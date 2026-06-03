@@ -1,0 +1,279 @@
+/* AddRecipe.css */
+
+.add-recipe {
+  min-height: 100%;
+  background: var(--paper);
+  padding-bottom: 40px;
+}
+
+.add-recipe-header {
+  padding: 16px 20px 0;
+}
+
+.add-close-btn {
+  width: 38px; height: 38px; border-radius: 50%;
+  background: var(--card); border: 1px solid var(--line-2);
+  display: flex; align-items: center; justify-content: center; cursor: pointer;
+}
+
+.add-recipe-title {
+  padding: 20px 22px 4px;
+}
+
+/* ── Hub: URL input ── */
+.add-link-section {
+  padding: 20px 22px 0;
+}
+
+.add-link-row {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--card); border: 1px solid var(--line-2);
+  border-radius: 16px; padding: 8px 8px 8px 14px;
+}
+
+.add-link-input {
+  flex: 1; border: none; outline: none; background: none;
+  font-family: var(--serif); font-size: 15px; color: var(--ink);
+}
+
+.add-link-input::placeholder {
+  color: var(--mute); font-style: italic;
+}
+
+.add-link-submit {
+  width: 44px; height: 44px; border-radius: 10px;
+  background: var(--espresso); display: flex; align-items: center;
+  justify-content: center; cursor: pointer; border: none; flex-shrink: 0;
+  transition: opacity 0.15s;
+}
+
+.add-link-submit:disabled {
+  opacity: 0.35;
+}
+
+.add-link-caption {
+  margin-top: 8px; font-family: var(--serif);
+  font-size: 12px; color: var(--mute); font-style: italic; padding: 0 2px;
+}
+
+/* ── Hub: divider + method cards ── */
+.add-divider {
+  display: flex; align-items: center; gap: 12px;
+  padding: 22px 22px 0; color: var(--mute); font-size: 13px; font-style: italic;
+  font-family: var(--serif);
+}
+
+.add-divider::before, .add-divider::after {
+  content: ''; flex: 1; height: 1px; background: var(--line-2);
+}
+
+.add-methods {
+  padding: 16px 22px 0; display: flex; flex-direction: column; gap: 11px;
+}
+
+.add-method-card {
+  display: flex; align-items: center; gap: 14px;
+  background: var(--card); border: 1px solid var(--line); border-radius: 16px;
+  padding: 14px; cursor: pointer; transition: transform 0.15s;
+  box-shadow: var(--shadow-card); width: 100%; text-align: left;
+}
+
+.add-method-card:active {
+  transform: scale(0.98);
+}
+
+.add-method-icon {
+  width: 46px; height: 46px; border-radius: 13px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+}
+
+.add-method-title {
+  font-family: var(--serif); font-weight: 600; font-size: 18px; color: var(--espresso);
+}
+
+.add-method-hint {
+  font-family: var(--serif); font-size: 13px; color: var(--mute);
+  font-style: italic; margin-top: 2px;
+}
+
+/* ── Manual form ── */
+.manual-form {
+  padding: 16px 22px 0;
+}
+
+.form-section {
+  margin-bottom: 20px;
+}
+
+.form-label {
+  display: block;
+  font-family: var(--serif);
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--mute);
+  margin-bottom: 8px;
+}
+
+.form-label-opt {
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0;
+  font-style: italic;
+  font-size: 11px;
+}
+
+.form-input {
+  width: 100%;
+  background: var(--card);
+  border: 1px solid var(--line-2);
+  border-radius: var(--r-input);
+  padding: 12px 14px;
+  font-family: var(--serif);
+  font-size: 15.5px;
+  color: var(--ink);
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.form-input:focus {
+  border-color: var(--sage-2);
+}
+
+.form-input::placeholder {
+  color: var(--mute);
+  font-style: italic;
+}
+
+.form-input-file {
+  width: 100%;
+  font-family: var(--serif);
+  font-size: 14px;
+  color: var(--cocoa);
+}
+
+.form-row-3 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.form-row-3 .form-section {
+  margin-bottom: 0;
+}
+
+.form-save-btn {
+  width: 100%;
+  background: var(--espresso);
+  color: var(--paper);
+  border: none;
+  border-radius: 999px;
+  padding: 18px;
+  font-family: var(--serif);
+  font-size: 17px;
+  font-weight: 600;
+  font-style: italic;
+  cursor: pointer;
+  transition: opacity 0.15s;
+  margin-top: 8px;
+}
+
+.form-save-btn:active {
+  opacity: 0.85;
+}
+
+/* Löschen-Button */
+.form-delete-btn {
+  width: 100%;
+  background: none;
+  color: #c0392b;
+  border: 1.5px solid #c0392b;
+  border-radius: 999px;
+  padding: 16px;
+  font-family: var(--serif);
+  font-size: 16px;
+  font-weight: 600;
+  font-style: italic;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  margin-top: 12px;
+  touch-action: manipulation;
+}
+
+.form-delete-btn:active {
+  background: #c0392b;
+  color: #fff;
+}
+
+/* Bestätigungsdialog */
+.delete-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 300;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.delete-dialog {
+  background: var(--card);
+  border-radius: 20px;
+  padding: 28px 24px 22px;
+  width: 100%;
+  max-width: 340px;
+  box-shadow: 0 20px 40px -10px rgba(0,0,0,0.35);
+}
+
+.delete-dialog-title {
+  font-family: var(--serif);
+  font-weight: 700;
+  font-size: 20px;
+  color: var(--espresso);
+  margin-bottom: 12px;
+}
+
+.delete-dialog-text {
+  font-family: var(--serif);
+  font-size: 15.5px;
+  color: var(--cocoa);
+  line-height: 1.5;
+  margin-bottom: 24px;
+}
+
+.delete-dialog-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.delete-dialog-cancel {
+  flex: 1;
+  padding: 14px;
+  border-radius: 999px;
+  background: var(--paper-2);
+  border: 1px solid var(--line-2);
+  font-family: var(--serif);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--cocoa);
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.delete-dialog-confirm {
+  flex: 1;
+  padding: 14px;
+  border-radius: 999px;
+  background: #c0392b;
+  border: none;
+  font-family: var(--serif);
+  font-size: 15px;
+  font-weight: 600;
+  font-style: italic;
+  color: #fff;
+  cursor: pointer;
+  touch-action: manipulation;
+}

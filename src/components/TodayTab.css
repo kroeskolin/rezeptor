@@ -1,0 +1,66 @@
+/* TodayTab.css */
+
+.inspiration-tab {
+  height: 100%;
+  background: var(--paper);
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 40px;
+}
+
+.inspiration-header {
+  padding: 16px 20px 0;
+}
+
+.inspiration-tools {
+  padding: 24px 20px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  flex: 1;                /* nimmt den restlichen Platz ein */
+}
+
+.inspo-tile {
+  border-radius: 18px;
+  padding: 22px 18px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  cursor: pointer;
+  transition: transform 0.15s;
+  touch-action: manipulation;
+  flex: 1;                /* jede Kachel streckt sich gleichmäßig */
+}
+
+.inspo-tile:active {
+  transform: scale(0.98);
+}
+
+.inspo-tile-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.inspo-tile-body {
+  flex: 1;
+}
+
+.inspo-tile-title {
+  font-family: var(--serif);
+  font-weight: 700;
+  font-size: 19px;
+  line-height: 1.1;
+}
+
+.inspo-tile-sub {
+  font-family: var(--serif);
+  font-size: 13px;
+  margin-top: 4px;
+  font-style: italic;
+  line-height: 1.35;
+}

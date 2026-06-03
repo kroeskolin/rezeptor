@@ -1,0 +1,144 @@
+/* Settings.css */
+
+.settings {
+  min-height: 100%;
+  background: var(--paper);
+  padding-bottom: 40px;
+}
+
+.settings-header {
+  padding: 16px 20px 0;
+}
+
+.settings-back-btn {
+  width: 38px; height: 38px; border-radius: 50%;
+  background: var(--card); border: 1px solid var(--line-2);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; flex-shrink: 0;
+}
+
+.settings-profile-card {
+  margin: 22px 20px 0;
+  background: var(--card); border: 1px solid var(--line); border-radius: 20px;
+  padding: 20px 18px; display: flex; align-items: center; gap: 14px;
+  box-shadow: var(--shadow-card);
+}
+
+.settings-avatar {
+  width: 52px; height: 52px; border-radius: 50%;
+  background: var(--green-grad);
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+
+.settings-avatar-initial {
+  font-family: var(--logo); font-weight: 600; font-size: 24px; color: var(--paper);
+}
+
+.settings-profile-name {
+  font-family: var(--serif); font-weight: 700; font-size: 19px; color: var(--espresso);
+}
+
+.settings-profile-email {
+  font-family: var(--serif); font-size: 13px; color: var(--mute); margin-top: 2px;
+}
+
+.settings-group {
+  padding: 0 20px;
+  margin-top: 22px;
+}
+
+.settings-group-label {
+  font-family: var(--serif); font-style: italic; font-weight: 500;
+  font-size: 14px; color: var(--mute); padding: 0 6px 9px;
+}
+
+.settings-group-card {
+  background: var(--card); border: 1px solid var(--line); border-radius: 16px;
+  overflow: hidden; box-shadow: 0 10px 24px -22px rgba(71,53,40,0.5);
+}
+
+.settings-row {
+  display: flex; align-items: center; gap: 13px;
+  padding: 13px 16px; border-bottom: 1px solid var(--line);
+}
+
+.settings-row:last-child {
+  border-bottom: none;
+}
+
+.settings-row-icon {
+  width: 34px; height: 34px; border-radius: 9px; flex-shrink: 0;
+  background: var(--paper-2); display: flex; align-items: center; justify-content: center;
+}
+
+.settings-row-label {
+  flex: 1; font-family: var(--serif); font-size: 15.5px; color: var(--espresso);
+}
+
+.settings-row-value {
+  font-family: var(--serif); font-size: 14px; color: var(--mute); font-style: italic;
+}
+
+.settings-toggle {
+  width: 44px; height: 26px; border-radius: 999px; position: relative; flex-shrink: 0;
+  transition: background .2s; cursor: pointer; border: none;
+}
+
+.settings-toggle-knob {
+  position: absolute; top: 3px; width: 20px; height: 20px;
+  border-radius: 50%; background: var(--paper);
+  box-shadow: 0 1px 3px rgba(71,53,40,0.3); transition: left 0.2s;
+}
+
+.settings-footer {
+  text-align: center; padding: 32px 20px 0;
+  font-family: var(--logo); font-size: 16px; font-style: italic; color: var(--line-2);
+}
+
+.settings-footer-version {
+  font-family: var(--serif); font-size: 11px; color: var(--mute); margin-top: 4px;
+}
+
+/* Form-Input (geteilt mit AddRecipe) */
+.form-input {
+  width: 100%;
+  background: var(--card);
+  border: 1px solid var(--line-2);
+  border-radius: var(--r-input);
+  padding: 12px 14px;
+  font-family: var(--serif);
+  font-size: 16px;
+  color: var(--ink);
+  outline: none;
+  transition: border-color 0.15s;
+  touch-action: manipulation;
+}
+
+.form-input:focus {
+  border-color: var(--sage-2);
+}
+
+.form-input::placeholder {
+  color: var(--mute);
+  font-style: italic;
+}
+
+.form-save-btn {
+  width: 100%;
+  background: var(--espresso);
+  color: var(--paper);
+  border: none;
+  border-radius: 999px;
+  padding: 16px;
+  font-family: var(--serif);
+  font-size: 16px;
+  font-weight: 600;
+  font-style: italic;
+  cursor: pointer;
+  transition: opacity 0.15s;
+  touch-action: manipulation;
+}
+
+.form-save-btn:active {
+  opacity: 0.85;
+}

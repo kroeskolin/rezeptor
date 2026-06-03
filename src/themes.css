@@ -1,0 +1,133 @@
+/* ============================================================
+   REZEPTOR — Themes
+   Jedes Theme überschreibt die CSS-Variablen aus index.css
+   Wird als Klasse auf <html> gesetzt, z.B. <html class="theme-nocturne">
+   ============================================================ */
+
+/* ── Theme: Waldgrün (Default) ── */
+/* Keine Klasse nötig — das sind die Werte aus index.css */
+
+/* ── Theme 1: Nocturne (Creme + Rosa + Blaugrau) ── */
+html.theme-nocturne {
+  --paper:    #FEFAF2;
+  --paper-2:  #F5EFE3;
+  --card:     #FFFFFF;
+
+  --sage:     #C4BBDB;
+  --sage-2:   #A89FC2;
+  --green:    #5B6E8C;
+
+  --ink:      #1E1E1E;
+  --espresso: #1E1E1E;
+  --cocoa:    #3A3A3A;
+  --mute:     #8A8A8A;
+
+  --rose:     #F5D6D0;
+  --rose-2:   #EDB8B8;
+  --rose-ink: #9E5A5A;
+
+  --line:     #EDE8E0;
+  --line-2:   #DDD8D0;
+
+  --green-grad: linear-gradient(158deg, #6B7FA0 0%, #4A5E7A 100%);
+}
+
+/* ── Theme 2: Herbst (Mauve + Weinrot + Dunkelviolett) ── */
+html.theme-herbst {
+  --paper:    #F5F0F2;
+  --paper-2:  #EDE5EA;
+  --card:     #FFFFFF;
+
+  --sage:     #D4B8C7;
+  --sage-2:   #C0A0B4;
+  --green:    #6E3347;
+
+  --ink:      #3D1F35;
+  --espresso: #3D1F35;
+  --cocoa:    #5A3048;
+  --mute:     #9A7A8A;
+
+  --rose:     #E8D0DA;
+  --rose-2:   #D4B8C7;
+  --rose-ink: #6E3347;
+
+  --line:     #E0D5DC;
+  --line-2:   #CFC0CA;
+
+  --green-grad: linear-gradient(158deg, #7D3A55 0%, #5A2840 100%);
+}
+
+/* ── Theme 3: Nacht (Dunkel + Eisblau + Petrol) ── */
+html.theme-nacht {
+  --paper:    #252B2B;
+  --paper-2:  #2E3535;
+  --card:     #323A3A;
+
+  --sage:     #4A8A96;
+  --sage-2:   #3D7A8A;
+  --green:    #7EC8D4;
+
+  --ink:      #E3EAF0;
+  --espresso: #E3EAF0;
+  --cocoa:    #B8C8D4;
+  --mute:     #6A8090;
+
+  --rose:     #3A4A50;
+  --rose-2:   #4A5A62;
+  --rose-ink: #9AC0CC;
+
+  --line:     #3A4545;
+  --line-2:   #4A5555;
+
+  --green-grad: linear-gradient(158deg, #3D7A8A 0%, #2C5F6A 100%);
+}
+
+/* ── Theme 4: Sommer (Türkis + Hellblau + Dunkelgrün) ── */
+html.theme-sommer {
+  --paper:    #F2FAF8;
+  --paper-2:  #E5F5F2;
+  --card:     #FFFFFF;
+
+  --sage:     #7DD4D4;
+  --sage-2:   #5CC4C4;
+  --green:    #2C5F58;
+
+  --ink:      #1A3A36;
+  --espresso: #1A3A36;
+  --cocoa:    #2E5550;
+  --mute:     #6A9A94;
+
+  --rose:     #B8EAE4;
+  --rose-2:   #8ED8D0;
+  --rose-ink: #2C5F58;
+
+  --line:     #D0ECEC;
+  --line-2:   #B8E0DC;
+
+  --green-grad: linear-gradient(158deg, #3BBFB0 0%, #2C8A82 100%);
+}
+
+/* ── Theme 5: Harvest (Gold + Altrosa + Dunkelbraun) ── */
+html.theme-harvest {
+  --paper:    #FDF8F0;
+  --paper-2:  #F5EDE0;
+  --card:     #FFFFFF;
+
+  --sage:     #F5D080;
+  --sage-2:   #E8BC50;
+  --green:    #8A4A20;
+
+  --ink:      #4A1A14;
+  --espresso: #4A1A14;
+  --cocoa:    #6A3020;
+  --mute:     #9A7060;
+
+  --rose:     #F0C8B8;
+  --rose-2:   #E4A898;
+  --rose-ink: #8A3A30;
+
+  --line:     #EAE0D4;
+  --line-2:   #DDD0C0;
+
+  --green-grad: linear-gradient(158deg, #D4736A 0%, #4A1A14 100%);
+}

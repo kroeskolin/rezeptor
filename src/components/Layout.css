@@ -1,0 +1,186 @@
+/* Layout.css */
+
+html,
+body,
+#root {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  width: 100%;
+  height: 100%;
+}
+
+.app-shell {
+  position: absolute;
+  inset: 0;
+  background: var(--paper);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ── Rezeptor-Header ── */
+.app-header {
+  background: linear-gradient(
+    to bottom,
+    var(--green) 0%,
+    rgba(0, 0, 0, 0) 100%
+  );
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  height: 56px;
+  padding-top: env(safe-area-inset-top, 0px);
+  /* Mit safe-area wird die Höhe durch padding-top automatisch größer */
+}
+
+/* Wenn safe-area-inset-top vorhanden, Header höher machen */
+@supports (padding-top: env(safe-area-inset-top)) {
+  .app-header {
+    height: calc(56px + env(safe-area-inset-top, 0px));
+    align-items: flex-end;
+    padding-bottom: 10px;
+  }
+}
+
+.app-header-left {
+  display: flex;
+  align-items: center;
+}
+
+.app-header-title {
+  font-family: var(--serif);
+  font-weight: 700;
+  font-size: 20px;
+  color: #F9FBF8;
+  letter-spacing: -0.01em;
+}
+
+.app-header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.app-header-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.12);
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.15s;
+  touch-action: manipulation;
+}
+
+.app-header-btn:active {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+/* ── Content ── */
+.app-content {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ── Bottom Nav ── */
+.bottom-nav {
+  flex-shrink: 0;
+  background: rgba(249, 251, 248, 0.96);
+  backdrop-filter: blur(16px) saturate(140%);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
+  border-top: 1px solid var(--line);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  z-index: 100;
+}
+
+.bottom-nav-row {
+  display: flex;
+  align-items: flex-end;
+  padding: 10px 6px 8px;
+}
+
+.bottom-nav-tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  flex: 1;
+  padding-bottom: 2px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.bottom-nav-tab span {
+  font-family: var(--serif);
+  font-size: 10.5px;
+  font-weight: 500;
+  color: var(--mute);
+  transition: color 0.15s;
+}
+
+.bottom-nav-tab.active span {
+  font-weight: 700;
+  color: var(--espresso);
+}
+
+.fab-wrapper {
+  width: 78px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+}
+
+.fab-halo {
+  position: absolute;
+  width: 84px;
+  height: 84px;
+  border-radius: 50%;
+  background: rgba(249, 251, 248, 0.96);
+  top: -38px;
+  left: 50%;
+  transform: translateX(-50%);
+  box-shadow: 0 -1px 0 var(--line);
+}
+
+.fab-btn {
+  position: relative;
+  width: 62px;
+  height: 62px;
+  border-radius: 50%;
+  background: var(--green-grad);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 3px solid var(--paper);
+  box-shadow: 0 10px 22px -8px rgba(84, 113, 63, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  margin-top: -28px;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
+  z-index: 1;
+  touch-action: manipulation;
+}
+
+.fab-btn:active {
+  transform: scale(0.95);
+}
+
+.fab-label {
+  font-family: var(--serif);
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--cocoa);
+  margin-top: 4px;
+  position: relative;
+  z-index: 1;
+}

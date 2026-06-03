@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="100" fill="#C9847A"/>
+  <!-- Topf-Körper -->
+  <rect x="126" y="220" width="260" height="180" rx="20" fill="white"/>
+  <!-- Topf-Rand oben -->
+  <rect x="116" y="200" width="280" height="30" rx="10" fill="white"/>
+  <!-- Deckel -->
+  <rect x="146" y="165" width="220" height="25" rx="10" fill="white"/>
+  <!-- Deckelgriff -->
+  <rect x="226" y="135" width="60" height="22" rx="11" fill="white"/>
+  <!-- Griff links -->
+  <rect x="86" y="215" width="50" height="22" rx="11" fill="white"/>
+  <!-- Griff rechts -->
+  <rect x="376" y="215" width="50" height="22" rx="11" fill="white"/>
+  <!-- Dampf links -->
+  <path d="M196 160 Q186 140 196 120 Q206 100 196 80" stroke="white" stroke-width="10" stroke-linecap="round" fill="none"/>
+  <!-- Dampf mitte -->
+  <path d="M256 160 Q246 140 256 120 Q266 100 256 80" stroke="white" stroke-width="10" stroke-linecap="round" fill="none"/>
+  <!-- Dampf rechts -->
+  <path d="M316 160 Q306 140 316 120 Q326 100 316 80" stroke="white" stroke-width="10" stroke-linecap="round" fill="none"/>
+</svg>

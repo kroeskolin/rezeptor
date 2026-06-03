@@ -1,0 +1,57 @@
+.community {
+  min-height: 100%; background: var(--paper); padding-bottom: 40px;
+}
+.community-header {
+  display: flex; align-items: flex-end; justify-content: space-between;
+  padding: 16px 20px 0;
+}
+.community-avatar {
+  width: 38px; height: 38px; border-radius: 50%; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+}
+.community-toggle-row {
+  display: flex; gap: 8px; padding: 16px 20px 0;
+}
+.community-toggle-pill {
+  padding: 7px 16px; border-radius: 999px; cursor: pointer;
+  font-family: var(--serif); font-size: 13.5px; border: 1px solid;
+  transition: background 0.15s;
+}
+.community-feed { padding: 18px 20px 0; display: flex; flex-direction: column; gap: 14px; }
+.community-card {
+  background: var(--card); border: 1px solid var(--line); border-radius: 18px;
+  padding: 16px; box-shadow: var(--shadow-card);
+}
+.community-card-top {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 12px;
+}
+.community-card-avatar {
+  width: 38px; height: 38px; border-radius: 50%; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+}
+.community-card-name {
+  font-family: var(--serif); font-weight: 700; font-size: 15px; color: var(--espresso);
+}
+.community-card-action {
+  font-family: var(--serif); font-size: 13px; color: var(--mute); margin-top: 1px;
+}
+.community-card-time {
+  font-family: var(--serif); font-size: 12px; color: var(--mute);
+  margin-left: auto; white-space: nowrap;
+}
+.community-recipe-mini {
+  background: var(--paper-2); border-radius: 12px; padding: 10px 12px;
+  display: flex; align-items: center; gap: 10px; margin-bottom: 12px;
+}
+.community-card-footer {
+  display: flex; align-items: center; justify-content: space-between;
+}
+.community-likes {
+  display: flex; align-items: center; gap: 6px;
+  font-family: var(--serif); font-size: 13.5px; color: var(--mute);
+}
+.community-save-btn {
+  padding: 8px 14px; border-radius: 999px; background: var(--espresso);
+  color: var(--paper); font-family: var(--serif); font-size: 13px; font-weight: 600;
+  cursor: pointer; border: none; display: flex; align-items: center; gap: 7px;
+}

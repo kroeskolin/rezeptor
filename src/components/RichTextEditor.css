@@ -1,0 +1,78 @@
+.rich-editor {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background: white;
+  overflow: hidden;
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px;
+  border-bottom: 1px solid #ddd;
+  background: #fafafa;
+}
+
+.toolbar button {
+  background: none;
+  border: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  color: #1a1a1a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s ease;
+}
+
+.toolbar button:hover {
+  background: #ebebeb;
+}
+
+.toolbar button.active {
+  background: #1a1a1a;
+  color: white;
+}
+
+.toolbar-divider {
+  width: 1px;
+  height: 20px;
+  background: #ddd;
+  margin: 0 4px;
+}
+
+.ProseMirror {
+  padding: 12px;
+  min-height: 150px;
+  outline: none;
+  font-family: 'Lora', serif;
+  font-size: 1rem;
+  line-height: 1.7;
+  color: #1a1a1a;
+}
+
+.ProseMirror p {
+  margin-bottom: 8px;
+}
+
+.ProseMirror ol,
+.ProseMirror ul {
+  padding-left: 20px;
+  margin-bottom: 8px;
+}
+
+.ProseMirror li {
+  margin-bottom: 4px;
+}
+
+.ProseMirror p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  color: #aaa;
+  pointer-events: none;
+  float: left;
+  height: 0;
+}

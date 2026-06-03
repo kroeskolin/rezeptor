@@ -1,0 +1,172 @@
+/* SearchDrawer.css */
+
+.search-drawer {
+  min-height: 100%;
+  background: var(--paper);
+  padding-bottom: 40px;
+}
+
+.search-bar-row {
+  padding: 16px 18px 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.search-input-wrap {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--card);
+  border: 1px solid var(--line-2);
+  border-radius: 14px;
+  padding: 11px 14px;
+}
+
+.search-input {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: none;
+  font-family: var(--serif);
+  /* 16px verhindert iOS-Zoom beim Fokussieren */
+  font-size: 16px;
+  color: var(--ink);
+  /* Zoom beim Fokus global unterbinden */
+  touch-action: manipulation;
+}
+
+.search-input::placeholder {
+  color: var(--mute);
+  font-style: italic;
+}
+
+.search-cancel {
+  font-family: var(--serif);
+  font-size: 15px;
+  color: var(--cocoa);
+  font-style: italic;
+  cursor: pointer;
+  background: none;
+  border: none;
+  white-space: nowrap;
+  /* Gleiche touch-action damit kein Zoom-Effekt */
+  touch-action: manipulation;
+  padding: 8px 0;
+}
+
+/* Filter-Gruppen */
+.search-filter-group {
+  padding: 18px 20px 0;
+}
+
+.search-filter-label {
+  font-family: var(--serif);
+  font-size: 12px;
+  color: var(--mute);
+  font-style: italic;
+  margin-bottom: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+/* Chip-Reihen */
+.search-chips-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.search-filter-chips {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.search-chip {
+  padding: 8px 15px;
+  border-radius: 999px;
+  flex-shrink: 0;
+  font-family: var(--serif);
+  font-size: 13.5px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s;
+  white-space: nowrap;
+  background: var(--card);
+  border: 1px solid var(--line-2);
+  color: var(--mute);        /* inaktiv: gedämpft */
+  touch-action: manipulation;
+}
+
+.search-chip.active {
+  background: var(--sage);
+  border-color: var(--sage-2);
+  color: var(--espresso);
+  font-weight: 700;
+}
+
+/* Ergebnisse */
+.search-results {
+  padding: 22px 20px 0;
+}
+
+.search-results-count {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.search-results-label {
+  font-family: var(--serif);
+  font-style: italic;
+  font-weight: 500;
+  font-size: 15.5px;
+  color: var(--espresso);
+  white-space: nowrap;
+}
+
+.search-results-list {
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+}
+
+.search-result-card {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 12px;
+  box-shadow: 0 10px 24px -20px rgba(71,53,40,0.5);
+  cursor: pointer;
+  transition: transform 0.15s;
+  touch-action: manipulation;
+}
+
+.search-result-card:active {
+  transform: scale(0.98);
+}
+
+.search-empty {
+  text-align: center;
+  padding: 40px 0;
+  color: var(--mute);
+  font-style: italic;
+  font-family: var(--serif);
+}
+
+.add-close-btn {
+  width: 38px; height: 38px; border-radius: 50%;
+  background: var(--card); border: 1px solid var(--line-2);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; flex-shrink: 0; touch-action: manipulation;
+}
+
+.add-recipe-header {
+  padding: 16px 20px 0;
+}

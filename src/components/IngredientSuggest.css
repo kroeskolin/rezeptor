@@ -1,0 +1,68 @@
+.reste {
+  min-height: 100%; background: var(--paper);
+  display: flex; flex-direction: column; padding-bottom: 40px;
+}
+.reste-header {
+  display: flex; align-items: center; justify-content: space-between; padding: 14px 20px 0;
+}
+.reste-back {
+  font-family: var(--serif); font-size: 15px; color: var(--cocoa);
+  font-style: italic; cursor: pointer; background: none; border: none;
+}
+.reste-title { padding: 14px 20px 0; }
+.reste-subtitle {
+  font-family: var(--serif); font-size: 14px; color: var(--cocoa);
+  font-style: italic; margin-top: 5px;
+}
+.reste-input-box {
+  margin: 16px 20px 0;
+  background: var(--card); border: 1px solid var(--line-2); border-radius: 16px;
+  padding: 12px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+  min-height: 56px;
+}
+.reste-chip {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 7px 10px 7px 13px; border-radius: 999px;
+  background: var(--sage); color: var(--espresso);
+  font-family: var(--serif); font-size: 13.5px; font-weight: 600;
+}
+.reste-chip-x {
+  width: 17px; height: 17px; border-radius: 50%; background: var(--sage-2);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; border: none; flex-shrink: 0;
+}
+.reste-input {
+  border: none; outline: none; background: none; font-family: var(--serif);
+  font-size: 14px; color: var(--ink); font-style: italic; flex: 1; min-width: 80px;
+}
+.reste-input::placeholder { color: var(--mute); }
+.reste-suggestions { padding: 14px 20px 0; }
+.reste-suggestions-label {
+  font-family: var(--serif); font-size: 12px; color: var(--mute);
+  letter-spacing: 0.06em; margin-bottom: 10px; font-style: italic;
+}
+.reste-suggestions-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.reste-sugg-chip {
+  padding: 8px 14px; border-radius: 999px;
+  font-family: var(--serif); font-size: 13.5px; cursor: pointer;
+  transition: background 0.15s; border: 1px solid; white-space: nowrap;
+}
+.reste-sugg-chip.on {
+  background: var(--sage); border-color: var(--sage-2); color: var(--espresso); font-weight: 600;
+}
+.reste-sugg-chip.off {
+  background: var(--card); border-color: var(--line-2); color: var(--espresso);
+}
+.reste-results { padding: 22px 20px 0; }
+.reste-result-card {
+  display: flex; align-items: center; gap: 13px;
+  background: var(--card); border: 1px solid var(--line); border-radius: 16px;
+  padding: 12px; box-shadow: var(--shadow-card); margin-bottom: 11px;
+  cursor: pointer; transition: transform 0.15s;
+}
+.reste-result-card:active { transform: scale(0.98); }
+.reste-match-badge {
+  padding: 4px 9px; border-radius: 999px; background: var(--paper-2);
+  font-family: var(--serif); font-size: 11.5px; font-weight: 700; color: var(--green);
+  white-space: nowrap;
+}

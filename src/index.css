@@ -1,0 +1,159 @@
+/* ============================================================
+   REZEPTOR · Design Tokens v3
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,500;0,8..60,600;0,8..60,700;1,8..60,400;1,8..60,500;1,8..60,600&family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500;1,600&display=swap');
+
+:root {
+  /* Surfaces */
+  --paper:    #F9FBF8;
+  --paper-2:  #F1F5EE;
+  --card:     #FFFFFF;
+
+  /* Sage */
+  --sage:     #C8D9BF;
+  --sage-2:   #B0C7A4;
+  --green:    #4C6A3E;
+
+  /* Espresso */
+  --ink:      #473528;
+  --espresso: #473528;
+  --cocoa:    #6A5546;
+  --mute:     #9A8C7E;
+
+  /* Rose */
+  --rose:     #EDD4CF;
+  --rose-2:   #E2BDB6;
+  --rose-ink: #A66E62;
+
+  /* Lines */
+  --line:     #E9EBE3;
+  --line-2:   #D8DCD0;
+
+  /* Gradient */
+  --green-grad: linear-gradient(158deg, #5C7A45 0%, #3C5232 100%);
+
+  /* Type */
+  --serif:   'Source Serif 4', Georgia, serif;
+  --logo:    'Playfair Display', Georgia, serif;
+
+  /* Radii */
+  --r-pill:   999px;
+  --r-card:   18px;
+  --r-card-l: 20px;
+  --r-tile:   13px;
+  --r-input:  14px;
+
+  /* Shadows */
+  --shadow-card:    0 12px 28px -22px rgba(71,53,40,0.50);
+  --shadow-feature: 0 16px 34px -22px rgba(71,53,40,0.45);
+  --shadow-float:   0 12px 26px -8px  rgba(71,53,40,0.60);
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--paper);
+  font-family: var(--serif);
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+#root {
+  /* wird von Layout.css übernommen */
+}
+
+* {
+  font-family: var(--serif);
+}
+
+h1, h2, h3, h4, p, ul, ol {
+  margin: 0;
+  padding: 0;
+}
+
+ul, ol {
+  list-style: none;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+
+input, textarea, select {
+  font: inherit;
+}
+
+.display {
+  font-family: var(--serif);
+  font-weight: 700;
+  letter-spacing: -0.018em;
+  line-height: 0.98;
+  font-variation-settings: "opsz" 60;
+}
+
+.ital {
+  font-style: italic;
+  font-weight: 400;
+}
+
+.label-caps {
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  font-weight: 600;
+  font-size: 10.5px;
+}
+
+.num {
+  font-feature-settings: "tnum", "lnum";
+  letter-spacing: 0.02em;
+}
+
+/* Scrollbars */
+::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+/* Tiptap Editor */
+.ProseMirror {
+  outline: none;
+  font-family: var(--serif);
+  font-size: 15.5px;
+  color: var(--ink);
+  line-height: 1.55;
+}
+
+.ProseMirror p {
+  margin-bottom: 0.75em;
+}
+
+.ProseMirror ol {
+  list-style: decimal;
+  padding-left: 1.4em;
+}
+
+.ProseMirror ul {
+  list-style: disc;
+  padding-left: 1.4em;
+}
+
+.ProseMirror li {
+  margin-bottom: 0.3em;
+}
+
+/* Cover tints */
+.cover-tint-0 { background: #C8D9BF; }
+.cover-tint-1 { background: #EDD4CF; }
+.cover-tint-2 { background: #E7DCC6; }
+.cover-tint-3 { background: #DCE7D0; }
