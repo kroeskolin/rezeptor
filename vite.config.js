@@ -19,8 +19,8 @@ export default defineConfig({
         background_color: '#ffffff',
         display: 'standalone',
         orientation: 'portrait',
-        scope: '/',
-        start_url: '/',
+        scope: '/rezeptor/',
+        start_url: '/rezeptor/',
         lang: 'de',
         icons: [
           {
