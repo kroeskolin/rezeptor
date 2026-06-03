@@ -19,20 +19,15 @@ body,
   overflow: hidden;
 }
 
+
 /* ── Rezeptor-Header ── */
 .app-header {
-  background: linear-gradient(
-    to bottom,
-    var(--green) 0%,
-    rgba(0, 0, 0, 0) 100%
-  );
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 16px;
-  height: 56px;
-  padding-top: env(safe-area-inset-top, 0px);
-  /* Mit safe-area wird die Höhe durch padding-top automatisch größer */
+  background: linear-gradient(to bottom,
+      var(--green) 0%,
+      rgba(0, 0, 0, 0) 100%);
+  /* Hintergrund läuft unter die Status Bar */
+  margin-top: calc(-1 * env(safe-area-inset-top, 0px));
+  padding-top: calc(env(safe-area-inset-top, 0px) + 10px);
 }
 
 /* Wenn safe-area-inset-top vorhanden, Header höher machen */
