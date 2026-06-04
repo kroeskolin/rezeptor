@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { getAllTags, addTag, deleteTag, exportRecipes, importRecipes } from '../db/recipes'
 import { Icon } from './DesignTokens'
-import { THEMES, applyTheme, loadTheme } from '../useTheme'
+import { THEMES, applyTheme } from '../useTheme'
 import './Settings.css'
 
 const COLORS = [
@@ -9,6 +9,11 @@ const COLORS = [
   '#FF9FF3', '#54A0FF', '#5F27CD', '#00D2D3',
   '#1DD1A1', '#C8D6E5'
 ]
+
+// Letztes Deployment-Datum aus dem Build
+const BUILD_DATE = new Date(document.lastModified).toLocaleDateString('de-DE', {
+  day: '2-digit', month: '2-digit', year: 'numeric'
+})
 
 function Toggle({ on, onToggle }) {
   return (
@@ -33,7 +38,7 @@ function SettingRow({ icon, label, value, toggle, on, onToggle, onClick }) {
         ? <Toggle on={on} onToggle={onToggle} />
         : <>
             {value && <span className="settings-row-value">{value}</span>}
-            <Icon name="chev" size={17} color="var(--line-2)" />
+            {onClick && <Icon name="chev" size={17} color="var(--line-2)" />}
           </>
       }
     </div>
@@ -56,6 +61,7 @@ export default function Settings({ onImport }) {
   const [importStatus, setImportStatus] = useState(null)
   const [notifications, setNotifications] = useState(false)
   const [showTagManager, setShowTagManager] = useState(false)
+  const [showThemePicker, setShowThemePicker] = useState(false)
   const [activeTheme, setActiveTheme] = useState('default')
   const fileInputRef = useRef(null)
 
@@ -106,6 +112,8 @@ export default function Settings({ onImport }) {
     e.target.value = ''
   }
 
+  const currentThemeName = THEMES.find(t => t.id === activeTheme)?.name || 'Waldgrün'
+
   // ── Tag-Manager ──
   if (showTagManager) {
     return (
@@ -118,7 +126,6 @@ export default function Settings({ onImport }) {
             Tags <span style={{ fontStyle: 'italic', fontWeight: 600 }}>verwalten</span>
           </h1>
         </div>
-
         <div className="settings-group">
           <div className="settings-group-label">Deine Tags</div>
           <div className="settings-group-card">
@@ -143,7 +150,6 @@ export default function Settings({ onImport }) {
             ))}
           </div>
         </div>
-
         <div className="settings-group">
           <div className="settings-group-label">Neuen Tag erstellen</div>
           <div className="settings-group-card" style={{ padding: '16px' }}>
@@ -171,6 +177,65 @@ export default function Settings({ onImport }) {
     )
   }
 
+  // ── Theme-Picker ──
+  if (showThemePicker) {
+    return (
+      <div className="settings">
+        <div className="settings-header" style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+          <button className="settings-back-btn" onClick={() => setShowThemePicker(false)}>
+            <Icon name="chev-left" size={18} color="var(--cocoa)" />
+          </button>
+          <h1 className="display" style={{ fontSize: 30, color: 'var(--espresso)' }}>
+            Farb<span style={{ fontStyle: 'italic', fontWeight: 600 }}>schema</span>
+          </h1>
+        </div>
+        <div className="settings-group">
+          <div className="settings-group-label">Thema wählen</div>
+          <div className="settings-group-card" style={{ padding: '16px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {THEMES.map(theme => (
+                <button
+                  key={theme.id}
+                  onClick={() => handleThemeChange(theme.id)}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 12,
+                    background: activeTheme === theme.id ? 'var(--paper-2)' : 'none',
+                    border: activeTheme === theme.id ? '1.5px solid var(--sage-2)' : '1.5px solid transparent',
+                    borderRadius: 14, padding: '10px 12px', cursor: 'pointer',
+                    transition: 'all 0.15s', width: '100%', textAlign: 'left',
+                  }}
+                >
+                  <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
+                    {theme.colors.map((c, i) => (
+                      <div key={i} style={{
+                        width: i === 0 ? 28 : 18, height: 28,
+                        borderRadius: i === 0 ? 8 : i === theme.colors.length - 1 ? '0 8px 8px 0' : 4,
+                        background: c, border: '1px solid rgba(0,0,0,0.06)',
+                      }} />
+                    ))}
+                  </div>
+                  <span style={{
+                    fontFamily: 'var(--serif)', fontSize: 15.5,
+                    fontWeight: activeTheme === theme.id ? 700 : 400,
+                    color: 'var(--espresso)',
+                  }}>
+                    {theme.name}
+                  </span>
+                  {activeTheme === theme.id && (
+                    <div style={{ marginLeft: 'auto' }}>
+                      <Icon name="check" size={18} color="var(--green)" strokeWidth={2.2} />
+                    </div>
+                  )}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+        <div style={{ height: 20 }} />
+      </div>
+    )
+  }
+
   // ── Hauptansicht ──
   return (
     <div className="settings">
@@ -180,63 +245,11 @@ export default function Settings({ onImport }) {
         </h1>
       </div>
 
-      <div className="settings-profile-card">
-        <div className="settings-avatar">
-          <span className="settings-avatar-initial">R</span>
-        </div>
-        <div style={{ flex: 1 }}>
-          <div className="settings-profile-name">Meine Rezepte</div>
-          <div className="settings-profile-email">Persönliche Sammlung</div>
-        </div>
-      </div>
-
-      {/* Theme-Auswahl */}
-      <div className="settings-group">
-        <div className="settings-group-label">Erscheinungsbild</div>
-        <div className="settings-group-card" style={{ padding: '16px' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {THEMES.map(theme => (
-              <button
-                key={theme.id}
-                onClick={() => handleThemeChange(theme.id)}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: 12,
-                  background: activeTheme === theme.id ? 'var(--paper-2)' : 'none',
-                  border: activeTheme === theme.id ? '1.5px solid var(--sage-2)' : '1.5px solid transparent',
-                  borderRadius: 14, padding: '10px 12px', cursor: 'pointer',
-                  transition: 'all 0.15s', width: '100%', textAlign: 'left',
-                }}
-              >
-                {/* Farbvorschau */}
-                <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
-                  {theme.colors.map((c, i) => (
-                    <div key={i} style={{
-                      width: i === 0 ? 28 : 18,
-                      height: 28,
-                      borderRadius: i === 0 ? 8 : i === theme.colors.length - 1 ? '0 8px 8px 0' : 4,
-                      background: c,
-                      border: '1px solid rgba(0,0,0,0.06)',
-                    }} />
-                  ))}
-                </div>
-                {/* Name */}
-                <span style={{
-                  fontFamily: 'var(--serif)', fontSize: 15.5,
-                  fontWeight: activeTheme === theme.id ? 700 : 400,
-                  color: 'var(--espresso)',
-                }}>
-                  {theme.name}
-                </span>
-                {activeTheme === theme.id && (
-                  <div style={{ marginLeft: 'auto' }}>
-                    <Icon name="check" size={18} color="var(--green)" strokeWidth={2.2} />
-                  </div>
-                )}
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
+      {/* Benachrichtigungen */}
+      <SettingsGroup title="Benachrichtigungen">
+        <SettingRow icon="bell" label="Benachrichtigungen"
+          toggle on={notifications} onToggle={() => setNotifications(v => !v)} />
+      </SettingsGroup>
 
       {/* Tags */}
       <SettingsGroup title="Kategorien & Tags">
@@ -245,10 +258,8 @@ export default function Settings({ onImport }) {
           onClick={() => setShowTagManager(true)} />
       </SettingsGroup>
 
-      {/* App */}
-      <SettingsGroup title="App">
-        <SettingRow icon="bell" label="Benachrichtigungen"
-          toggle on={notifications} onToggle={() => setNotifications(v => !v)} />
+      {/* Daten */}
+      <SettingsGroup title="Daten">
         <SettingRow icon="download" label="Rezepte exportieren" onClick={handleExport} />
         <SettingRow icon="import" label="Rezepte importieren"
           onClick={() => fileInputRef.current?.click()} />
@@ -265,14 +276,20 @@ export default function Settings({ onImport }) {
         </div>
       )}
 
-      <SettingsGroup title="Über">
-        <SettingRow icon="help" label="Hilfe & Feedback" />
-        <SettingRow icon="shield" label="Datenschutz" />
+      {/* Erscheinungsbild */}
+      <SettingsGroup title="Erscheinungsbild">
+        <SettingRow icon="sun" label="Farbschema wählen"
+          value={currentThemeName}
+          onClick={() => setShowThemePicker(true)} />
       </SettingsGroup>
 
+      {/* Footer */}
       <div className="settings-footer">
         <em>Rezeptor</em>
         <div className="settings-footer-version">Version 1.0</div>
+        <div className="settings-footer-version" style={{ marginTop: 2 }}>
+          Zuletzt aktualisiert am {BUILD_DATE}
+        </div>
       </div>
 
       <input ref={fileInputRef} type="file" accept=".json"
