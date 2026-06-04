@@ -157,15 +157,3 @@ input, textarea, select {
 .cover-tint-1 { background: #EDD4CF; }
 .cover-tint-2 { background: #E7DCC6; }
 .cover-tint-3 { background: #DCE7D0; }
-
-/* Safe Area für Seiten ohne grünen Header */
-.add-recipe,
-.search-drawer,
-.settings,
-.recipe-detail,
-.inspiration-tab,
-.lucky-wheel,
-.tinder,
-.reste {
-  padding-top: env(safe-area-inset-top, 44px);
-}
