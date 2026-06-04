@@ -1,8 +1,6 @@
 /* Layout.css */
 
-html,
-body,
-#root {
+html, body, #root {
   position: fixed;
   inset: 0;
   overflow: hidden;
@@ -12,7 +10,10 @@ body,
 
 .app-shell {
   position: absolute;
-  inset: 0;
+  top: 0;           /* wirklich von ganz oben */
+  left: 0;
+  right: 0;
+  bottom: 0;
   background: var(--paper);
   display: flex;
   flex-direction: column;
