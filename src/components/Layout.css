@@ -22,12 +22,18 @@ body,
 
 /* ── Rezeptor-Header ── */
 .app-header {
-  background: linear-gradient(to bottom,
-      var(--green) 0%,
-      rgba(0, 0, 0, 0) 100%);
-  /* Hintergrund läuft unter die Status Bar */
-  margin-top: calc(-1 * env(safe-area-inset-top, 0px));
-  padding-top: calc(env(safe-area-inset-top, 0px) + 10px);
+  flex-shrink: 0;
+  background: linear-gradient(
+    to bottom,
+    var(--green) 0%,
+    rgba(0, 0, 0, 0) 100%
+  );
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  padding: 0 16px 12px;
+  padding-top: env(safe-area-inset-top, 44px);
+  min-height: calc(56px + env(safe-area-inset-top, 44px));
 }
 
 /* Wenn safe-area-inset-top vorhanden, Header höher machen */
