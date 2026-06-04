@@ -14,6 +14,8 @@ import RecipeTinder from './components/RecipeTinder'
 import IngredientSuggest from './components/IngredientSuggest'
 import SearchDrawer from './components/SearchDrawer'
 import { loadTheme } from './useTheme'
+import SplashScreen from './components/SplashScreen'
+
 
 // Theme beim App-Start laden
 loadTheme()
@@ -28,6 +30,7 @@ function App() {
   const [showSearch, setShowSearch] = useState(false)
   const [favOnly, setFavOnly] = useState(false)
   const [todayMode, setTodayMode] = useState(null)
+  const [showSplash, setShowSplash] = useState(true)
 
   useEffect(() => {
     getAllRecipes().then(setRecipes)
@@ -148,6 +151,7 @@ function App() {
         onSearchClick={() => setShowSearch(true)}
       >
         {renderContent()}
+        {showSplash && <SplashScreen onDone={() => setShowSplash(false)} />}
       </Layout>
 
       {showCookMode && selectedRecipe && (

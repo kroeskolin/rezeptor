@@ -1,0 +1,117 @@
+/* SplashScreen.css */
+
+.splash {
+  position: fixed;
+  inset: 0;
+  background: #2C3E28;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  opacity: 1;
+  transition: opacity 0.5s ease;
+}
+
+.splash-fadeout {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.splash-logo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+.splash-wordmark {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 32px;
+  font-weight: 600;
+  color: #C8D9BF;
+  letter-spacing: -0.01em;
+  opacity: 0;
+  animation: splash-word-in 0.4s ease forwards;
+  animation-delay: 1.4s;
+}
+
+.splash-wordmark em {
+  font-style: italic;
+  color: #F9FBF8;
+}
+
+/* ── R Stamm ── */
+.splash-r-stem {
+  stroke-dasharray: 110;
+  stroke-dashoffset: 110;
+  animation: splash-draw 0.35s ease forwards;
+  animation-delay: 0.1s;
+}
+
+/* ── R Bogen ── */
+.splash-r-arc {
+  stroke-dasharray: 160;
+  stroke-dashoffset: 160;
+  animation: splash-draw 0.4s ease forwards;
+  animation-delay: 0.4s;
+}
+
+/* ── R Bein ── */
+.splash-r-leg {
+  stroke-dasharray: 90;
+  stroke-dashoffset: 90;
+  animation: splash-draw 0.3s ease forwards;
+  animation-delay: 0.75s;
+}
+
+/* ── Gabel: fällt von oben und bounced ── */
+.splash-fork {
+  transform: translateY(-180px);
+  opacity: 0;
+  animation: splash-fork-fall 0.6s cubic-bezier(0.36, 0, 0.66, -0.56) forwards;
+  animation-delay: 1.0s;
+}
+
+/* Zeichne-Animation */
+@keyframes splash-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* Gabel fällt und bounced */
+@keyframes splash-fork-fall {
+  0% {
+    transform: translateY(-180px);
+    opacity: 1;
+  }
+  55% {
+    transform: translateY(0px);
+    opacity: 1;
+  }
+  70% {
+    transform: translateY(-18px);
+  }
+  82% {
+    transform: translateY(0px);
+  }
+  91% {
+    transform: translateY(-7px);
+  }
+  100% {
+    transform: translateY(0px);
+    opacity: 1;
+  }
+}
+
+/* Wordmark einblenden */
+@keyframes splash-word-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
