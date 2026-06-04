@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="114" fill="#2C3E28"/>
+  <!-- R Stamm -->
+  <path d="M156 400 L156 120" stroke="#C8D9BF" stroke-width="14" stroke-linecap="round" fill="none"/>
+  <!-- R Bogen -->
+  <path d="M156 120 C280 116 336 172 336 228 C336 284 280 336 156 336" stroke="#C8D9BF" stroke-width="13" stroke-linecap="round" fill="none"/>
+  <!-- R Bein zu Gabel -->
+  <path d="M156 336 C248 336 304 372 356 436" stroke="#C8D9BF" stroke-width="13" stroke-linecap="round" fill="none"/>
+  <!-- Gabel Stiel -->
+  <path d="M356 436 L356 292" stroke="#F9FBF8" stroke-width="11" stroke-linecap="round" fill="none"/>
+  <!-- Gabel Zinken -->
+  <path d="M316 292 L316 236" stroke="#F9FBF8" stroke-width="9" stroke-linecap="round" fill="none"/>
+  <path d="M356 292 L356 236" stroke="#F9FBF8" stroke-width="9" stroke-linecap="round" fill="none"/>
+  <path d="M396 292 L396 236" stroke="#F9FBF8" stroke-width="9" stroke-linecap="round" fill="none"/>
+  <!-- Verbindungsbogen Zinken -->
+  <path d="M316 292 Q356 304 396 292" stroke="#F9FBF8" stroke-width="9" stroke-linecap="round" fill="none"/>
+</svg>
