@@ -24,7 +24,7 @@
 }
 
 .tag-badge-add {
-  background: var(--paper-2);
+  background: var(--paper-2) !important;
   border: 1.5px solid var(--line-2) !important;
   color: var(--cocoa) !important;
   font-style: italic;
@@ -57,30 +57,45 @@
   color: var(--espresso);
   cursor: pointer;
   touch-action: manipulation;
-  transition: opacity 0.15s;
 }
 
-.tag-starter-btn:disabled {
-  opacity: 0.5;
+.tag-starter-btn:disabled { opacity: 0.5; }
+
+/* ── Sheet Overlay ── */
+.tag-sheet-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 500;
+  display: flex;
+  align-items: flex-end;
 }
 
-/* Create Popup */
-.tag-create-popup {
+/* Sheet von unten — Input ganz oben, Farbpalette darunter */
+.tag-sheet {
+  width: 100%;
   background: var(--card);
-  border: 1px solid var(--line-2);
-  border-radius: 16px;
-  padding: 14px;
+  border-radius: 20px 20px 0 0;
+  padding: 12px 16px 32px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
 }
 
-.tag-create-input {
+.tag-sheet-handle {
+  width: 36px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--line-2);
+  margin: 0 auto 4px;
+}
+
+.tag-sheet-input {
   width: 100%;
   background: var(--paper-2);
   border: 1px solid var(--line-2);
-  border-radius: 10px;
-  padding: 10px 12px;
+  border-radius: 12px;
+  padding: 12px 14px;
   font-family: var(--serif);
   font-size: 16px;
   color: var(--ink);
@@ -88,23 +103,23 @@
   touch-action: manipulation;
 }
 
-.tag-create-input::placeholder {
+.tag-sheet-input::placeholder {
   color: var(--mute);
   font-style: italic;
 }
 
-/* Farbpalette Grid */
+/* Farbpalette */
 .tag-color-grid {
   display: grid;
   grid-template-columns: repeat(8, 1fr);
-  gap: 6px;
+  gap: 8px;
 }
 
 .tag-color-dot {
   width: 100%;
   aspect-ratio: 1;
-  border-radius: 6px;
-  border: 2px solid transparent;
+  border-radius: 8px;
+  border: 2.5px solid transparent;
   cursor: pointer;
   transition: transform 0.1s, border-color 0.1s;
   touch-action: manipulation;
@@ -115,40 +130,36 @@
   transform: scale(1.15);
 }
 
-.tag-color-dot:active {
-  transform: scale(0.95);
-}
+.tag-color-dot:active { transform: scale(0.95); }
 
-/* Vorschau + Buttons */
-.tag-create-actions {
+/* Buttons */
+.tag-sheet-actions {
   display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: flex-end;
 }
 
 .tag-create-cancel {
-  padding: 8px 14px;
+  padding: 10px 16px;
   border-radius: 999px;
   background: var(--paper-2);
   border: 1px solid var(--line-2);
   font-family: var(--serif);
-  font-size: 13.5px;
+  font-size: 14px;
   color: var(--mute);
   cursor: pointer;
   touch-action: manipulation;
 }
 
 .tag-create-save {
-  padding: 8px 14px;
+  padding: 10px 16px;
   border-radius: 999px;
   background: var(--espresso);
   border: none;
   font-family: var(--serif);
-  font-size: 13.5px;
+  font-size: 14px;
   font-weight: 600;
   color: var(--paper);
   cursor: pointer;
   touch-action: manipulation;
-  transition: opacity 0.15s;
 }

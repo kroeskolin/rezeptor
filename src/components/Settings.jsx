@@ -5,23 +5,49 @@ import { THEMES, applyTheme } from '../useTheme'
 import './Settings.css'
 
 const COLORS = [
-  '#FF6B6B', '#FF9F43', '#FECA57', '#48DBFB',
-  '#FF9FF3', '#54A0FF', '#5F27CD', '#00D2D3',
-  '#1DD1A1', '#C8D6E5'
+  '#FFCDD2', '#EF9A9A', '#E57373', '#F44336', '#D32F2F',
+  '#F8BBD9', '#F06292', '#C2185B',
+  '#FFE0B2', '#FFCC80', '#FFA726', '#E65100',
+  '#FFF176', '#FFEE58', '#F9A825',
+  '#DCEDC8', '#AED581', '#66BB6A', '#2E7D32',
+  '#C8D9BF', '#4C6A3E', '#B2EBF2', '#26C6DA',
+  '#BBDEFB', '#64B5F6', '#1976D2', '#0D47A1',
+  '#E1BEE7', '#CE93D8', '#9C27B0', '#4A148C',
+  '#EDD4CF', '#D7A89A', '#A1665A', '#6D4C41',
+  '#BDBDBD', '#757575', '#212121'
 ]
 
-// Letztes Deployment-Datum aus dem Build
+const STARTER_TAGS = [
+  { name: 'Snack',               color: '#FFA726' },
+  { name: 'Dessert',             color: '#F06292' },
+  { name: 'Partyessen',          color: '#F44336' },
+  { name: 'Festlich',            color: '#D32F2F' },
+  { name: 'Vegetarisch',         color: '#66BB6A' },
+  { name: 'Vegan',               color: '#2E7D32' },
+  { name: 'Fleisch',             color: '#A1665A' },
+  { name: 'Fisch',               color: '#26C6DA' },
+  { name: 'Super easy',          color: '#64B5F6' },
+  { name: 'Herausfordernd',      color: '#1976D2' },
+  { name: 'Suppe',               color: '#26C6DA' },
+  { name: 'Auflauf',             color: '#FFA726' },
+  { name: 'Backen süß',          color: '#F06292' },
+  { name: 'Backen herzhaft',     color: '#A1665A' },
+  { name: 'Schmoren',            color: '#6D4C41' },
+  { name: 'Salat',               color: '#66BB6A' },
+  { name: 'Pfannengericht',      color: '#FFEE58' },
+  { name: 'Familienrezept',      color: '#9C27B0' },
+  { name: 'Noch nie zubereitet', color: '#CE93D8' },
+]
+
 const BUILD_DATE = new Date(document.lastModified).toLocaleDateString('de-DE', {
   day: '2-digit', month: '2-digit', year: 'numeric'
 })
 
 function Toggle({ on, onToggle }) {
   return (
-    <button
-      className="settings-toggle"
+    <button className="settings-toggle"
       style={{ background: on ? 'var(--sage-2)' : 'var(--line-2)' }}
-      onClick={onToggle}
-    >
+      onClick={onToggle}>
       <div className="settings-toggle-knob" style={{ left: on ? 21 : 3 }} />
     </button>
   )
@@ -54,19 +80,63 @@ function SettingsGroup({ title, children }) {
   )
 }
 
+// ── Tag-Erstellen Sheet ──────────────────────────────────────────
+function CreateTagSheet({ onSave, onClose }) {
+  const [name, setName] = useState('')
+  const [color, setColor] = useState(COLORS[10])
+
+  const handleSave = async () => {
+    if (!name.trim()) return
+    await addTag({ name: name.trim(), color })
+    onSave()
+  }
+
+  return (
+    <div className="tag-sheet-overlay" onClick={onClose}>
+      <div className="tag-sheet" onClick={e => e.stopPropagation()}>
+        <div className="tag-sheet-handle" />
+        <input
+          className="tag-sheet-input"
+          type="text"
+          placeholder="Tag-Name …"
+          value={name}
+          onChange={e => setName(e.target.value)}
+          onKeyDown={e => e.key === 'Enter' && handleSave()}
+          autoFocus
+        />
+        <div className="tag-color-grid">
+          {COLORS.map(c => (
+            <button key={c} className={`tag-color-dot ${color === c ? 'active' : ''}`}
+              style={{ background: c }} onClick={() => setColor(c)} />
+          ))}
+        </div>
+        <div className="tag-sheet-actions">
+          <button className="tag-create-cancel" onClick={onClose}>Abbrechen</button>
+          <button className="tag-create-save" onClick={handleSave}
+            disabled={!name.trim()} style={{ opacity: name.trim() ? 1 : 0.4 }}>
+            Speichern
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function Settings({ onImport }) {
   const [tags, setTags] = useState([])
-  const [newTagName, setNewTagName] = useState('')
-  const [newTagColor, setNewTagColor] = useState(COLORS[0])
   const [importStatus, setImportStatus] = useState(null)
   const [notifications, setNotifications] = useState(false)
   const [showTagManager, setShowTagManager] = useState(false)
   const [showThemePicker, setShowThemePicker] = useState(false)
+  const [showCreateSheet, setShowCreateSheet] = useState(false)
   const [activeTheme, setActiveTheme] = useState('default')
+  const [loadingStarter, setLoadingStarter] = useState(false)
   const fileInputRef = useRef(null)
 
+  const reload = () => getAllTags().then(setTags)
+
   useEffect(() => {
-    getAllTags().then(setTags)
+    reload()
     const saved = localStorage.getItem('rezeptor-theme') || 'default'
     setActiveTheme(saved)
   }, [])
@@ -76,26 +146,23 @@ export default function Settings({ onImport }) {
     setActiveTheme(themeId)
   }
 
-  const handleAddTag = async () => {
-    if (!newTagName.trim()) return
-    await addTag({ name: newTagName.trim(), color: newTagColor })
-    const updated = await getAllTags()
-    setTags(updated)
-    setNewTagName('')
-    setNewTagColor(COLORS[0])
-  }
-
   const handleDeleteTag = async (id) => {
     if (window.confirm('Tag wirklich löschen?')) {
       await deleteTag(id)
-      const updated = await getAllTags()
-      setTags(updated)
+      await reload()
     }
   }
 
-  const handleExport = async () => {
-    await exportRecipes()
+  const handleLoadStarter = async () => {
+    setLoadingStarter(true)
+    for (const tag of STARTER_TAGS) {
+      await addTag(tag)
+    }
+    await reload()
+    setLoadingStarter(false)
   }
+
+  const handleExport = async () => { await exportRecipes() }
 
   const handleImportFile = async (e) => {
     const file = e.target.files[0]
@@ -126,6 +193,7 @@ export default function Settings({ onImport }) {
             Tags <span style={{ fontStyle: 'italic', fontWeight: 600 }}>verwalten</span>
           </h1>
         </div>
+
         <div className="settings-group">
           <div className="settings-group-label">Deine Tags</div>
           <div className="settings-group-card">
@@ -150,28 +218,31 @@ export default function Settings({ onImport }) {
             ))}
           </div>
         </div>
-        <div className="settings-group">
-          <div className="settings-group-label">Neuen Tag erstellen</div>
-          <div className="settings-group-card" style={{ padding: '16px' }}>
-            <input className="form-input" type="text" placeholder="Tag-Name …"
-              value={newTagName} onChange={e => setNewTagName(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && handleAddTag()}
-              style={{ marginBottom: 14 }} />
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}>
-              {COLORS.map(color => (
-                <button key={color} onClick={() => setNewTagColor(color)} style={{
-                  width: 30, height: 30, borderRadius: '50%', background: color,
-                  border: newTagColor === color ? '3px solid var(--espresso)' : '3px solid transparent',
-                  cursor: 'pointer', transition: 'border 0.15s',
-                }} />
-              ))}
-            </div>
-            <button className="form-save-btn" onClick={handleAddTag}
-              disabled={!newTagName.trim()} style={{ opacity: newTagName.trim() ? 1 : 0.4 }}>
-              Tag hinzufügen
+
+        {/* Starterpaket */}
+        {tags.length === 0 && (
+          <div style={{ padding: '16px 20px 0' }}>
+            <button className="tag-starter-btn" onClick={handleLoadStarter} disabled={loadingStarter}
+              style={{ width: '100%' }}>
+              {loadingStarter ? 'Wird geladen …' : '✨ Starterpaket laden'}
             </button>
           </div>
+        )}
+
+        {/* Neuen Tag erstellen */}
+        <div style={{ padding: '16px 20px 0' }}>
+          <button className="form-save-btn" onClick={() => setShowCreateSheet(true)}>
+            + Neuen Tag erstellen
+          </button>
         </div>
+
+        {showCreateSheet && (
+          <CreateTagSheet
+            onSave={async () => { await reload(); setShowCreateSheet(false) }}
+            onClose={() => setShowCreateSheet(false)}
+          />
+        )}
+
         <div style={{ height: 20 }} />
       </div>
     )
@@ -194,17 +265,14 @@ export default function Settings({ onImport }) {
           <div className="settings-group-card" style={{ padding: '16px' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {THEMES.map(theme => (
-                <button
-                  key={theme.id}
-                  onClick={() => handleThemeChange(theme.id)}
+                <button key={theme.id} onClick={() => handleThemeChange(theme.id)}
                   style={{
                     display: 'flex', alignItems: 'center', gap: 12,
                     background: activeTheme === theme.id ? 'var(--paper-2)' : 'none',
                     border: activeTheme === theme.id ? '1.5px solid var(--sage-2)' : '1.5px solid transparent',
                     borderRadius: 14, padding: '10px 12px', cursor: 'pointer',
                     transition: 'all 0.15s', width: '100%', textAlign: 'left',
-                  }}
-                >
+                  }}>
                   <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
                     {theme.colors.map((c, i) => (
                       <div key={i} style={{
@@ -214,11 +282,8 @@ export default function Settings({ onImport }) {
                       }} />
                     ))}
                   </div>
-                  <span style={{
-                    fontFamily: 'var(--serif)', fontSize: 15.5,
-                    fontWeight: activeTheme === theme.id ? 700 : 400,
-                    color: 'var(--espresso)',
-                  }}>
+                  <span style={{ fontFamily: 'var(--serif)', fontSize: 15.5,
+                    fontWeight: activeTheme === theme.id ? 700 : 400, color: 'var(--espresso)' }}>
                     {theme.name}
                   </span>
                   {activeTheme === theme.id && (
@@ -245,20 +310,17 @@ export default function Settings({ onImport }) {
         </h1>
       </div>
 
-      {/* Benachrichtigungen */}
       <SettingsGroup title="Benachrichtigungen">
         <SettingRow icon="bell" label="Benachrichtigungen"
           toggle on={notifications} onToggle={() => setNotifications(v => !v)} />
       </SettingsGroup>
 
-      {/* Tags */}
       <SettingsGroup title="Kategorien & Tags">
         <SettingRow icon="bookmark" label="Tags verwalten"
           value={tags.length > 0 ? `${tags.length} Tags` : undefined}
           onClick={() => setShowTagManager(true)} />
       </SettingsGroup>
 
-      {/* Daten */}
       <SettingsGroup title="Daten">
         <SettingRow icon="download" label="Rezepte exportieren" onClick={handleExport} />
         <SettingRow icon="import" label="Rezepte importieren"
@@ -276,14 +338,11 @@ export default function Settings({ onImport }) {
         </div>
       )}
 
-      {/* Erscheinungsbild */}
       <SettingsGroup title="Erscheinungsbild">
         <SettingRow icon="sun" label="Farbschema wählen"
-          value={currentThemeName}
-          onClick={() => setShowThemePicker(true)} />
+          value={currentThemeName} onClick={() => setShowThemePicker(true)} />
       </SettingsGroup>
 
-      {/* Footer */}
       <div className="settings-footer">
         <em>Rezeptor</em>
         <div className="settings-footer-version">Version 1.0</div>
