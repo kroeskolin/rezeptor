@@ -145,7 +145,7 @@ function App() {
           setFavOnly(false)
         }}
         onFabClick={() => setShowAddRecipe(true)}
-        hideNav={showAddRecipe || showEditRecipe}
+        hideNav={showAddRecipe || showEditRecipe || showSplash}
         onFavClick={() => setFavOnly(v => !v)}
         favActive={favOnly}
         onSearchClick={() => setShowSearch(true)}

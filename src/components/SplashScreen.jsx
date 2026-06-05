@@ -51,10 +51,6 @@ export default function SplashScreen({ onDone }) {
           </g>
 
         </svg>
-
-        <div className="splash-wordmark">
-          Rezept<em>or</em>
-        </div>
       </div>
     </div>
   )
