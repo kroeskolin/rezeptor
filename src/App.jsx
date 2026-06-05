@@ -16,8 +16,6 @@ import SearchDrawer from './components/SearchDrawer'
 import { loadTheme } from './useTheme'
 import SplashScreen from './components/SplashScreen'
 
-
-// Theme beim App-Start laden
 loadTheme()
 
 function App() {
@@ -31,6 +29,7 @@ function App() {
   const [favOnly, setFavOnly] = useState(false)
   const [todayMode, setTodayMode] = useState(null)
   const [showSplash, setShowSplash] = useState(true)
+  const [isOnMainPage, setIsOnMainPage] = useState(true)
 
   useEffect(() => {
     getAllRecipes().then(setRecipes)
@@ -44,21 +43,27 @@ function App() {
       const url = sharedUrl || sharedText
       if (url.startsWith('http')) {
         setShowAddRecipe(true)
+        setIsOnMainPage(false)
         window.history.replaceState({}, '', '/')
       }
     }
   }, [])
 
+  const goToMainPage = () => setIsOnMainPage(true)
+  const goToSubPage = () => setIsOnMainPage(false)
+
   const handleSave = async () => {
     const updated = await getAllRecipes()
     setRecipes(updated)
     setShowAddRecipe(false)
+    goToMainPage()
   }
 
   const handleDelete = async () => {
     const updated = await getAllRecipes()
     setRecipes(updated)
     setSelectedRecipe(null)
+    goToMainPage()
   }
 
   const handleUpdate = async () => {
@@ -67,6 +72,7 @@ function App() {
     const refreshed = updated.find(r => r.id === selectedRecipe?.id)
     setSelectedRecipe(refreshed || null)
     setShowEditRecipe(false)
+    goToSubPage() // terug naar detail
   }
 
   const handleToggleFavorite = async (recipe) => {
@@ -81,13 +87,13 @@ function App() {
 
   const renderContent = () => {
     if (showAddRecipe) {
-      return <AddRecipe onSave={handleSave} onClose={() => setShowAddRecipe(false)} />
+      return <AddRecipe onSave={handleSave} onClose={() => { setShowAddRecipe(false); goToMainPage() }} />
     }
     if (showEditRecipe && selectedRecipe) {
       return <EditRecipe
         recipe={selectedRecipe}
         onSave={handleUpdate}
-        onClose={() => setShowEditRecipe(false)}
+        onClose={() => { setShowEditRecipe(false); goToSubPage() }}
         onDelete={handleDelete}
       />
     }
@@ -95,8 +101,8 @@ function App() {
       return (
         <SearchDrawer
           recipes={recipes}
-          onSelectRecipe={(r) => { setSelectedRecipe(r); setShowSearch(false) }}
-          onClose={() => setShowSearch(false)}
+          onSelectRecipe={(r) => { setSelectedRecipe(r); setShowSearch(false); goToSubPage() }}
+          onClose={() => { setShowSearch(false); goToMainPage() }}
         />
       )
     }
@@ -104,8 +110,8 @@ function App() {
       return (
         <RecipeDetail
           recipe={selectedRecipe}
-          onBack={() => setSelectedRecipe(null)}
-          onEdit={() => setShowEditRecipe(true)}
+          onBack={() => { setSelectedRecipe(null); goToMainPage() }}
+          onEdit={() => { setShowEditRecipe(true); goToSubPage() }}
           onDelete={handleDelete}
           onUpdate={handleUpdate}
           onStartCook={() => setShowCookMode(true)}
@@ -116,19 +122,30 @@ function App() {
 
     switch (activeTab) {
       case 'home':
-        return <RecipeList recipes={recipes} onSelectRecipe={setSelectedRecipe}
+        return <RecipeList recipes={recipes} onSelectRecipe={(r) => { setSelectedRecipe(r); goToSubPage() }}
           onToggleFavorite={handleToggleFavorite} favOnly={favOnly} />
       case 'today':
-        if (todayMode === 'wheel') return <LuckyWheel recipes={recipes} onSelectRecipe={setSelectedRecipe} onBack={() => setTodayMode(null)} />
-        if (todayMode === 'tinder') return <RecipeTinder recipes={recipes} onSelectRecipe={setSelectedRecipe} onBack={() => setTodayMode(null)} />
-        if (todayMode === 'ingredients') return <IngredientSuggest recipes={recipes} onSelectRecipe={setSelectedRecipe} onBack={() => setTodayMode(null)} />
-        return <TodayTab onSelectMode={setTodayMode} />
+        if (todayMode === 'wheel') return <LuckyWheel recipes={recipes}
+          onSelectRecipe={(r) => { setSelectedRecipe(r); goToSubPage() }}
+          onBack={() => { setTodayMode(null); goToMainPage() }} />
+        if (todayMode === 'tinder') return <RecipeTinder recipes={recipes}
+          onSelectRecipe={(r) => { setSelectedRecipe(r); goToSubPage() }}
+          onBack={() => { setTodayMode(null); goToMainPage() }} />
+        if (todayMode === 'ingredients') return <IngredientSuggest recipes={recipes}
+          onSelectRecipe={(r) => { setSelectedRecipe(r); goToSubPage() }}
+          onBack={() => { setTodayMode(null); goToMainPage() }} />
+        return <TodayTab onSelectMode={(mode) => { setTodayMode(mode); goToSubPage() }} />
       case 'community':
         return <Community recipes={recipes} />
       case 'settings':
-        return <Settings onImport={handleSave} onExport={() => { }} />
+        return <Settings
+          onImport={handleSave}
+          onExport={() => {}}
+          onShowTagManager={goToSubPage}
+          onHideTagManager={goToMainPage}
+        />
       default:
-        return <RecipeList recipes={recipes} onSelectRecipe={setSelectedRecipe}
+        return <RecipeList recipes={recipes} onSelectRecipe={(r) => { setSelectedRecipe(r); goToSubPage() }}
           onToggleFavorite={handleToggleFavorite} favOnly={favOnly} />
     }
   }
@@ -143,12 +160,13 @@ function App() {
           setSelectedRecipe(null)
           setShowSearch(false)
           setFavOnly(false)
+          goToMainPage()
         }}
-        onFabClick={() => setShowAddRecipe(true)}
-        hideNav={showAddRecipe || showEditRecipe || showSplash}
+        onFabClick={() => { setShowAddRecipe(true); goToSubPage() }}
+        hideNav={!isOnMainPage}
         onFavClick={() => setFavOnly(v => !v)}
         favActive={favOnly}
-        onSearchClick={() => setShowSearch(true)}
+        onSearchClick={() => { setShowSearch(true); goToSubPage() }}
       >
         {renderContent()}
         {showSplash && <SplashScreen onDone={() => setShowSplash(false)} />}

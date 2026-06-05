@@ -80,7 +80,6 @@ function SettingsGroup({ title, children }) {
   )
 }
 
-// ── Tag-Erstellen Sheet ──────────────────────────────────────────
 function CreateTagSheet({ onSave, onClose }) {
   const [name, setName] = useState('')
   const [color, setColor] = useState(COLORS[10])
@@ -95,15 +94,9 @@ function CreateTagSheet({ onSave, onClose }) {
     <div className="tag-sheet-overlay" onClick={onClose}>
       <div className="tag-sheet" onClick={e => e.stopPropagation()}>
         <div className="tag-sheet-handle" />
-        <input
-          className="tag-sheet-input"
-          type="text"
-          placeholder="Tag-Name …"
-          value={name}
-          onChange={e => setName(e.target.value)}
-          onKeyDown={e => e.key === 'Enter' && handleSave()}
-          autoFocus
-        />
+        <input className="tag-sheet-input" type="text" placeholder="Tag-Name …"
+          value={name} onChange={e => setName(e.target.value)}
+          onKeyDown={e => e.key === 'Enter' && handleSave()} autoFocus />
         <div className="tag-color-grid">
           {COLORS.map(c => (
             <button key={c} className={`tag-color-dot ${color === c ? 'active' : ''}`}
@@ -122,11 +115,12 @@ function CreateTagSheet({ onSave, onClose }) {
   )
 }
 
-export default function Settings({ onImport }) {
+export default function Settings({ onImport, onShowTagManager, onHideTagManager }) {
   const [tags, setTags] = useState([])
   const [importStatus, setImportStatus] = useState(null)
   const [notifications, setNotifications] = useState(false)
   const [showTagManager, setShowTagManager] = useState(false)
+  const [editMode, setEditMode] = useState(false)
   const [showThemePicker, setShowThemePicker] = useState(false)
   const [showCreateSheet, setShowCreateSheet] = useState(false)
   const [activeTheme, setActiveTheme] = useState('default')
@@ -141,23 +135,31 @@ export default function Settings({ onImport }) {
     setActiveTheme(saved)
   }, [])
 
+  const openTagManager = () => {
+    setShowTagManager(true)
+    setEditMode(false)
+    onShowTagManager?.()
+  }
+
+  const closeTagManager = () => {
+    setShowTagManager(false)
+    setEditMode(false)
+    onHideTagManager?.()
+  }
+
   const handleThemeChange = (themeId) => {
     applyTheme(themeId)
     setActiveTheme(themeId)
   }
 
   const handleDeleteTag = async (id) => {
-    if (window.confirm('Tag wirklich löschen?')) {
-      await deleteTag(id)
-      await reload()
-    }
+    await deleteTag(id)
+    await reload()
   }
 
   const handleLoadStarter = async () => {
     setLoadingStarter(true)
-    for (const tag of STARTER_TAGS) {
-      await addTag(tag)
-    }
+    for (const tag of STARTER_TAGS) await addTag(tag)
     await reload()
     setLoadingStarter(false)
   }
@@ -184,53 +186,70 @@ export default function Settings({ onImport }) {
   // ── Tag-Manager ──
   if (showTagManager) {
     return (
-      <div className="settings">
-        <div className="settings-header" style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-          <button className="settings-back-btn" onClick={() => setShowTagManager(false)}>
+      <div className="settings tag-manager-page">
+        {/* Header */}
+        <div className="tag-manager-header">
+          <button className="add-close-btn" onClick={closeTagManager}>
             <Icon name="chev-left" size={18} color="var(--cocoa)" />
           </button>
-          <h1 className="display" style={{ fontSize: 30, color: 'var(--espresso)' }}>
-            Tags <span style={{ fontStyle: 'italic', fontWeight: 600 }}>verwalten</span>
-          </h1>
+          <div style={{ flex: 1 }}>
+            <h1 className="display" style={{ fontSize: 28, color: 'var(--espresso)', lineHeight: 1 }}>
+              Tags <span style={{ fontStyle: 'italic', fontWeight: 600 }}>verwalten</span>
+            </h1>
+            <div style={{ fontFamily: 'var(--serif)', fontSize: 13, color: 'var(--mute)', marginTop: 3 }}>
+              {tags.length} {tags.length === 1 ? 'Tag' : 'Tags'}
+            </div>
+          </div>
+          {/* Stift / Häkchen */}
+          <button className="add-close-btn" onClick={() => setEditMode(v => !v)}>
+            {editMode
+              ? <Icon name="check" size={16} color="var(--green)" strokeWidth={2.4} />
+              : <Icon name="pencil" size={15} color="var(--cocoa)" strokeWidth={1.8} />
+            }
+          </button>
         </div>
 
-        <div className="settings-group">
-          <div className="settings-group-label">Deine Tags</div>
-          <div className="settings-group-card">
-            {tags.length === 0 && (
-              <div style={{ padding: '16px', fontFamily: 'var(--serif)', fontSize: 14, color: 'var(--mute)', fontStyle: 'italic' }}>
-                Noch keine Tags vorhanden.
-              </div>
-            )}
-            {tags.map((tag, i) => (
-              <div key={tag.id} className="settings-row"
-                style={{ borderBottom: i < tags.length - 1 ? '1px solid var(--line)' : 'none' }}>
-                <div style={{ width: 28, height: 28, borderRadius: 8, background: tag.color, flexShrink: 0 }} />
-                <span className="settings-row-label">{tag.name}</span>
-                <button onClick={() => handleDeleteTag(tag.id)} style={{
-                  width: 30, height: 30, borderRadius: '50%',
-                  background: 'var(--paper-2)', border: '1px solid var(--line-2)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
-                }}>
-                  <Icon name="x" size={13} color="var(--mute)" strokeWidth={2} />
-                </button>
-              </div>
-            ))}
-          </div>
+        {/* Scrollbarer Tag-Bereich */}
+        <div className="tag-manager-scroll">
+          {tags.length === 0 ? (
+            <div style={{ padding: '24px 20px', fontFamily: 'var(--serif)', fontSize: 14, color: 'var(--mute)', fontStyle: 'italic', textAlign: 'center' }}>
+              Noch keine Tags vorhanden.
+            </div>
+          ) : (
+            <div className="tag-manager-grid">
+              {tags.map(tag => (
+                <div key={tag.id} className="tag-manager-item">
+                  <div style={{ width: 26, height: 26, borderRadius: 7, background: tag.color, flexShrink: 0 }} />
+                  <span style={{ fontFamily: 'var(--serif)', fontSize: 14.5, color: 'var(--espresso)', flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {tag.name}
+                  </span>
+                  {editMode && (
+                    <button onClick={() => handleDeleteTag(tag.id)} style={{
+                      width: 24, height: 24, borderRadius: '50%', flexShrink: 0,
+                      background: 'var(--paper-2)', border: '1px solid var(--line-2)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+                    }}>
+                      <Icon name="x" size={11} color="var(--mute)" strokeWidth={2.2} />
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Starterpaket */}
+          {tags.length === 0 && (
+            <div style={{ padding: '0 20px' }}>
+              <button className="tag-starter-btn" onClick={handleLoadStarter}
+                disabled={loadingStarter} style={{ width: '100%' }}>
+                {loadingStarter ? 'Wird geladen …' : '✨ Starterpaket laden'}
+              </button>
+            </div>
+          )}
         </div>
 
-        {/* Starterpaket */}
-        {tags.length === 0 && (
-          <div style={{ padding: '16px 20px 0' }}>
-            <button className="tag-starter-btn" onClick={handleLoadStarter} disabled={loadingStarter}
-              style={{ width: '100%' }}>
-              {loadingStarter ? 'Wird geladen …' : '✨ Starterpaket laden'}
-            </button>
-          </div>
-        )}
-
-        {/* Neuen Tag erstellen */}
-        <div style={{ padding: '16px 20px 0' }}>
+        {/* Fixierter Button unten */}
+        <div className="tag-manager-footer">
           <button className="form-save-btn" onClick={() => setShowCreateSheet(true)}>
             + Neuen Tag erstellen
           </button>
@@ -242,8 +261,6 @@ export default function Settings({ onImport }) {
             onClose={() => setShowCreateSheet(false)}
           />
         )}
-
-        <div style={{ height: 20 }} />
       </div>
     )
   }
@@ -318,7 +335,7 @@ export default function Settings({ onImport }) {
       <SettingsGroup title="Kategorien & Tags">
         <SettingRow icon="bookmark" label="Tags verwalten"
           value={tags.length > 0 ? `${tags.length} Tags` : undefined}
-          onClick={() => setShowTagManager(true)} />
+          onClick={openTagManager} />
       </SettingsGroup>
 
       <SettingsGroup title="Daten">
