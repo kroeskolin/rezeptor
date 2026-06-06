@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { getAllTags, addTag, deleteTag, exportRecipes, importRecipes } from '../db/recipes'
+import { getAllTags, addTag, updateTag, deleteTag, exportRecipes, importRecipes } from '../db/recipes'
 import { Icon } from './DesignTokens'
 import { THEMES, applyTheme } from '../useTheme'
 import './Settings.css'
@@ -80,13 +80,19 @@ function SettingsGroup({ title, children }) {
   )
 }
 
-function CreateTagSheet({ onSave, onClose }) {
-  const [name, setName] = useState('')
-  const [color, setColor] = useState(COLORS[10])
+// Sheet für Erstellen UND Bearbeiten
+function TagSheet({ tag, onSave, onClose }) {
+  const isEdit = !!tag
+  const [name, setName] = useState(tag?.name || '')
+  const [color, setColor] = useState(tag?.color || COLORS[10])
 
   const handleSave = async () => {
     if (!name.trim()) return
-    await addTag({ name: name.trim(), color })
+    if (isEdit) {
+      await updateTag({ ...tag, name: name.trim(), color })
+    } else {
+      await addTag({ name: name.trim(), color })
+    }
     onSave()
   }
 
@@ -94,6 +100,9 @@ function CreateTagSheet({ onSave, onClose }) {
     <div className="tag-sheet-overlay" onClick={onClose}>
       <div className="tag-sheet" onClick={e => e.stopPropagation()}>
         <div className="tag-sheet-handle" />
+        <div style={{ fontFamily: 'var(--serif)', fontSize: 13, color: 'var(--mute)', fontStyle: 'italic', marginBottom: 8 }}>
+          {isEdit ? 'Tag bearbeiten' : 'Neuen Tag erstellen'}
+        </div>
         <input className="tag-sheet-input" type="text" placeholder="Tag-Name …"
           value={name} onChange={e => setName(e.target.value)}
           onKeyDown={e => e.key === 'Enter' && handleSave()} autoFocus />
@@ -122,7 +131,8 @@ export default function Settings({ onImport, onShowTagManager, onHideTagManager 
   const [showTagManager, setShowTagManager] = useState(false)
   const [editMode, setEditMode] = useState(false)
   const [showThemePicker, setShowThemePicker] = useState(false)
-  const [showCreateSheet, setShowCreateSheet] = useState(false)
+  const [editingTag, setEditingTag] = useState(null) // null = create, tag object = edit
+  const [showSheet, setShowSheet] = useState(false)
   const [activeTheme, setActiveTheme] = useState('default')
   const [loadingStarter, setLoadingStarter] = useState(false)
   const fileInputRef = useRef(null)
@@ -187,7 +197,6 @@ export default function Settings({ onImport, onShowTagManager, onHideTagManager 
   if (showTagManager) {
     return (
       <div className="settings tag-manager-page">
-        {/* Header */}
         <div className="tag-manager-header">
           <button className="add-close-btn" onClick={closeTagManager}>
             <Icon name="chev-left" size={18} color="var(--cocoa)" />
@@ -200,7 +209,6 @@ export default function Settings({ onImport, onShowTagManager, onHideTagManager 
               {tags.length} {tags.length === 1 ? 'Tag' : 'Tags'}
             </div>
           </div>
-          {/* Stift / Häkchen */}
           <button className="add-close-btn" onClick={() => setEditMode(v => !v)}>
             {editMode
               ? <Icon name="check" size={16} color="var(--green)" strokeWidth={2.4} />
@@ -209,7 +217,6 @@ export default function Settings({ onImport, onShowTagManager, onHideTagManager 
           </button>
         </div>
 
-        {/* Scrollbarer Tag-Bereich */}
         <div className="tag-manager-scroll">
           {tags.length === 0 ? (
             <div style={{ padding: '24px 20px', fontFamily: 'var(--serif)', fontSize: 14, color: 'var(--mute)', fontStyle: 'italic', textAlign: 'center' }}>
@@ -218,17 +225,29 @@ export default function Settings({ onImport, onShowTagManager, onHideTagManager 
           ) : (
             <div className="tag-manager-grid">
               {tags.map(tag => (
-                <div key={tag.id} className="tag-manager-item">
+                <div
+                  key={tag.id}
+                  className="tag-manager-item"
+                  onClick={() => {
+                    if (editMode) {
+                      setEditingTag(tag)
+                      setShowSheet(true)
+                    }
+                  }}
+                  style={{ cursor: editMode ? 'pointer' : 'default' }}
+                >
                   <div style={{ width: 26, height: 26, borderRadius: 7, background: tag.color, flexShrink: 0 }} />
                   <span style={{ fontFamily: 'var(--serif)', fontSize: 14.5, color: 'var(--espresso)', flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {tag.name}
                   </span>
                   {editMode && (
-                    <button onClick={() => handleDeleteTag(tag.id)} style={{
-                      width: 24, height: 24, borderRadius: '50%', flexShrink: 0,
-                      background: 'var(--paper-2)', border: '1px solid var(--line-2)',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
-                    }}>
+                    <button
+                      onClick={e => { e.stopPropagation(); handleDeleteTag(tag.id) }}
+                      style={{
+                        width: 24, height: 24, borderRadius: '50%', flexShrink: 0,
+                        background: 'var(--paper-2)', border: '1px solid var(--line-2)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+                      }}>
                       <Icon name="x" size={11} color="var(--mute)" strokeWidth={2.2} />
                     </button>
                   )}
@@ -237,7 +256,6 @@ export default function Settings({ onImport, onShowTagManager, onHideTagManager 
             </div>
           )}
 
-          {/* Starterpaket */}
           {tags.length === 0 && (
             <div style={{ padding: '0 20px' }}>
               <button className="tag-starter-btn" onClick={handleLoadStarter}
@@ -246,19 +264,25 @@ export default function Settings({ onImport, onShowTagManager, onHideTagManager 
               </button>
             </div>
           )}
+
+          {editMode && tags.length > 0 && (
+            <div style={{ padding: '12px 0 0', fontFamily: 'var(--serif)', fontSize: 13, color: 'var(--mute)', fontStyle: 'italic', textAlign: 'center' }}>
+              Tippe auf einen Tag zum Bearbeiten · X zum Löschen
+            </div>
+          )}
         </div>
 
-        {/* Fixierter Button unten */}
         <div className="tag-manager-footer">
-          <button className="form-save-btn" onClick={() => setShowCreateSheet(true)}>
+          <button className="form-save-btn" onClick={() => { setEditingTag(null); setShowSheet(true) }}>
             + Neuen Tag erstellen
           </button>
         </div>
 
-        {showCreateSheet && (
-          <CreateTagSheet
-            onSave={async () => { await reload(); setShowCreateSheet(false) }}
-            onClose={() => setShowCreateSheet(false)}
+        {showSheet && (
+          <TagSheet
+            tag={editingTag}
+            onSave={async () => { await reload(); setShowSheet(false); setEditingTag(null) }}
+            onClose={() => { setShowSheet(false); setEditingTag(null) }}
           />
         )}
       </div>

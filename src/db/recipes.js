@@ -144,3 +144,14 @@ export async function deleteTag(id) {
         request.onerror = () => reject(request.error)
     })
 }
+
+export async function updateTag(tag) {
+    const db = await openDB()
+    return new Promise((resolve, reject) => {
+        const tx = db.transaction(TAGS_STORE, 'readwrite')
+        const store = tx.objectStore(TAGS_STORE)
+        const request = store.put(tag)
+        request.onsuccess = () => resolve(request.result)
+        request.onerror = () => reject(request.error)
+    })
+}
