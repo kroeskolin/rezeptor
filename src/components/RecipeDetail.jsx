@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import './RecipeDetail.css';
 import { Icon, coverTint, totalTime } from './DesignTokens';
 
@@ -5,30 +6,57 @@ function HeartBtn({ recipe, onToggle, glass = false }) {
   const isFav = !!recipe.favorite;
   if (glass) {
     return (
-      <button
-        className="detail-ctrl-btn-glass"
+      <button className="detail-ctrl-btn-glass"
         onClick={e => { e.stopPropagation(); onToggle(recipe); }}
-        aria-label={isFav ? 'Aus Favoriten entfernen' : 'Zu Favoriten hinzufügen'}
-      >
+        aria-label={isFav ? 'Aus Favoriten entfernen' : 'Zu Favoriten hinzufügen'}>
         <Icon name="heart" size={16} color={isFav ? '#ffb3b3' : '#fff'}
           fill={isFav} strokeWidth={isFav ? 0 : 1.8} />
       </button>
     );
   }
   return (
-    <button
-      className="detail-ctrl-btn-white"
+    <button className="detail-ctrl-btn-white"
       onClick={e => { e.stopPropagation(); onToggle(recipe); }}
       aria-label={isFav ? 'Aus Favoriten entfernen' : 'Zu Favoriten hinzufügen'}
-      style={{ background: isFav ? 'var(--rose)' : 'var(--card)', borderColor: isFav ? 'var(--rose-2)' : 'var(--line-2)' }}
-    >
+      style={{ background: isFav ? 'var(--rose)' : 'var(--card)', borderColor: isFav ? 'var(--rose-2)' : 'var(--line-2)' }}>
       <Icon name="heart" size={16} color={isFav ? 'var(--rose-ink)' : 'var(--mute)'}
         fill={isFav} strokeWidth={isFav ? 0 : 1.8} />
     </button>
   );
 }
 
+function PhotoFullscreen({ src, onClose }) {
+  return (
+    <div
+      onClick={onClose}
+      style={{
+        position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.92)',
+        zIndex: 400, display: 'flex', alignItems: 'center', justifyContent: 'center',
+      }}
+    >
+      <button
+        onClick={onClose}
+        style={{
+          position: 'absolute', top: 20, right: 20,
+          width: 38, height: 38, borderRadius: '50%',
+          background: 'rgba(255,255,255,0.15)', border: 'none',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+        }}
+      >
+        <Icon name="x" size={18} color="#fff" strokeWidth={2} />
+      </button>
+      <img
+        src={src}
+        alt="Foto"
+        style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
+        onClick={e => e.stopPropagation()}
+      />
+    </div>
+  );
+}
+
 export default function RecipeDetail({ recipe, onBack, onEdit, onStartCook, onToggleFavorite }) {
+  const [showFullscreen, setShowFullscreen] = useState(false);
   if (!recipe) return null;
 
   const t = coverTint(recipe);
@@ -58,10 +86,11 @@ export default function RecipeDetail({ recipe, onBack, onEdit, onStartCook, onTo
   return (
     <div className="recipe-detail">
       {hasPhoto ? (
-        <div className="recipe-detail-hero">
+        <div className="recipe-detail-hero" onClick={() => setShowFullscreen(true)}
+          style={{ cursor: 'zoom-in' }}>
           <img className="recipe-detail-hero-img" src={recipe.image} alt={recipe.title} />
           <div className="recipe-detail-hero-scrim" />
-          <div className="recipe-detail-controls">
+          <div className="recipe-detail-controls" onClick={e => e.stopPropagation()}>
             <div className="detail-ctrl-group">
               <button className="detail-ctrl-btn-glass" onClick={onBack}>
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
@@ -181,6 +210,11 @@ export default function RecipeDetail({ recipe, onBack, onEdit, onStartCook, onTo
       )}
 
       <div style={{ height: 20 }} />
+
+      {/* Vollbild-Foto */}
+      {showFullscreen && (
+        <PhotoFullscreen src={recipe.image} onClose={() => setShowFullscreen(false)} />
+      )}
     </div>
   );
 }

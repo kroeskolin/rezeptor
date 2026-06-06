@@ -75,17 +75,53 @@ export default function AddRecipe({ onSave, onClose }) {
     }
   }
 
+
   const handleUrlLoad = async () => {
     if (!url.trim()) return
     setIsLoading(true); setLoadingMsg('Rezept wird geladen …')
     try {
+      const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(url)}`
+      const response = await fetch(proxyUrl)
+      const html = await response.text()
+
+      // Bild-URL aus HTML extrahieren (og:image, twitter:image, erstes großes img)
+      let imageUrl = null
+      const ogMatch = html.match(/<meta[^>]*property=["']og:image["'][^>]*content=["']([^"']+)["']/i)
+        || html.match(/<meta[^>]*content=["']([^"']+)["'][^>]*property=["']og:image["']/i)
+      const twitterMatch = html.match(/<meta[^>]*name=["']twitter:image["'][^>]*content=["']([^"']+)["']/i)
+      if (ogMatch) imageUrl = ogMatch[1]
+      else if (twitterMatch) imageUrl = twitterMatch[1]
+
+      // Bild laden und als Base64 speichern
+      let imageBase64 = null
+      if (imageUrl) {
+        try {
+          // Relative URL zu absoluter URL machen
+          if (imageUrl.startsWith('/')) {
+            const urlObj = new URL(url)
+            imageUrl = `${urlObj.protocol}//${urlObj.host}${imageUrl}`
+          }
+          const imgProxy = `https://corsproxy.io/?${encodeURIComponent(imageUrl)}`
+          const imgResponse = await fetch(imgProxy)
+          const blob = await imgResponse.blob()
+          imageBase64 = await new Promise(resolve => {
+            const reader = new FileReader()
+            reader.onloadend = () => resolve(reader.result)
+            reader.readAsDataURL(blob)
+          })
+        } catch (e) {
+          // Bild konnte nicht geladen werden — kein Problem, weiter ohne Bild
+          console.log('Bild konnte nicht geladen werden:', e)
+        }
+      }
+
       const recipe = await extractRecipeFromUrl(url)
       setForm({
         title: recipe.title || '', subtitle: recipe.subtitle || '',
         servings: recipe.servings || '', prepTime: recipe.prepTime || '',
         cookTime: recipe.cookTime || '', ingredients: recipe.ingredients || [],
-        steps: (recipe.steps || '') + `<p><em>Importiert von <a href="${url}" target="_blank">${url}</a> am ${new Date().toLocaleDateString('de-DE')}</em></p>`,
-        tags: [], image: null,
+        steps: recipe.steps || '',
+        tags: [], image: imageBase64,
       })
       setUrl(''); setMode('manual')
     } catch (error) {
@@ -386,3 +422,5 @@ export default function AddRecipe({ onSave, onClose }) {
     </div>
   )
 }
+
+
