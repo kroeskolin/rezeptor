@@ -142,3 +142,51 @@
 .form-save-btn:active {
   opacity: 0.85;
 }
+
+/* ── Tag Manager Page ── */
+.tag-manager-page {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.tag-manager-header {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 20px 12px;
+  border-bottom: 1px solid var(--line);
+}
+
+.tag-manager-scroll {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 16px 20px;
+}
+
+.tag-manager-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.tag-manager-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 10px 12px;
+  box-shadow: 0 4px 12px -8px rgba(71,53,40,0.2);
+}
+
+.tag-manager-footer {
+  flex-shrink: 0;
+  padding: 12px 20px;
+  padding-bottom: max(12px, env(safe-area-inset-bottom, 12px));
+  background: var(--paper);
+  border-top: 1px solid var(--line);
+}

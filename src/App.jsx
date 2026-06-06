@@ -140,7 +140,7 @@ function App() {
       case 'settings':
         return <Settings
           onImport={handleSave}
-          onExport={() => {}}
+          onExport={() => { }}
           onShowTagManager={goToSubPage}
           onHideTagManager={goToMainPage}
         />
@@ -163,7 +163,7 @@ function App() {
           goToMainPage()
         }}
         onFabClick={() => { setShowAddRecipe(true); goToSubPage() }}
-        hideNav={!isOnMainPage}
+        hideNav={!isOnMainPage || showSplash}
         onFavClick={() => setFavOnly(v => !v)}
         favActive={favOnly}
         onSearchClick={() => { setShowSearch(true); goToSubPage() }}

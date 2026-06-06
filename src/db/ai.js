@@ -162,6 +162,8 @@ Regeln:
 - Lies den GESAMTEN Text aller Bilder
 - steps ist HTML mit <p> Tags
 - prepTime und cookTime sind Zahlen in Minuten
+- Wenn eine Zutat sowohl eine Stückangabe als auch ein Gewicht in Klammern hat (z.B. "½ kleiner Radicchio (50g)"), nimm die Stückangabe als amount und unit, und lass das Gewicht in Klammern weg. Beispiel: amount: "½", unit: "Stück", name: "kleiner Radicchio"
+- Bruchzahlen wie ½, ¼, ⅓ immer als Unicode-Zeichen übernehmen, nicht als Dezimalzahl umrechnen
 - Antworte ausschließlich mit dem JSON-Array`
         },
         ...base64Images.map(img => ({
