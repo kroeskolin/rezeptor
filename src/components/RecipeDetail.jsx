@@ -199,6 +199,21 @@ export default function RecipeDetail({ recipe, onBack, onEdit, onStartCook, onTo
         </div>
       )}
 
+      {(recipe.source || recipe.createdAt) && (
+        <div style={{ padding: '0 22px 16px', display: 'flex', flexDirection: 'column', gap: 4 }}>
+          {recipe.source && (
+            <div style={{ fontFamily: 'var(--serif)', fontSize: 13, color: 'var(--mute)', fontStyle: 'italic' }}>
+              Quelle: {recipe.source}
+            </div>
+          )}
+          {recipe.createdAt && (
+            <div style={{ fontFamily: 'var(--serif)', fontSize: 13, color: 'var(--mute)' }}>
+              Hinzugefügt am {new Date(recipe.createdAt).toLocaleDateString('de-DE', { day: '2-digit', month: 'long', year: 'numeric' })}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Ingredients */}
       {ingredients.length > 0 && (
         <div className="recipe-detail-section">

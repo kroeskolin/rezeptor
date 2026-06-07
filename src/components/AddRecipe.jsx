@@ -49,7 +49,7 @@ export default function AddRecipe({ onSave, onClose }) {
       title: form.title, subtitle: form.subtitle,
       servings: Number(form.servings), prepTime: Number(form.prepTime),
       cookTime: Number(form.cookTime), ingredients: form.ingredients,
-      steps: form.steps, tags: form.tags, source: 'foto', image: form.image || null,
+      steps: form.steps, tags: form.tags, source: form.source || '', image: form.image || null,
     })
     onSave()
   }
@@ -122,6 +122,7 @@ export default function AddRecipe({ onSave, onClose }) {
         cookTime: recipe.cookTime || '', ingredients: recipe.ingredients || [],
         steps: recipe.steps || '',
         tags: [], image: imageBase64,
+        source: url, // NEU
       })
       setUrl(''); setMode('manual')
     } catch (error) {
@@ -411,6 +412,11 @@ export default function AddRecipe({ onSave, onClose }) {
           <label className="form-label">Zubereitung</label>
           <RichTextEditor key={form.steps ? 'loaded' : 'empty'}
             content={form.steps} onChange={steps => setForm({ ...form, steps })} />
+        </div>
+        <div className="form-section">
+          <label className="form-label">Quelle <span className="form-label-opt">optional</span></label>
+          <input className="form-input" type="text" placeholder="z.B. essen.de oder Oma"
+            value={form.source || ''} onChange={e => setForm({ ...form, source: e.target.value })} />
         </div>
         <div className="form-section">
           <label className="form-label">Tags</label>
