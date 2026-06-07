@@ -103,7 +103,7 @@ export default function AddRecipe({ onSave, onClose }) {
             const urlObj = new URL(url)
             imageUrl = `${urlObj.protocol}//${urlObj.host}${imageUrl}`
           }
-          const imgProxy = `https://corsproxy.io/?${encodeURIComponent(imageUrl)}`
+          const imgProxy = `https://rezeptor-proxy.brr-kroeske.workers.dev/?url=${encodeURIComponent(imageUrl)}`
           const imgResponse = await fetch(imgProxy)
           const blob = await imgResponse.blob()
           imageBase64 = await new Promise(resolve => {
