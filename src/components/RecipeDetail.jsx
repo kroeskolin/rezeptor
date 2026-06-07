@@ -94,7 +94,7 @@ export default function RecipeDetail({ recipe, onBack, onEdit, onStartCook, onTo
             <div className="detail-ctrl-group">
               <button className="detail-ctrl-btn-glass" onClick={onBack}>
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                  <path d="M9 2L4 7l5 5" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M9 2L4 7l5 5" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
               </button>
               <button className="detail-ctrl-btn-glass" onClick={onEdit}>
@@ -119,7 +119,7 @@ export default function RecipeDetail({ recipe, onBack, onEdit, onStartCook, onTo
             <div className="detail-ctrl-group">
               <button className="detail-ctrl-btn-white" onClick={onBack}>
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                  <path d="M9 2L4 7l5 5" stroke="var(--espresso)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M9 2L4 7l5 5" stroke="var(--espresso)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
               </button>
               <button className="detail-ctrl-btn-white" onClick={onEdit}>
@@ -159,13 +159,26 @@ export default function RecipeDetail({ recipe, onBack, onEdit, onStartCook, onTo
             <span className="detail-stat-unit">Port.</span>
           </div>
         )}
-        <div className="detail-meta-spacer" />
-        {tags.slice(0, 2).map((tag, i) => (
-          <span key={i} className={`detail-chip ${i === 0 ? 'detail-chip-sage' : 'detail-chip-rose'}`}>
-            {tag.name || tag}
-          </span>
-        ))}
       </div>
+
+      {/* Tags */}
+      {tags.length > 0 && (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, padding: '0 20px 4px' }}>
+          {tags.map((tag, i) => (
+            <span key={i} style={{
+              background: tag.color ? `${tag.color}33` : 'var(--sage)',
+              color: tag.color || 'var(--espresso)',
+              borderRadius: 20,
+              padding: '5px 13px',
+              fontSize: 13,
+              fontFamily: 'var(--serif)',
+              fontWeight: 600,
+            }}>
+              {tag.name || tag}
+            </span>
+          ))}
+        </div>
+      )}
 
       {/* Ingredients */}
       {ingredients.length > 0 && (
