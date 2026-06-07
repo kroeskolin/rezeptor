@@ -80,7 +80,7 @@ export default function AddRecipe({ onSave, onClose }) {
     if (!url.trim()) return
     setIsLoading(true); setLoadingMsg('Rezept wird geladen …')
     try {
-      const imgProxy = `https://rezeptor-proxy.brr-kroeske.workers.dev/?url=${encodeURIComponent(imageUrl)}`
+      const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(url)}`
       const response = await fetch(proxyUrl)
       const html = await response.text()
 
@@ -98,7 +98,6 @@ export default function AddRecipe({ onSave, onClose }) {
       let imageBase64 = null
       if (imageUrl) {
         try {
-          // Relative URL zu absoluter URL machen
           if (imageUrl.startsWith('/')) {
             const urlObj = new URL(url)
             imageUrl = `${urlObj.protocol}//${urlObj.host}${imageUrl}`
@@ -112,7 +111,6 @@ export default function AddRecipe({ onSave, onClose }) {
             reader.readAsDataURL(blob)
           })
         } catch (e) {
-          // Bild konnte nicht geladen werden — kein Problem, weiter ohne Bild
           console.log('Bild konnte nicht geladen werden:', e)
         }
       }
