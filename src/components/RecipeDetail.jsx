@@ -163,7 +163,7 @@ export default function RecipeDetail({ recipe, onBack, onEdit, onStartCook, onTo
 
       {/* Tags */}
       {tags.length > 0 && (
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, padding: '0 20px 4px', marginTop: 12 }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, padding: '0 20px 4px' }}>
           {tags.map((tag, i) => (
             <span key={i} style={{
               background: tag.color ? `${tag.color}33` : 'var(--sage)',
