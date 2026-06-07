@@ -146,6 +146,7 @@
   padding: 16px 22px;
   border-bottom: 1px solid var(--line);
   gap: 22px;
+  margin-bottom: 12px;
 }
 
 .detail-stat {
