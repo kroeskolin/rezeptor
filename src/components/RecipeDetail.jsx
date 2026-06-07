@@ -2,6 +2,8 @@ import { useState } from 'react';
 import './RecipeDetail.css';
 import { Icon, coverTint, totalTime } from './DesignTokens';
 
+const [servings, setServings] = useState(recipe.servings || 1);
+
 function HeartBtn({ recipe, onToggle, glass = false }) {
   const isFav = !!recipe.favorite;
   if (glass) {
@@ -83,6 +85,14 @@ export default function RecipeDetail({ recipe, onBack, onEdit, onStartCook, onTo
 
   const steps = getSteps();
 
+  const scaleAmount = (amount) => {
+    if (!amount || !recipe.servings) return amount;
+    const base = parseFloat(amount);
+    if (isNaN(base)) return amount;
+    const scaled = base * servings / recipe.servings;
+    return scaled % 1 === 0 ? String(scaled) : scaled.toFixed(1).replace(/\.0$/, '');
+  };
+
   return (
     <div className="recipe-detail">
       {hasPhoto ? (
@@ -155,7 +165,17 @@ export default function RecipeDetail({ recipe, onBack, onEdit, onStartCook, onTo
         )}
         {recipe.servings > 0 && (
           <div className="detail-stat">
-            <span className="detail-stat-value num">{recipe.servings}</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <button onClick={() => setServings(s => Math.max(1, s - 1))}
+                style={{ background: 'var(--line-2)', border: 'none', borderRadius: '50%', width: 24, height: 24, cursor: 'pointer', fontSize: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--espresso)' }}>
+                −
+              </button>
+              <span className="detail-stat-value num">{servings}</span>
+              <button onClick={() => setServings(s => s + 1)}
+                style={{ background: 'var(--line-2)', border: 'none', borderRadius: '50%', width: 24, height: 24, cursor: 'pointer', fontSize: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--espresso)' }}>
+                +
+              </button>
+            </div>
             <span className="detail-stat-unit">Port.</span>
           </div>
         )}
@@ -189,45 +209,52 @@ export default function RecipeDetail({ recipe, onBack, onEdit, onStartCook, onTo
               <div key={i} className="ingredient-row">
                 <span className="ingredient-name">{ing.name}</span>
                 <span className="ingredient-amount num">
-                  {ing.amount}{ing.unit ? ` ${ing.unit}` : ''}
+                  {scaleAmount(ing.amount)}{ing.unit ? ` ${ing.unit}` : ''}
                 </span>
               </div>
             ))}
           </div>
         </div>
-      )}
+      )
+      }
 
       {/* Steps */}
-      {steps.length > 0 && (
-        <div className="recipe-detail-section">
-          <div className="section-head">Zubereitung</div>
-          <div>
-            {steps.map((step, i) => (
-              <div key={i} className="step-row">
-                <span className="step-num">{i + 1}</span>
-                <span className="step-text">{step}</span>
-              </div>
-            ))}
+      {
+        steps.length > 0 && (
+          <div className="recipe-detail-section">
+            <div className="section-head">Zubereitung</div>
+            <div>
+              {steps.map((step, i) => (
+                <div key={i} className="step-row">
+                  <span className="step-num">{i + 1}</span>
+                  <span className="step-text">{step}</span>
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
-      )}
+        )
+      }
 
       {/* CTA */}
-      {steps.length > 0 && (
-        <div className="recipe-detail-cta">
-          <button className="recipe-detail-cta-btn" onClick={onStartCook}>
-            Kochmodus starten
-            <span style={{ color: 'var(--rose)', fontSize: 20, fontStyle: 'normal' }}>→</span>
-          </button>
-        </div>
-      )}
+      {
+        steps.length > 0 && (
+          <div className="recipe-detail-cta">
+            <button className="recipe-detail-cta-btn" onClick={onStartCook}>
+              Kochmodus starten
+              <span style={{ color: 'var(--rose)', fontSize: 20, fontStyle: 'normal' }}>→</span>
+            </button>
+          </div>
+        )
+      }
 
       <div style={{ height: 20 }} />
 
       {/* Vollbild-Foto */}
-      {showFullscreen && (
-        <PhotoFullscreen src={recipe.image} onClose={() => setShowFullscreen(false)} />
-      )}
-    </div>
+      {
+        showFullscreen && (
+          <PhotoFullscreen src={recipe.image} onClose={() => setShowFullscreen(false)} />
+        )
+      }
+    </div >
   );
 }
