@@ -169,7 +169,7 @@ export default function RecipeDetail({ recipe, onBack, onEdit, onStartCook, onTo
               background: tag.color ? `${tag.color}33` : 'var(--sage)',
               color: tag.color || 'var(--espresso)',
               borderRadius: 20,
-              padding: '12px 20px 4px',
+              padding: '5px 13px',
               fontSize: 13,
               fontFamily: 'var(--serif)',
               fontWeight: 600,
