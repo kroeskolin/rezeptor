@@ -2,8 +2,6 @@ import { useState } from 'react';
 import './RecipeDetail.css';
 import { Icon, coverTint, totalTime } from './DesignTokens';
 
-const [servings, setServings] = useState(recipe.servings || 1);
-
 function HeartBtn({ recipe, onToggle, glass = false }) {
   const isFav = !!recipe.favorite;
   if (glass) {
@@ -61,6 +59,7 @@ export default function RecipeDetail({ recipe, onBack, onEdit, onStartCook, onTo
   const [showFullscreen, setShowFullscreen] = useState(false);
   if (!recipe) return null;
 
+  const [servings, setServings] = useState(recipe.servings || 1);
   const t = coverTint(recipe);
   const initial = (recipe.title || '?').trim().charAt(0).toUpperCase();
   const time = totalTime(recipe);
