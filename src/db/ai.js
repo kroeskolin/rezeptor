@@ -1,15 +1,19 @@
-import { GoogleGenAI } from '@google/genai'
+const WORKER_URL = 'https://rezeptor-proxy.brr-kroeske.workers.dev'
 
-const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY })
-
-console.log('API Key geladen:', import.meta.env.VITE_GEMINI_API_KEY ? 'ja' : 'nein')
-
-async function generateContent(prompt) {
-    const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: prompt,
+async function generateContent(contents) {
+    const response = await fetch(WORKER_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            model: 'gemini-2.5-flash',
+            contents: typeof contents === 'string'
+                ? [{ parts: [{ text: contents }] }]
+                : contents,
+        }),
     })
-    return response.text
+    const data = await response.json()
+    if (data.error) throw new Error(data.error.message)
+    return data.candidates[0].content.parts[0].text
 }
 
 export async function extractRecipeFromText(text) {
@@ -60,13 +64,10 @@ export async function extractRecipeFromUrl(url) {
 }
 
 export async function extractRecipeFromImage(base64Image) {
-    const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: [
+    const data = await generateContent([{
+        parts: [
             {
-                parts: [
-                    {
-                        text: `Du bist ein Kochbuch-Assistent. Lies diese Rezeptseite vollständig – egal wie das Layout aussieht (einspaltig, zweispaltig, Tabelle, etc.).
+                text: `Du bist ein Kochbuch-Assistent. Lies diese Rezeptseite vollständig – egal wie das Layout aussieht (einspaltig, zweispaltig, Tabelle, etc.).
 Extrahiere Titel, alle Zutaten UND die komplette Zubereitung.
 Antworte NUR mit einem JSON-Objekt, ohne Markdown-Backticks, ohne Erklärungen.
 
@@ -84,20 +85,16 @@ Wichtig:
 - Lies den GESAMTEN Text der Seite
 - steps muss HTML sein mit <p> Tags pro Absatz
 - Antworte ausschließlich mit dem JSON`
-                    },
-                    {
-                        inlineData: {
-                            mimeType: 'image/jpeg',
-                            data: base64Image.split(',')[1]
-                        }
-                    }
-                ]
+            },
+            {
+                inlineData: {
+                    mimeType: 'image/jpeg',
+                    data: base64Image.split(',')[1]
+                }
             }
         ]
-    })
-    const text = response.text
-    console.log('Gemini Antwort:', text)
-    const clean = text.replace(/```json|```/g, '').trim()
+    }])
+    const clean = data.replace(/```json|```/g, '').trim()
     return JSON.parse(clean)
 }
 
@@ -110,32 +107,24 @@ Keine Erklärung, nur die Einheit.`
 }
 
 export async function transcribeAudio(base64Audio, mimeType) {
-    const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: [
+    const data = await generateContent([{
+        parts: [
             {
-                parts: [
-                    {
-                        text: `Transkribiere diese Sprachaufnahme vollständig und wörtlich auf Deutsch. 
+                text: `Transkribiere diese Sprachaufnahme vollständig und wörtlich auf Deutsch. 
 Antworte NUR mit dem transkribierten Text, ohne Erklärungen oder Formatierungen.`
-                    },
-                    {
-                        inlineData: {
-                            mimeType: mimeType,
-                            data: base64Audio
-                        }
-                    }
-                ]
+            },
+            {
+                inlineData: {
+                    mimeType: mimeType,
+                    data: base64Audio
+                }
             }
         ]
-    })
-    return response.text.trim()
+    }])
+    return data.trim()
 }
 
-// Diese Funktion ans Ende von ai.js anfügen:
-
 export async function extractRecipesFromImages(base64Images) {
-    // base64Images ist ein Array von komprimierten JPEG base64 strings
     const parts = [
         {
             text: `Du bist ein Kochbuch-Assistent. Analysiere diese Bilder (es können mehrere Seiten eines Rezepts oder mehrere verschiedene Rezepte sein).
@@ -174,13 +163,8 @@ Regeln:
         }))
     ]
 
-    const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: [{ parts }]
-    })
-
-    const text = response.text
-    const clean = text.replace(/```json|```/g, '').trim()
+    const data = await generateContent([{ parts }])
+    const clean = data.replace(/```json|```/g, '').trim()
     const recipes = JSON.parse(clean)
     return Array.isArray(recipes) ? recipes : [recipes]
 }

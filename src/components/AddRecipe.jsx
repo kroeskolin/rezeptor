@@ -89,6 +89,8 @@ export default function AddRecipe({ onSave, onClose }) {
       const ogMatch = html.match(/<meta[^>]*property=["']og:image["'][^>]*content=["']([^"']+)["']/i)
         || html.match(/<meta[^>]*content=["']([^"']+)["'][^>]*property=["']og:image["']/i)
       const twitterMatch = html.match(/<meta[^>]*name=["']twitter:image["'][^>]*content=["']([^"']+)["']/i)
+      console.log('og:image gefunden:', ogMatch?.[1])
+      console.log('twitter:image gefunden:', twitterMatch?.[1])
       if (ogMatch) imageUrl = ogMatch[1]
       else if (twitterMatch) imageUrl = twitterMatch[1]
 
