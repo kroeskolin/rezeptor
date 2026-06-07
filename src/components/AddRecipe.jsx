@@ -80,7 +80,7 @@ export default function AddRecipe({ onSave, onClose }) {
     if (!url.trim()) return
     setIsLoading(true); setLoadingMsg('Rezept wird geladen …')
     try {
-      const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(url)}`
+      const imgProxy = `https://rezeptor-proxy.brr-kroeske.workers.dev/?url=${encodeURIComponent(imageUrl)}`
       const response = await fetch(proxyUrl)
       const html = await response.text()
 
