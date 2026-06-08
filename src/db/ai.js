@@ -56,6 +56,8 @@ export async function extractRecipeFromUrl(url) {
         const proxyUrl = `https://rezeptor-proxy.brr-kroeske.workers.dev/fetch?url=${encodeURIComponent(url)}`
         const response = await fetch(proxyUrl)
         const text = await response.text()
+        console.log('HTML Länge:', text.length)
+        console.log('Enthält ld+json:', text.includes('application/ld+json'))
 
         // JSON-LD versuchen
         const jsonLdMatch = text.match(/<script[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)
