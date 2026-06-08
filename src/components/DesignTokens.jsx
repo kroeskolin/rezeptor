@@ -1,10 +1,10 @@
 // Shared design helpers — used across all components
 
 export const COVER_TINTS = [
-  { bg: '#C8D9BF', ink: '#3C5232' },  // sage
-  { bg: '#EDD4CF', ink: '#8A4F46' },  // rose
-  { bg: '#E7DCC6', ink: '#6A5230' },  // cream
-  { bg: '#DCE7D0', ink: '#46603A' },  // pale green
+  { bg: 'var(--tint-1-bg)', ink: 'var(--tint-1-ink)' },
+  { bg: 'var(--tint-2-bg)', ink: 'var(--tint-2-ink)' },
+  { bg: 'var(--tint-3-bg)', ink: 'var(--tint-3-ink)' },
+  { bg: 'var(--tint-4-bg)', ink: 'var(--tint-4-ink)' },
 ];
 
 export function coverTint(recipe) {
@@ -34,10 +34,14 @@ export function Monogram({ recipe, size = 56, radius = 14 }) {
       background: t.bg, position: 'relative', overflow: 'hidden',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
     }}>
-      <span style={{
-        fontFamily: 'var(--logo)', fontWeight: 600,
-        fontSize: size * 0.56, color: t.ink, lineHeight: 1,
-      }}>{initial}</span>
+      {recipe?.image
+        ? <img src={recipe.image} alt={recipe.title}
+            style={{ width: '100%', height: '100%', objectFit: 'cover', position: 'absolute', inset: 0 }} />
+        : <span style={{
+            fontFamily: 'var(--logo)', fontWeight: 600,
+            fontSize: size * 0.56, color: t.ink, lineHeight: 1,
+          }}>{initial}</span>
+      }
     </div>
   );
 }

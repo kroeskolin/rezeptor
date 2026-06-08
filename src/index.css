@@ -48,6 +48,12 @@
   --shadow-card:    0 12px 28px -22px rgba(71,53,40,0.50);
   --shadow-feature: 0 16px 34px -22px rgba(71,53,40,0.45);
   --shadow-float:   0 12px 26px -8px  rgba(71,53,40,0.60);
+
+  /* Tints */
+  --tint-1-bg: #C8D9BF; --tint-1-ink: #3C5232;
+  --tint-2-bg: #EDD4CF; --tint-2-ink: #8A4F46;
+  --tint-3-bg: #E7DCC6; --tint-3-ink: #6A5230;
+  --tint-4-bg: #DCE7D0; --tint-4-ink: #46603A;
 }
 
 *, *::before, *::after {
