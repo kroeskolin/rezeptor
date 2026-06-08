@@ -56,12 +56,63 @@ export async function extractRecipeFromUrl(url) {
         const proxyUrl = `https://rezeptor-proxy.brr-kroeske.workers.dev/fetch?url=${encodeURIComponent(url)}`
         const response = await fetch(proxyUrl)
         const text = await response.text()
+
+        // JSON-LD versuchen
+        const jsonLdMatch = text.match(/<script[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)
+        if (jsonLdMatch) {
+            for (const block of jsonLdMatch) {
+                try {
+                    const inner = block.replace(/<script[^>]*>/, '').replace(/<\/script>/, '')
+                    const data = JSON.parse(inner)
+                    const recipes = Array.isArray(data) ? data : [data]
+                    const recipeData = recipes.find(d => d['@type'] === 'Recipe' || (Array.isArray(d['@type']) && d['@type'].includes('Recipe')))
+                    if (recipeData) {
+                        return parseJsonLdRecipe(recipeData)
+                    }
+                } catch {}
+            }
+        }
+
+        // Fallback: Gemini
         const trimmed = text.slice(0, 40000)
-        console.log('Erster HTML-Chunk:', text.slice(0, 500))
         return await extractRecipeFromText(trimmed)
     } catch (error) {
         console.error('Detaillierter Fehler:', error)
         throw new Error('URL konnte nicht geladen werden.')
+    }
+}
+
+function parseJsonLdRecipe(data) {
+    const parseTime = (iso) => {
+        if (!iso) return 0
+        const match = iso.match(/PT(?:(\d+)H)?(?:(\d+)M)?/)
+        if (!match) return 0
+        return (parseInt(match[1] || 0) * 60) + parseInt(match[2] || 0)
+    }
+
+    const ingredients = (data.recipeIngredient || []).map(ing => {
+        const match = ing.match(/^([\d\/\.,\s¼½¾⅓⅔⅛]+)?\s*([a-zA-ZäöüÄÖÜg]+\.)?\s*(.+)$/)
+        return {
+            amount: match?.[1]?.trim() || '',
+            unit: match?.[2]?.trim().replace('.', '') || '',
+            name: match?.[3]?.trim() || ing,
+        }
+    })
+
+    const instructions = data.recipeInstructions || []
+    const steps = instructions.map(step => {
+        const text = typeof step === 'string' ? step : step.text || ''
+        return `<p>${text}</p>`
+    }).join('')
+
+    return {
+        title: data.name || '',
+        subtitle: data.description?.slice(0, 100) || '',
+        servings: parseInt(data.recipeYield) || 4,
+        prepTime: parseTime(data.prepTime),
+        cookTime: parseTime(data.cookTime || data.totalTime),
+        ingredients,
+        steps,
     }
 }
 
