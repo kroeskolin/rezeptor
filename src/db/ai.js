@@ -55,7 +55,7 @@ export async function extractRecipeFromUrl(url) {
         const proxyUrl = `https://rezeptor-proxy.brr-kroeske.workers.dev/fetch?url=${encodeURIComponent(url)}`
         const response = await fetch(proxyUrl)
         const text = await response.text()
-        const trimmed = text.slice(0, 15000)
+        const trimmed = text.slice(0, 40000)
         return await extractRecipeFromText(trimmed)
     } catch (error) {
         console.error('Detaillierter Fehler:', error)
