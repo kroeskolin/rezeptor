@@ -52,7 +52,7 @@ ${text}
 
 export async function extractRecipeFromUrl(url) {
     try {
-        const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(url)}`
+        const proxyUrl = `https://rezeptor-proxy.brr-kroeske.workers.dev/fetch?url=${encodeURIComponent(url)}`
         const response = await fetch(proxyUrl)
         const text = await response.text()
         const trimmed = text.slice(0, 15000)
