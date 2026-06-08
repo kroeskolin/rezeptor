@@ -60,6 +60,7 @@ export async function extractRecipeFromUrl(url) {
         // JSON-LD versuchen
         const jsonLdMatch = text.match(/<script[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)
         if (jsonLdMatch) {
+            console.log('JSON-LD Blöcke gefunden:', jsonLdMatch.length)
             for (const block of jsonLdMatch) {
                 try {
                     const inner = block.replace(/<script[^>]*>/, '').replace(/<\/script>/, '')
@@ -67,9 +68,10 @@ export async function extractRecipeFromUrl(url) {
                     const recipes = Array.isArray(data) ? data : [data]
                     const recipeData = recipes.find(d => d['@type'] === 'Recipe' || (Array.isArray(d['@type']) && d['@type'].includes('Recipe')))
                     if (recipeData) {
+                        console.log('Recipe gefunden:', recipeData)
                         return parseJsonLdRecipe(recipeData)
                     }
-                } catch {}
+                } catch { }
             }
         }
 
