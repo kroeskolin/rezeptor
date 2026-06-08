@@ -46,6 +46,7 @@ Text:
 ${text}
 `
     const result = await generateContent(prompt)
+    console.log('Gemini Antwort:', result)
     const clean = result.replace(/```json|```/g, '').trim()
     return JSON.parse(clean)
 }
