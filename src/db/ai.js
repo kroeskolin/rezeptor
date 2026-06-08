@@ -67,6 +67,7 @@ export async function extractRecipeFromUrl(url) {
                 try {
                     const inner = block.replace(/<script[^>]*>/, '').replace(/<\/script>/, '')
                     const data = JSON.parse(inner)
+                    console.log('JSON-LD @type:', JSON.stringify(data['@type']), JSON.stringify(data['@graph']?.map(d => d['@type'])))
                     const recipes = Array.isArray(data) ? data : [data]
                     const recipeData = recipes.find(d => d['@type'] === 'Recipe' || (Array.isArray(d['@type']) && d['@type'].includes('Recipe')))
                     if (recipeData) {
