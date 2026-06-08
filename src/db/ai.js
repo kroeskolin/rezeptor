@@ -57,6 +57,7 @@ export async function extractRecipeFromUrl(url) {
         const response = await fetch(proxyUrl)
         const text = await response.text()
         const trimmed = text.slice(0, 40000)
+        console.log('Erster HTML-Chunk:', text.slice(0, 500))
         return await extractRecipeFromText(trimmed)
     } catch (error) {
         console.error('Detaillierter Fehler:', error)
