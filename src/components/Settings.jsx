@@ -18,24 +18,24 @@ const COLORS = [
 ]
 
 const STARTER_TAGS = [
-  { name: 'Snack',               color: '#FFA726' },
-  { name: 'Dessert',             color: '#F06292' },
-  { name: 'Partyessen',          color: '#F44336' },
-  { name: 'Festlich',            color: '#D32F2F' },
-  { name: 'Vegetarisch',         color: '#66BB6A' },
-  { name: 'Vegan',               color: '#2E7D32' },
-  { name: 'Fleisch',             color: '#A1665A' },
-  { name: 'Fisch',               color: '#26C6DA' },
-  { name: 'Super easy',          color: '#64B5F6' },
-  { name: 'Herausfordernd',      color: '#1976D2' },
-  { name: 'Suppe',               color: '#26C6DA' },
-  { name: 'Auflauf',             color: '#FFA726' },
-  { name: 'Backen süß',          color: '#F06292' },
-  { name: 'Backen herzhaft',     color: '#A1665A' },
-  { name: 'Schmoren',            color: '#6D4C41' },
-  { name: 'Salat',               color: '#66BB6A' },
-  { name: 'Pfannengericht',      color: '#FFEE58' },
-  { name: 'Familienrezept',      color: '#9C27B0' },
+  { name: 'Snack', color: '#FFA726' },
+  { name: 'Dessert', color: '#F06292' },
+  { name: 'Partyessen', color: '#F44336' },
+  { name: 'Festlich', color: '#D32F2F' },
+  { name: 'Vegetarisch', color: '#66BB6A' },
+  { name: 'Vegan', color: '#2E7D32' },
+  { name: 'Fleisch', color: '#A1665A' },
+  { name: 'Fisch', color: '#26C6DA' },
+  { name: 'Super easy', color: '#64B5F6' },
+  { name: 'Herausfordernd', color: '#1976D2' },
+  { name: 'Suppe', color: '#26C6DA' },
+  { name: 'Auflauf', color: '#FFA726' },
+  { name: 'Backen süß', color: '#F06292' },
+  { name: 'Backen herzhaft', color: '#A1665A' },
+  { name: 'Schmoren', color: '#6D4C41' },
+  { name: 'Salat', color: '#66BB6A' },
+  { name: 'Pfannengericht', color: '#FFEE58' },
+  { name: 'Familienrezept', color: '#9C27B0' },
   { name: 'Noch nie zubereitet', color: '#CE93D8' },
 ]
 
@@ -63,9 +63,9 @@ function SettingRow({ icon, label, value, toggle, on, onToggle, onClick }) {
       {toggle
         ? <Toggle on={on} onToggle={onToggle} />
         : <>
-            {value && <span className="settings-row-value">{value}</span>}
-            {onClick && <Icon name="chev" size={17} color="var(--line-2)" />}
-          </>
+          {value && <span className="settings-row-value">{value}</span>}
+          {onClick && <Icon name="chev" size={17} color="var(--line-2)" />}
+        </>
       }
     </div>
   )
@@ -135,6 +135,9 @@ export default function Settings({ onImport, onShowTagManager, onHideTagManager 
   const [showSheet, setShowSheet] = useState(false)
   const [activeTheme, setActiveTheme] = useState('default')
   const [loadingStarter, setLoadingStarter] = useState(false)
+  const [displayName, setDisplayName] = useState('')
+  const [editingName, setEditingName] = useState(false)
+  const [nameInput, setNameInput] = useState('')
   const fileInputRef = useRef(null)
 
   const reload = () => getAllTags().then(setTags)
@@ -143,7 +146,16 @@ export default function Settings({ onImport, onShowTagManager, onHideTagManager 
     reload()
     const saved = localStorage.getItem('rezeptor-theme') || 'default'
     setActiveTheme(saved)
+    const profile = JSON.parse(localStorage.getItem('rezeptor-user-profile') || '{}')
+    setDisplayName(profile.displayName || '')
   }, [])
+
+  const handleSaveName = () => {
+    const profile = { displayName: nameInput.trim() }
+    localStorage.setItem('rezeptor-user-profile', JSON.stringify(profile))
+    setDisplayName(nameInput.trim())
+    setEditingName(false)
+  }
 
   const openTagManager = () => {
     setShowTagManager(true)
@@ -323,8 +335,10 @@ export default function Settings({ onImport, onShowTagManager, onHideTagManager 
                       }} />
                     ))}
                   </div>
-                  <span style={{ fontFamily: 'var(--serif)', fontSize: 15.5,
-                    fontWeight: activeTheme === theme.id ? 700 : 400, color: 'var(--espresso)' }}>
+                  <span style={{
+                    fontFamily: 'var(--serif)', fontSize: 15.5,
+                    fontWeight: activeTheme === theme.id ? 700 : 400, color: 'var(--espresso)'
+                  }}>
                     {theme.name}
                   </span>
                   {activeTheme === theme.id && (
@@ -350,6 +364,41 @@ export default function Settings({ onImport, onShowTagManager, onHideTagManager 
           Einstell<span style={{ fontStyle: 'italic', fontWeight: 600 }}>un</span>gen
         </h1>
       </div>
+
+      <SettingsGroup title="Profil">
+        {editingName ? (
+          <div style={{ padding: '12px 16px', display: 'flex', gap: 10, alignItems: 'center' }}>
+            <input
+              className="form-input"
+              type="text"
+              placeholder="Dein Name …"
+              value={nameInput}
+              onChange={e => setNameInput(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && handleSaveName()}
+              autoFocus
+              style={{ flex: 1, margin: 0 }}
+            />
+            <button onClick={handleSaveName}
+              style={{ background: 'var(--green)', border: 'none', borderRadius: 10, padding: '8px 14px', color: '#fff', fontFamily: 'var(--serif)', fontSize: 14, cursor: 'pointer' }}>
+              OK
+            </button>
+            <button onClick={() => setEditingName(false)}
+              style={{ background: 'var(--line-2)', border: 'none', borderRadius: 10, padding: '8px 14px', fontFamily: 'var(--serif)', fontSize: 14, cursor: 'pointer', color: 'var(--cocoa)' }}>
+              Abbrechen
+            </button>
+          </div>
+        ) : (
+          <SettingRow
+            icon="user"
+            label="Dein Name"
+            value={displayName || 'Noch kein Name'}
+            onClick={() => { setNameInput(displayName); setEditingName(true) }}
+          />
+        )}
+        <div style={{ padding: '4px 16px 12px', fontFamily: 'var(--serif)', fontSize: 12, color: 'var(--mute)', fontStyle: 'italic' }}>
+          Wird später im Community-Feed sichtbar sein.
+        </div>
+      </SettingsGroup>
 
       <SettingsGroup title="Benachrichtigungen">
         <SettingRow icon="bell" label="Benachrichtigungen"
