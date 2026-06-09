@@ -190,11 +190,13 @@ export default function RecipeDetail({ recipe, onBack, onEdit, onStartCook, onTo
               <button className="detail-ctrl-btn-glass" onClick={onEdit}>
                 <Icon name="pencil" size={15} color="#fff" strokeWidth={1.8} />
               </button>
+            </div>
+            <div className="detail-ctrl-group">
               <button className="detail-ctrl-btn-glass" onClick={e => { e.stopPropagation(); setShowShareSheet(true); }}>
                 <Icon name="share" size={15} color="#fff" strokeWidth={1.8} />
               </button>
+              <HeartBtn recipe={recipe} onToggle={onToggleFavorite} glass />
             </div>
-            <HeartBtn recipe={recipe} onToggle={onToggleFavorite} glass />
           </div>
           <div className="recipe-detail-title-overlay">
             <h1 className="recipe-detail-title-photo">{recipe.title}</h1>
