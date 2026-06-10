@@ -93,6 +93,8 @@ export default function RecipeDetail({ recipe, onBack, onEdit, onStartCook, onTo
     const stepLines = steps.map((s, i) => `${i + 1}. ${s}`).join('\n\n')
 
     const text = [
+      `Sieh dir dieses Rezept aus meiner Rezeptor-App an: ${recipe.title}. Viel Spaß beim Ausprobieren! 🍳`,
+      '',
       recipe.subtitle ? `(${recipe.subtitle})` : null,
       '',
       time > 0 ? `⏱ ${time} Min.` : null,
@@ -105,8 +107,6 @@ export default function RecipeDetail({ recipe, onBack, onEdit, onStartCook, onTo
       stepLines,
       '',
       recipe.source ? `Quelle: ${recipe.source}` : null,
-      '',
-      `Sieh dir dieses Rezept aus meiner Rezeptor-App an: ${recipe.title}. Viel Spaß beim Ausprobieren! 🍳`,
     ].filter(Boolean).join('\n')
 
     await navigator.share({ title: recipe.title, text })
@@ -115,10 +115,7 @@ export default function RecipeDetail({ recipe, onBack, onEdit, onStartCook, onTo
 
   const handleSharePdf = () => {
     const escape = (str) => String(str || '')
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
 
     const ingredientRows = ingredients.map(ing =>
       `<tr><td>${escape(ing.name)}</td><td style="text-align:right;color:#9A8C7E;padding-left:16px">${escape(ing.amount)}${ing.unit ? ' ' + escape(ing.unit) : ''}</td></tr>`
@@ -128,23 +125,20 @@ export default function RecipeDetail({ recipe, onBack, onEdit, onStartCook, onTo
       `<div style="display:flex;gap:16px;margin-bottom:12px"><span style="font-weight:700;color:#C8D9BF;font-size:18px;flex-shrink:0;min-width:24px">${i + 1}</span><span>${escape(step)}</span></div>`
     ).join('')
 
-    const imageHtml = recipe.image
-      ? `<img id="recipe-img" src="${recipe.image}" alt="${escape(recipe.title)}" style="width:100%;max-height:320px;object-fit:cover;border-radius:12px;margin-bottom:24px;display:block" />`
-      : ''
-
     const html = `<!DOCTYPE html><html><head><meta charset="UTF-8">
   <style>
     body { font-family: Georgia, serif; max-width: 680px; margin: 40px auto; padding: 0 24px; color: #473528; }
     h1 { font-size: 32px; margin-bottom: 4px; }
     .subtitle { font-style: italic; color: #6A5546; margin-bottom: 16px; }
     .meta { color: #9A8C7E; font-size: 14px; margin-bottom: 24px; }
+    img { width: 100%; max-height: 320px; object-fit: cover; border-radius: 12px; margin-bottom: 24px; display: block; }
     h2 { font-size: 18px; border-bottom: 1px solid #E9EBE3; padding-bottom: 6px; margin-top: 28px; }
     table { width: 100%; border-collapse: collapse; }
     td { padding: 7px 0; border-bottom: 1px solid #E9EBE3; font-size: 15px; vertical-align: top; }
     .source { margin-top: 32px; font-size: 13px; color: #9A8C7E; font-style: italic; }
     .footer { margin-top: 40px; font-size: 12px; color: #C8D9BF; text-align: center; }
   </style></head><body>
-  ${imageHtml}
+  ${recipe.image ? `<img src="${recipe.image}" />` : ''}
   <h1>${escape(recipe.title)}</h1>
   ${recipe.subtitle ? `<div class="subtitle">${escape(recipe.subtitle)}</div>` : ''}
   <div class="meta">${[time > 0 ? `${time} Min.` : null, recipe.servings > 0 ? `${recipe.servings} Portionen` : null].filter(Boolean).join(' · ')}</div>
@@ -154,12 +148,15 @@ export default function RecipeDetail({ recipe, onBack, onEdit, onStartCook, onTo
   ${stepRows}
   ${recipe.source ? `<div class="source">Quelle: ${escape(recipe.source)}</div>` : ''}
   <div class="footer">Erstellt mit Rezeptor</div>
-  <script>window.onload = () => setTimeout(() => window.print(), 500)</script>
   </body></html>`
 
-    const printWindow = window.open('', '_blank')
-    printWindow.document.write(html)
-    printWindow.document.close()
+    const blob = new Blob([html], { type: 'text/html' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `${recipe.title}.html`
+    a.click()
+    URL.revokeObjectURL(url)
     setShowShareSheet(false)
   }
 
@@ -367,8 +364,8 @@ export default function RecipeDetail({ recipe, onBack, onEdit, onStartCook, onTo
               }}>
                 <Icon name="share" size={20} color="var(--espresso)" />
                 <div>
-                  <div style={{ fontFamily: 'var(--serif)', fontSize: 15, fontWeight: 700, color: 'var(--espresso)' }}>Als Text teilen</div>
-                  <div style={{ fontFamily: 'var(--serif)', fontSize: 13, color: 'var(--mute)', fontStyle: 'italic' }}>WhatsApp, Mail, Notizen …</div>
+                  <div style={{ fontFamily: 'var(--serif)', fontSize: 15, fontWeight: 700, color: 'var(--espresso)' }}>Als Datei speichern</div>
+                  <div style={{ fontFamily: 'var(--serif)', fontSize: 13, color: 'var(--mute)', fontStyle: 'italic' }}>HTML-Datei zum Drucken</div>
                 </div>
               </button>
               <button onClick={handleSharePdf} style={{
