@@ -387,43 +387,40 @@ export default function RecipeDetail({ recipe, onBack, onEdit, onStartCook, onTo
               Rezept <span style={{ fontStyle: 'italic' }}>teilen</span>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <button onClick={handleShareText} style={{
+                display: 'flex', alignItems: 'center', gap: 14,
+                background: 'var(--paper-2)', border: '1px solid var(--line-2)',
+                borderRadius: 14, padding: '14px 16px', cursor: 'pointer', textAlign: 'left',
+              }}>
+                <Icon name="share" size={20} color="var(--espresso)" />
+                <div>
+                  <div style={{ fontFamily: 'var(--serif)', fontSize: 15, fontWeight: 700, color: 'var(--espresso)' }}>Als Text teilen</div>
+                  <div style={{ fontFamily: 'var(--serif)', fontSize: 13, color: 'var(--mute)', fontStyle: 'italic' }}>WhatsApp, Mail, Notizen …</div>
+                </div>
+              </button>
+              <button onClick={handleSharePdf} style={{
+                display: 'flex', alignItems: 'center', gap: 14,
+                background: 'var(--paper-2)', border: '1px solid var(--line-2)',
+                borderRadius: 14, padding: '14px 16px', cursor: 'pointer', textAlign: 'left',
+              }}>
+                <Icon name="globe" size={20} color="var(--espresso)" />
+                <div>
+                  <div style={{ fontFamily: 'var(--serif)', fontSize: 15, fontWeight: 700, color: 'var(--espresso)' }}>Als HTML teilen</div>
+                  <div style={{ fontFamily: 'var(--serif)', fontSize: 13, color: 'var(--mute)', fontStyle: 'italic' }}>Dann Screenshot machen oder zu PDF umwandeln</div>
+                </div>
+              </button>
+              <button onClick={handleShareJson} style={{
+                display: 'flex', alignItems: 'center', gap: 14,
+                background: 'var(--paper-2)', border: '1px solid var(--line-2)',
+                borderRadius: 14, padding: '14px 16px', cursor: 'pointer', textAlign: 'left',
+              }}>
+                <Icon name="import" size={20} color="var(--espresso)" />
+                <div>
+                  <div style={{ fontFamily: 'var(--serif)', fontSize: 15, fontWeight: 700, color: 'var(--espresso)' }}>Als JSON teilen</div>
+                  <div style={{ fontFamily: 'var(--serif)', fontSize: 13, color: 'var(--mute)', fontStyle: 'italic' }}>Für den Import in Rezeptor</div>
+                </div>
+              </button>
             </div>
           </div>
-      )}
         </div>
-      );
-}<div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-        <button onClick={handleShareText} style={{
-          display: 'flex', alignItems: 'center', gap: 14,
-          background: 'var(--paper-2)', border: '1px solid var(--line-2)',
-          borderRadius: 14, padding: '14px 16px', cursor: 'pointer', textAlign: 'left',
-        }}>
-          <Icon name="share" size={20} color="var(--espresso)" />
-          <div>
-            <div style={{ fontFamily: 'var(--serif)', fontSize: 15, fontWeight: 700, color: 'var(--espresso)' }}>Als Text teilen</div>
-            <div style={{ fontFamily: 'var(--serif)', fontSize: 13, color: 'var(--mute)', fontStyle: 'italic' }}>WhatsApp, Mail, Notizen …</div>
-          </div>
-        </button>
-        <button onClick={handleSharePdf} style={{
-          display: 'flex', alignItems: 'center', gap: 14,
-          background: 'var(--paper-2)', border: '1px solid var(--line-2)',
-          borderRadius: 14, padding: '14px 16px', cursor: 'pointer', textAlign: 'left',
-        }}>
-          <Icon name="globe" size={20} color="var(--espresso)" />
-          <div>
-            <div style={{ fontFamily: 'var(--serif)', fontSize: 15, fontWeight: 700, color: 'var(--espresso)' }}>Als HTML teilen</div>
-            <div style={{ fontFamily: 'var(--serif)', fontSize: 13, color: 'var(--mute)', fontStyle: 'italic' }}>Dann Screenshot machen oder zu PDF umwandeln</div>
-          </div>
-        </button>
-        <button onClick={handleShareJson} style={{
-          display: 'flex', alignItems: 'center', gap: 14,
-          background: 'var(--paper-2)', border: '1px solid var(--line-2)',
-          borderRadius: 14, padding: '14px 16px', cursor: 'pointer', textAlign: 'left',
-        }}>
-          <Icon name="import" size={20} color="var(--espresso)" />
-          <div>
-            <div style={{ fontFamily: 'var(--serif)', fontSize: 15, fontWeight: 700, color: 'var(--espresso)' }}>Als JSON teilen</div>
-            <div style={{ fontFamily: 'var(--serif)', fontSize: 13, color: 'var(--mute)', fontStyle: 'italic' }}>Für den Import in Rezeptor</div>
-          </div>
-        </button>
-      </div>
+      )}
