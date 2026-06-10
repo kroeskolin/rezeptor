@@ -424,3 +424,6 @@ export default function RecipeDetail({ recipe, onBack, onEdit, onStartCook, onTo
           </div>
         </div>
       )}
+    </div>
+  );
+}
