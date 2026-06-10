@@ -93,7 +93,6 @@ export default function RecipeDetail({ recipe, onBack, onEdit, onStartCook, onTo
     const stepLines = steps.map((s, i) => `${i + 1}. ${s}`).join('\n\n')
 
     const text = [
-      recipe.title,
       recipe.subtitle ? `(${recipe.subtitle})` : null,
       '',
       time > 0 ? `⏱ ${time} Min.` : null,
@@ -106,70 +105,61 @@ export default function RecipeDetail({ recipe, onBack, onEdit, onStartCook, onTo
       stepLines,
       '',
       recipe.source ? `Quelle: ${recipe.source}` : null,
+      '',
+      `Sieh dir dieses Rezept aus meiner Rezeptor-App an: ${recipe.title}. Viel Spaß beim Ausprobieren! 🍳`,
     ].filter(Boolean).join('\n')
 
     await navigator.share({ title: recipe.title, text })
     setShowShareSheet(false)
   }
 
-  const handleSharePdf = async () => {
-    const { jsPDF } = await import('jspdf')
-    const doc = new jsPDF({ unit: 'mm', format: 'a4' })
+  const handleSharePdf = () => {
+    const escape = (str) => String(str || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
 
-    const pageW = 210
-    const margin = 20
-    const contentW = pageW - margin * 2
-    let y = 20
+    const ingredientRows = ingredients.map(ing =>
+      `<tr><td>${escape(ing.name)}</td><td style="text-align:right;color:#9A8C7E;padding-left:16px">${escape(ing.amount)}${ing.unit ? ' ' + escape(ing.unit) : ''}</td></tr>`
+    ).join('')
 
-    const addText = (text, fontSize, isBold = false, color = [71, 53, 40]) => {
-      doc.setFontSize(fontSize)
-      doc.setTextColor(...color)
-      doc.setFont('helvetica', isBold ? 'bold' : 'normal')
-      const lines = doc.splitTextToSize(text, contentW)
-      lines.forEach(line => {
-        if (y > 270) { doc.addPage(); y = 20 }
-        doc.text(line, margin, y)
-        y += fontSize * 0.45
-      })
-      y += 2
-    }
+    const stepRows = steps.map((step, i) =>
+      `<div style="display:flex;gap:16px;margin-bottom:12px"><span style="font-weight:700;color:#C8D9BF;font-size:18px;flex-shrink:0;min-width:24px">${i + 1}</span><span>${escape(step)}</span></div>`
+    ).join('')
 
-    addText(recipe.title, 22, true)
-    if (recipe.subtitle) addText(recipe.subtitle, 13, false, [106, 85, 70])
-    y += 4
+    const imageHtml = recipe.image
+      ? `<img id="recipe-img" src="${recipe.image}" alt="${escape(recipe.title)}" style="width:100%;max-height:320px;object-fit:cover;border-radius:12px;margin-bottom:24px;display:block" />`
+      : ''
 
-    const meta = [time > 0 ? `${time} Min.` : null, recipe.servings > 0 ? `${recipe.servings} Portionen` : null].filter(Boolean).join('  ·  ')
-    if (meta) addText(meta, 11, false, [154, 140, 126])
-    y += 4
+    const html = `<!DOCTYPE html><html><head><meta charset="UTF-8">
+  <style>
+    body { font-family: Georgia, serif; max-width: 680px; margin: 40px auto; padding: 0 24px; color: #473528; }
+    h1 { font-size: 32px; margin-bottom: 4px; }
+    .subtitle { font-style: italic; color: #6A5546; margin-bottom: 16px; }
+    .meta { color: #9A8C7E; font-size: 14px; margin-bottom: 24px; }
+    h2 { font-size: 18px; border-bottom: 1px solid #E9EBE3; padding-bottom: 6px; margin-top: 28px; }
+    table { width: 100%; border-collapse: collapse; }
+    td { padding: 7px 0; border-bottom: 1px solid #E9EBE3; font-size: 15px; vertical-align: top; }
+    .source { margin-top: 32px; font-size: 13px; color: #9A8C7E; font-style: italic; }
+    .footer { margin-top: 40px; font-size: 12px; color: #C8D9BF; text-align: center; }
+  </style></head><body>
+  ${imageHtml}
+  <h1>${escape(recipe.title)}</h1>
+  ${recipe.subtitle ? `<div class="subtitle">${escape(recipe.subtitle)}</div>` : ''}
+  <div class="meta">${[time > 0 ? `${time} Min.` : null, recipe.servings > 0 ? `${recipe.servings} Portionen` : null].filter(Boolean).join(' · ')}</div>
+  <h2>Zutaten</h2>
+  <table>${ingredientRows}</table>
+  <h2>Zubereitung</h2>
+  ${stepRows}
+  ${recipe.source ? `<div class="source">Quelle: ${escape(recipe.source)}</div>` : ''}
+  <div class="footer">Erstellt mit Rezeptor</div>
+  <script>window.onload = () => setTimeout(() => window.print(), 500)</script>
+  </body></html>`
 
-    addText('Zutaten', 14, true)
-    y += 1
-    ingredients.forEach(ing => {
-      const line = `${ing.name}${ing.amount ? `:  ${ing.amount}${ing.unit ? ' ' + ing.unit : ''}` : ''}`
-      addText(line, 11)
-    })
-    y += 4
-
-    addText('Zubereitung', 14, true)
-    y += 1
-    steps.forEach((step, i) => addText(`${i + 1}.  ${step}`, 11))
-    y += 4
-
-    if (recipe.source) addText(`Quelle: ${recipe.source}`, 10, false, [154, 140, 126])
-
-    const pdfBlob = doc.output('blob')
-    const file = new File([pdfBlob], `${recipe.title}.pdf`, { type: 'application/pdf' })
-
-    if (navigator.canShare?.({ files: [file] })) {
-      await navigator.share({ files: [file], title: recipe.title })
-    } else {
-      const url = URL.createObjectURL(pdfBlob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `${recipe.title}.pdf`
-      a.click()
-      URL.revokeObjectURL(url)
-    }
+    const printWindow = window.open('', '_blank')
+    printWindow.document.write(html)
+    printWindow.document.close()
     setShowShareSheet(false)
   }
 
@@ -220,11 +210,13 @@ export default function RecipeDetail({ recipe, onBack, onEdit, onStartCook, onTo
               <button className="detail-ctrl-btn-white" onClick={onEdit}>
                 <Icon name="pencil" size={15} color="var(--espresso)" strokeWidth={1.8} />
               </button>
+            </div>
+            <div className="detail-ctrl-group">
               <button className="detail-ctrl-btn-white" onClick={e => { e.stopPropagation(); setShowShareSheet(true); }}>
                 <Icon name="share" size={15} color="var(--espresso)" strokeWidth={1.8} />
               </button>
+              <HeartBtn recipe={recipe} onToggle={onToggleFavorite} />
             </div>
-            <HeartBtn recipe={recipe} onToggle={onToggleFavorite} />
           </div>
           {(category || tags[0]) && (
             <div className="recipe-detail-eyebrow" style={{ color: t.ink }}>
