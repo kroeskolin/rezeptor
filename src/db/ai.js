@@ -228,3 +228,108 @@ Regeln:
     const recipes = JSON.parse(clean)
     return Array.isArray(recipes) ? recipes : [recipes]
 }
+
+// Hilfsfunktion: YouTube-URL erkennen und Video-ID extrahieren
+export function extractYouTubeId(url) {
+  const match = url.match(
+    /(?:youtube\.com\/(?:watch\?v=|shorts\/|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/
+  )
+  return match?.[1] || null
+}
+
+export async function extractRecipeFromYoutube(url) {
+  const videoId = extractYouTubeId(url)
+  if (!videoId) throw new Error('Keine gültige YouTube-URL.')
+
+  // Videoseite über Worker laden
+  const proxyUrl = `https://rezeptor-proxy.brr-kroeske.workers.dev/fetch?url=${encodeURIComponent(
+    `https://www.youtube.com/watch?v=${videoId}`
+  )}`
+  const response = await fetch(proxyUrl)
+  const html = await response.text()
+
+  // Titel aus <title>-Tag
+  const titleMatch = html.match(/<title>([^<]*)<\/title>/)
+  const pageTitle = titleMatch?.[1]?.replace(' - YouTube', '').trim() || ''
+
+  // Beschreibung: im HTML als "description":{"simpleText":"..."} oder attributedDescription
+  let description = ''
+  const descMatch = html.match(/"description":\{"simpleText":"([\s\S]*?)"\}/)
+  if (descMatch) {
+    description = descMatch[1].replace(/\\n/g, '\n').replace(/\\"/g, '"')
+  }
+  // Fallback: shortDescription
+  if (!description) {
+    const shortMatch = html.match(/"shortDescription":"([\s\S]*?)",\s*"isCrawlable"/)
+    if (shortMatch) {
+      description = shortMatch[1].replace(/\\n/g, '\n').replace(/\\"/g, '"')
+    }
+  }
+
+  // Thumbnail als Bild
+  let imageBase64 = null
+  try {
+    const thumbUrl = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`
+    const imgProxy = `https://rezeptor-proxy.brr-kroeske.workers.dev/?url=${encodeURIComponent(thumbUrl)}`
+    const imgResponse = await fetch(imgProxy)
+    const blob = await imgResponse.blob()
+    imageBase64 = await new Promise(resolve => {
+      const reader = new FileReader()
+      reader.onloadend = () => resolve(reader.result)
+      reader.readAsDataURL(blob)
+    })
+  } catch (e) {
+    console.log('Thumbnail konnte nicht geladen werden:', e)
+  }
+
+  // Prüfen ob Beschreibung überhaupt Rezept-Hinweise enthält
+  const hasRecipeHints = /\d+\s*(g|kg|ml|l|EL|TL|Stück|Zehe|Prise|Bund|cup|oz)\b/i.test(description)
+    || /zutaten|ingredients|rezept|recipe/i.test(description)
+
+  if (!description || !hasRecipeHints) {
+    return {
+      noRecipeFound: true,
+      title: pageTitle,
+      description,
+      imageBase64,
+      sourceUrl: url,
+    }
+  }
+
+  // Gemini mit Titel + Beschreibung
+  const prompt = `
+Du bist ein Kochbuch-Assistent. Extrahiere aus dieser YouTube-Videobeschreibung ein strukturiertes Rezept.
+Videotitel: ${pageTitle}
+
+Beschreibung:
+${description.slice(0, 8000)}
+
+Antworte NUR mit einem JSON-Objekt, ohne Markdown-Backticks, ohne Erklärungen.
+{
+  "title": "Rezeptname",
+  "subtitle": "Kurze Beschreibung oder leer",
+  "servings": 4,
+  "prepTime": 10,
+  "cookTime": 20,
+  "ingredients": [{ "name": "Zutat", "amount": "200", "unit": "g" }],
+  "steps": "<p>Schritt 1</p><p>Schritt 2</p>",
+  "confidence": "high"
+}
+
+Regeln:
+- confidence ist "high" wenn Zutaten UND Zubereitung klar erkennbar sind, sonst "low"
+- steps ist HTML mit <p> Tags
+- prepTime und cookTime sind Zahlen in Minuten
+- Antworte ausschließlich mit dem JSON
+`
+  const result = await generateContent(prompt)
+  const clean = result.replace(/```json|```/g, '').trim()
+  const recipe = JSON.parse(clean)
+
+  return {
+    ...recipe,
+    noRecipeFound: recipe.confidence === 'low' && (!recipe.ingredients?.length),
+    imageBase64,
+    sourceUrl: url,
+  }
+}
