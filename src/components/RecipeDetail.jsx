@@ -160,6 +160,36 @@ export default function RecipeDetail({ recipe, onBack, onEdit, onStartCook, onTo
     setShowShareSheet(false)
   }
 
+  const handleShareJson = async () => {
+    const exportData = {
+      title: recipe.title,
+      subtitle: recipe.subtitle || '',
+      servings: recipe.servings,
+      prepTime: recipe.prepTime,
+      cookTime: recipe.cookTime,
+      ingredients: recipe.ingredients,
+      steps: recipe.steps,
+      tags: recipe.tags,
+      source: recipe.source || '',
+      image: recipe.image || null,
+    }
+    const json = JSON.stringify([exportData], null, 2)
+    const blob = new Blob([json], { type: 'application/json' })
+    const file = new File([blob], `${recipe.title}.json`, { type: 'application/json' })
+
+    if (navigator.canShare?.({ files: [file] })) {
+      await navigator.share({ files: [file], title: recipe.title })
+    } else {
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `${recipe.title}.json`
+      a.click()
+      URL.revokeObjectURL(url)
+    }
+    setShowShareSheet(false)
+  }
+
   return (
     <div className="recipe-detail">
       {hasPhoto ? (
@@ -357,32 +387,43 @@ export default function RecipeDetail({ recipe, onBack, onEdit, onStartCook, onTo
               Rezept <span style={{ fontStyle: 'italic' }}>teilen</span>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              <button onClick={handleShareText} style={{
-                display: 'flex', alignItems: 'center', gap: 14,
-                background: 'var(--paper-2)', border: '1px solid var(--line-2)',
-                borderRadius: 14, padding: '14px 16px', cursor: 'pointer', textAlign: 'left',
-              }}>
-                <Icon name="share" size={20} color="var(--espresso)" />
-                <div>
-                  <div style={{ fontFamily: 'var(--serif)', fontSize: 15, fontWeight: 700, color: 'var(--espresso)' }}>Als Datei speichern</div>
-                  <div style={{ fontFamily: 'var(--serif)', fontSize: 13, color: 'var(--mute)', fontStyle: 'italic' }}>HTML-Datei zum Drucken</div>
-                </div>
-              </button>
-              <button onClick={handleSharePdf} style={{
-                display: 'flex', alignItems: 'center', gap: 14,
-                background: 'var(--paper-2)', border: '1px solid var(--line-2)',
-                borderRadius: 14, padding: '14px 16px', cursor: 'pointer', textAlign: 'left',
-              }}>
-                <Icon name="download" size={20} color="var(--espresso)" />
-                <div>
-                  <div style={{ fontFamily: 'var(--serif)', fontSize: 15, fontWeight: 700, color: 'var(--espresso)' }}>Als PDF teilen</div>
-                  <div style={{ fontFamily: 'var(--serif)', fontSize: 13, color: 'var(--mute)', fontStyle: 'italic' }}>Drucken oder speichern</div>
-                </div>
-              </button>
             </div>
           </div>
-        </div>
       )}
-    </div>
-  );
-}
+        </div>
+      );
+}<div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <button onClick={handleShareText} style={{
+          display: 'flex', alignItems: 'center', gap: 14,
+          background: 'var(--paper-2)', border: '1px solid var(--line-2)',
+          borderRadius: 14, padding: '14px 16px', cursor: 'pointer', textAlign: 'left',
+        }}>
+          <Icon name="share" size={20} color="var(--espresso)" />
+          <div>
+            <div style={{ fontFamily: 'var(--serif)', fontSize: 15, fontWeight: 700, color: 'var(--espresso)' }}>Als Text teilen</div>
+            <div style={{ fontFamily: 'var(--serif)', fontSize: 13, color: 'var(--mute)', fontStyle: 'italic' }}>WhatsApp, Mail, Notizen …</div>
+          </div>
+        </button>
+        <button onClick={handleSharePdf} style={{
+          display: 'flex', alignItems: 'center', gap: 14,
+          background: 'var(--paper-2)', border: '1px solid var(--line-2)',
+          borderRadius: 14, padding: '14px 16px', cursor: 'pointer', textAlign: 'left',
+        }}>
+          <Icon name="globe" size={20} color="var(--espresso)" />
+          <div>
+            <div style={{ fontFamily: 'var(--serif)', fontSize: 15, fontWeight: 700, color: 'var(--espresso)' }}>Als HTML teilen</div>
+            <div style={{ fontFamily: 'var(--serif)', fontSize: 13, color: 'var(--mute)', fontStyle: 'italic' }}>Dann Screenshot machen oder zu PDF umwandeln</div>
+          </div>
+        </button>
+        <button onClick={handleShareJson} style={{
+          display: 'flex', alignItems: 'center', gap: 14,
+          background: 'var(--paper-2)', border: '1px solid var(--line-2)',
+          borderRadius: 14, padding: '14px 16px', cursor: 'pointer', textAlign: 'left',
+        }}>
+          <Icon name="import" size={20} color="var(--espresso)" />
+          <div>
+            <div style={{ fontFamily: 'var(--serif)', fontSize: 15, fontWeight: 700, color: 'var(--espresso)' }}>Als JSON teilen</div>
+            <div style={{ fontFamily: 'var(--serif)', fontSize: 13, color: 'var(--mute)', fontStyle: 'italic' }}>Für den Import in Rezeptor</div>
+          </div>
+        </button>
+      </div>
