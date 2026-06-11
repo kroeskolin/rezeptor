@@ -252,13 +252,12 @@ export async function extractRecipeFromYoutube(url) {
   const titleMatch = html.match(/<title>([^<]*)<\/title>/)
   const pageTitle = titleMatch?.[1]?.replace(' - YouTube', '').trim() || ''
 
-  // Beschreibung: im HTML als "description":{"simpleText":"..."} oder attributedDescription
+  // Beschreibung
   let description = ''
   const descMatch = html.match(/"description":\{"simpleText":"([\s\S]*?)"\}/)
   if (descMatch) {
     description = descMatch[1].replace(/\\n/g, '\n').replace(/\\"/g, '"')
   }
-  // Fallback: shortDescription
   if (!description) {
     const shortMatch = html.match(/"shortDescription":"([\s\S]*?)",\s*"isCrawlable"/)
     if (shortMatch) {
@@ -266,7 +265,7 @@ export async function extractRecipeFromYoutube(url) {
     }
   }
 
-  // Thumbnail als Bild
+  // Thumbnail
   let imageBase64 = null
   try {
     const thumbUrl = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`
@@ -282,27 +281,56 @@ export async function extractRecipeFromYoutube(url) {
     console.log('Thumbnail konnte nicht geladen werden:', e)
   }
 
-  // Prüfen ob Beschreibung überhaupt Rezept-Hinweise enthält
-  const hasRecipeHints = /\d+\s*(g|kg|ml|l|EL|TL|Stück|Zehe|Prise|Bund|cup|oz)\b/i.test(description)
-    || /zutaten|ingredients|rezept|recipe/i.test(description)
+  const hasRecipeHints = (text) =>
+    /\d+\s*(g|kg|ml|l|EL|TL|Stück|Zehe|Prise|Bund|cup|oz)\b/i.test(text)
+    || /zutaten|ingredients|rezept|recipe/i.test(text)
 
-  if (!description || !hasRecipeHints) {
+  // Quelle 1: Beschreibung prüfen
+  let sourceText = ''
+  let sourceLabel = ''
+  if (description && hasRecipeHints(description)) {
+    sourceText = description
+    sourceLabel = 'Videobeschreibung'
+  }
+
+  // Quelle 2: Erster Kommentar prüfen, falls Beschreibung nichts brachte
+  let topComments = []
+  if (!sourceText) {
+    try {
+      const commentProxy = `https://rezeptor-proxy.brr-kroeske.workers.dev/comment?videoId=${videoId}`
+      const commentResponse = await fetch(commentProxy)
+      const commentData = await commentResponse.json()
+      topComments = commentData.comments || []
+
+      const recipeComment = topComments.find(c => hasRecipeHints(c))
+      if (recipeComment) {
+        sourceText = recipeComment
+        sourceLabel = 'Kommentar'
+      }
+    } catch (e) {
+      console.log('Kommentare konnten nicht geladen werden:', e)
+    }
+  }
+
+  // Nichts gefunden -> Dialog im Frontend
+  if (!sourceText) {
     return {
       noRecipeFound: true,
       title: pageTitle,
-      description,
+      description, // für "Trotzdem versuchen" mit der Beschreibung
+      topComments, // falls wir später auch das anbieten wollen
       imageBase64,
       sourceUrl: url,
     }
   }
 
-  // Gemini mit Titel + Beschreibung
+  // Gemini mit Titel + gefundenem Text
   const prompt = `
-Du bist ein Kochbuch-Assistent. Extrahiere aus dieser YouTube-Videobeschreibung ein strukturiertes Rezept.
+Du bist ein Kochbuch-Assistent. Extrahiere aus diesem Text (Quelle: ${sourceLabel} eines YouTube-Videos) ein strukturiertes Rezept.
 Videotitel: ${pageTitle}
 
-Beschreibung:
-${description.slice(0, 8000)}
+Text:
+${sourceText.slice(0, 8000)}
 
 Antworte NUR mit einem JSON-Objekt, ohne Markdown-Backticks, ohne Erklärungen.
 {
@@ -329,6 +357,7 @@ Regeln:
   return {
     ...recipe,
     noRecipeFound: recipe.confidence === 'low' && (!recipe.ingredients?.length),
+    description, // falls "Trotzdem versuchen" trotzdem noch gebraucht wird
     imageBase64,
     sourceUrl: url,
   }
