@@ -231,101 +231,103 @@ Regeln:
 
 // Hilfsfunktion: YouTube-URL erkennen und Video-ID extrahieren
 export function extractYouTubeId(url) {
-  const match = url.match(
-    /(?:youtube\.com\/(?:watch\?v=|shorts\/|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/
-  )
-  return match?.[1] || null
+    const match = url.match(
+        /(?:youtube\.com\/(?:watch\?v=|shorts\/|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/
+    )
+    return match?.[1] || null
 }
 
 export async function extractRecipeFromYoutube(url) {
-  const videoId = extractYouTubeId(url)
-  if (!videoId) throw new Error('Keine gültige YouTube-URL.')
+    const videoId = extractYouTubeId(url)
+    if (!videoId) throw new Error('Keine gültige YouTube-URL.')
 
-  // Videoseite über Worker laden
-  const proxyUrl = `https://rezeptor-proxy.brr-kroeske.workers.dev/fetch?url=${encodeURIComponent(
-    `https://www.youtube.com/watch?v=${videoId}`
-  )}`
-  const response = await fetch(proxyUrl)
-  const html = await response.text()
+    // Videoseite über Worker laden
+    const proxyUrl = `https://rezeptor-proxy.brr-kroeske.workers.dev/fetch?url=${encodeURIComponent(
+        `https://www.youtube.com/watch?v=${videoId}`
+    )}`
+    const response = await fetch(proxyUrl)
+    const html = await response.text()
 
-  // Titel aus <title>-Tag
-  const titleMatch = html.match(/<title>([^<]*)<\/title>/)
-  const pageTitle = titleMatch?.[1]?.replace(' - YouTube', '').trim() || ''
+    // Titel aus <title>-Tag
+    const titleMatch = html.match(/<title>([^<]*)<\/title>/)
+    const pageTitle = titleMatch?.[1]?.replace(' - YouTube', '').trim() || ''
 
-  // Beschreibung
-  let description = ''
-  const descMatch = html.match(/"description":\{"simpleText":"([\s\S]*?)"\}/)
-  if (descMatch) {
-    description = descMatch[1].replace(/\\n/g, '\n').replace(/\\"/g, '"')
-  }
-  if (!description) {
-    const shortMatch = html.match(/"shortDescription":"([\s\S]*?)",\s*"isCrawlable"/)
-    if (shortMatch) {
-      description = shortMatch[1].replace(/\\n/g, '\n').replace(/\\"/g, '"')
+    // Beschreibung
+    let description = ''
+    const descMatch = html.match(/"description":\{"simpleText":"([\s\S]*?)"\}/)
+    if (descMatch) {
+        description = descMatch[1].replace(/\\n/g, '\n').replace(/\\"/g, '"')
     }
-  }
+    if (!description) {
+        const shortMatch = html.match(/"shortDescription":"([\s\S]*?)",\s*"isCrawlable"/)
+        if (shortMatch) {
+            description = shortMatch[1].replace(/\\n/g, '\n').replace(/\\"/g, '"')
+        }
+    }
 
-  // Thumbnail
-  let imageBase64 = null
-  try {
-    const thumbUrl = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`
-    const imgProxy = `https://rezeptor-proxy.brr-kroeske.workers.dev/?url=${encodeURIComponent(thumbUrl)}`
-    const imgResponse = await fetch(imgProxy)
-    const blob = await imgResponse.blob()
-    imageBase64 = await new Promise(resolve => {
-      const reader = new FileReader()
-      reader.onloadend = () => resolve(reader.result)
-      reader.readAsDataURL(blob)
-    })
-  } catch (e) {
-    console.log('Thumbnail konnte nicht geladen werden:', e)
-  }
+    console.log(description)
 
-  const hasRecipeHints = (text) =>
-    /\d+\s*(g|kg|ml|l|EL|TL|Stück|Zehe|Prise|Bund|cup|oz)\b/i.test(text)
-    || /zutaten|ingredients|rezept|recipe/i.test(text)
-
-  // Quelle 1: Beschreibung prüfen
-  let sourceText = ''
-  let sourceLabel = ''
-  if (description && hasRecipeHints(description)) {
-    sourceText = description
-    sourceLabel = 'Videobeschreibung'
-  }
-
-  // Quelle 2: Erster Kommentar prüfen, falls Beschreibung nichts brachte
-  let topComments = []
-  if (!sourceText) {
+    // Thumbnail
+    let imageBase64 = null
     try {
-      const commentProxy = `https://rezeptor-proxy.brr-kroeske.workers.dev/comment?videoId=${videoId}`
-      const commentResponse = await fetch(commentProxy)
-      const commentData = await commentResponse.json()
-      topComments = commentData.comments || []
-
-      const recipeComment = topComments.find(c => hasRecipeHints(c))
-      if (recipeComment) {
-        sourceText = recipeComment
-        sourceLabel = 'Kommentar'
-      }
+        const thumbUrl = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`
+        const imgProxy = `https://rezeptor-proxy.brr-kroeske.workers.dev/?url=${encodeURIComponent(thumbUrl)}`
+        const imgResponse = await fetch(imgProxy)
+        const blob = await imgResponse.blob()
+        imageBase64 = await new Promise(resolve => {
+            const reader = new FileReader()
+            reader.onloadend = () => resolve(reader.result)
+            reader.readAsDataURL(blob)
+        })
     } catch (e) {
-      console.log('Kommentare konnten nicht geladen werden:', e)
+        console.log('Thumbnail konnte nicht geladen werden:', e)
     }
-  }
 
-  // Nichts gefunden -> Dialog im Frontend
-  if (!sourceText) {
-    return {
-      noRecipeFound: true,
-      title: pageTitle,
-      description, // für "Trotzdem versuchen" mit der Beschreibung
-      topComments, // falls wir später auch das anbieten wollen
-      imageBase64,
-      sourceUrl: url,
+    const hasRecipeHints = (text) =>
+        /\d+\s*(g|kg|ml|l|EL|TL|tbsp|tsp|Stück|Zehe|Prise|Bund|cup|oz|lb)\b/i.test(text)
+        || /zutaten|ingredients|rezept|recipe/i.test(text)
+
+    // Quelle 1: Beschreibung prüfen
+    let sourceText = ''
+    let sourceLabel = ''
+    if (description && hasRecipeHints(description)) {
+        sourceText = description
+        sourceLabel = 'Videobeschreibung'
     }
-  }
 
-  // Gemini mit Titel + gefundenem Text
-  const prompt = `
+    // Quelle 2: Erster Kommentar prüfen, falls Beschreibung nichts brachte
+    let topComments = []
+    if (!sourceText) {
+        try {
+            const commentProxy = `https://rezeptor-proxy.brr-kroeske.workers.dev/comment?videoId=${videoId}`
+            const commentResponse = await fetch(commentProxy)
+            const commentData = await commentResponse.json()
+            topComments = commentData.comments || []
+
+            const recipeComment = topComments.find(c => hasRecipeHints(c))
+            if (recipeComment) {
+                sourceText = recipeComment
+                sourceLabel = 'Kommentar'
+            }
+        } catch (e) {
+            console.log('Kommentare konnten nicht geladen werden:', e)
+        }
+    }
+
+    // Nichts gefunden -> Dialog im Frontend
+    if (!sourceText) {
+        return {
+            noRecipeFound: true,
+            title: pageTitle,
+            description, // für "Trotzdem versuchen" mit der Beschreibung
+            topComments, // falls wir später auch das anbieten wollen
+            imageBase64,
+            sourceUrl: url,
+        }
+    }
+
+    // Gemini mit Titel + gefundenem Text
+    const prompt = `
 Du bist ein Kochbuch-Assistent. Extrahiere aus diesem Text (Quelle: ${sourceLabel} eines YouTube-Videos) ein strukturiertes Rezept.
 Videotitel: ${pageTitle}
 
@@ -350,15 +352,15 @@ Regeln:
 - prepTime und cookTime sind Zahlen in Minuten
 - Antworte ausschließlich mit dem JSON
 `
-  const result = await generateContent(prompt)
-  const clean = result.replace(/```json|```/g, '').trim()
-  const recipe = JSON.parse(clean)
+    const result = await generateContent(prompt)
+    const clean = result.replace(/```json|```/g, '').trim()
+    const recipe = JSON.parse(clean)
 
-  return {
-    ...recipe,
-    noRecipeFound: recipe.confidence === 'low' && (!recipe.ingredients?.length),
-    description, // falls "Trotzdem versuchen" trotzdem noch gebraucht wird
-    imageBase64,
-    sourceUrl: url,
-  }
+    return {
+        ...recipe,
+        noRecipeFound: recipe.confidence === 'low' && (!recipe.ingredients?.length),
+        description, // falls "Trotzdem versuchen" trotzdem noch gebraucht wird
+        imageBase64,
+        sourceUrl: url,
+    }
 }
