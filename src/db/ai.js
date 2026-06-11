@@ -265,7 +265,7 @@ export async function extractRecipeFromYoutube(url) {
         }
     }
 
-    console.log(description)
+    console.log('YT description:', description)
 
     // Thumbnail
     let imageBase64 = null
