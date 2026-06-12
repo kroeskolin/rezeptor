@@ -426,10 +426,8 @@ export default function AddRecipe({ onSave, onClose }) {
       { icon: 'camera', title: 'Foto', hint: 'Ein oder mehrere Fotos auswählen', tone: 'sage', onClick: () => photoInputRef.current?.click() },
       { icon: 'mic', title: 'Diktieren', hint: 'Einfach einsprechen', tone: 'rose', onClick: () => setMode('voice') },
       { icon: 'pen', title: 'Manuell', hint: 'Von Hand eintippen', tone: 'paper-2', onClick: () => setMode('manual') },
-      { icon: 'import', title: 'JSON-Datei', hint: 'Aus Rezeptor exportiertes Rezept', tone: 'paper-2', onClick: () => jsonInputRef.current?.click() },
-    ]
-    const tileBg = { sage: 'var(--sage)', rose: 'var(--rose)', 'paper-2': 'var(--paper-2)' }
-
+      { icon: 'import', title: 'JSON-Datei', hint: 'Aus Rezeptor exportiertes Rezept', tone: 'tint', onClick: () => jsonInputRef.current?.click() },]
+    const tileBg = { sage: 'var(--sage)', rose: 'var(--rose)', 'paper-2': 'var(--paper-2)', tint: 'var(--tint-3-bg)' }
     return (
       <div className="add-recipe">
         <div className="add-recipe-header">
