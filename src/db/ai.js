@@ -277,6 +277,9 @@ export async function extractRecipeFromYoutube(url) {
             }
         }
     }
+
+    const idx1 = html.indexOf('ytInitialPlayerResponse')
+    console.log('Kontext um ytInitialPlayerResponse:', html.slice(idx1, idx1 + 60))
     console.log('YT description:', description)
 
     // Thumbnail
