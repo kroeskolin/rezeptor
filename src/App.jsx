@@ -15,6 +15,8 @@ import IngredientSuggest from './components/IngredientSuggest'
 import SearchDrawer from './components/SearchDrawer'
 import { loadTheme } from './useTheme'
 import SplashScreen from './components/SplashScreen'
+import { decompressFromEncodedURIComponent } from 'lz-string'
+import { addRecipe } from './db/recipes'
 
 loadTheme()
 
@@ -30,6 +32,7 @@ function App() {
   const [todayMode, setTodayMode] = useState(null)
   const [showSplash, setShowSplash] = useState(true)
   const [isOnMainPage, setIsOnMainPage] = useState(true)
+  const [importRecipe, setImportRecipe] = useState(null)
 
   useEffect(() => {
     getAllRecipes().then(setRecipes)
@@ -46,6 +49,25 @@ function App() {
         setIsOnMainPage(false)
         window.history.replaceState({}, '', '/')
       }
+    }
+  }, [])
+
+  useEffect(() => {
+    const hash = window.location.hash
+    if (hash.startsWith('#import=')) {
+      try {
+        const compressed = hash.slice('#import='.length)
+        const json = decompressFromEncodedURIComponent(compressed)
+        const recipe = JSON.parse(json)
+        if (recipe && recipe.title) {
+          setImportRecipe(recipe)
+          setIsOnMainPage(false)
+        }
+      } catch (e) {
+        console.error('Import-Link konnte nicht gelesen werden:', e)
+      }
+      // Hash entfernen, damit Reload nicht erneut importiert
+      window.history.replaceState({}, '', window.location.pathname)
     }
   }, [])
 
@@ -86,6 +108,68 @@ function App() {
   }
 
   const renderContent = () => {
+    if (importRecipe) {
+      return (
+        <div style={{ padding: '60px 22px 0', display: 'flex', flexDirection: 'column', gap: 20 }}>
+          <h1 className="display" style={{ fontSize: 30, color: 'var(--espresso)', lineHeight: 1.1, fontFamily: 'var(--serif)' }}>
+            Rezept <span style={{ fontStyle: 'italic', fontWeight: 600 }}>erhalten</span>
+          </h1>
+          <div style={{
+            background: 'var(--card)', border: '1.5px solid var(--line-2)',
+            borderRadius: 16, padding: 18,
+          }}>
+            <div style={{ fontFamily: 'var(--serif)', fontWeight: 700, fontSize: 19, color: 'var(--espresso)' }}>
+              {importRecipe.title}
+            </div>
+            {importRecipe.subtitle && (
+              <div style={{ fontFamily: 'var(--serif)', fontSize: 14, color: 'var(--mute)', fontStyle: 'italic', marginTop: 4 }}>
+                {importRecipe.subtitle}
+              </div>
+            )}
+            <div style={{ fontFamily: 'var(--serif)', fontSize: 13.5, color: 'var(--cocoa)', marginTop: 8 }}>
+              {importRecipe.ingredients?.length || 0} Zutaten
+              {(importRecipe.prepTime || importRecipe.cookTime) ? ` · ${(importRecipe.prepTime || 0) + (importRecipe.cookTime || 0)} Min.` : ''}
+            </div>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <button
+              onClick={async () => {
+                await addRecipe({
+                  title: importRecipe.title || '',
+                  subtitle: importRecipe.subtitle || '',
+                  servings: Number(importRecipe.servings) || 0,
+                  prepTime: Number(importRecipe.prepTime) || 0,
+                  cookTime: Number(importRecipe.cookTime) || 0,
+                  ingredients: importRecipe.ingredients || [],
+                  steps: importRecipe.steps || '',
+                  tags: importRecipe.tags || [],
+                  source: importRecipe.source || 'Geteilt via Rezeptor',
+                  image: null,
+                })
+                setImportRecipe(null)
+                await handleSave()
+              }}
+              style={{
+                background: 'var(--green)', color: 'var(--paper)', border: 'none',
+                borderRadius: 14, padding: '15px', fontSize: 16, fontWeight: 700,
+                fontFamily: 'var(--serif)', cursor: 'pointer',
+              }}>
+              Rezept importieren
+            </button>
+            <button
+              onClick={() => { setImportRecipe(null); goToMainPage() }}
+              style={{
+                background: 'var(--card)', color: 'var(--cocoa)', border: '1px solid var(--line-2)',
+                borderRadius: 14, padding: '15px', fontSize: 15,
+                fontFamily: 'var(--serif)', cursor: 'pointer',
+              }}>
+              Abbrechen
+            </button>
+          </div>
+        </div>
+      )
+    }
+    
     if (showAddRecipe) {
       return <AddRecipe onSave={handleSave} onClose={() => { setShowAddRecipe(false); goToMainPage() }} />
     }
