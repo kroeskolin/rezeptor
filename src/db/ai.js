@@ -267,6 +267,8 @@ export async function extractRecipeFromYoutube(url) {
         }
     }
     console.log('YT description:', description)
+    console.log('contains ytInitialPlayerResponse:', html.includes('ytInitialPlayerResponse'))
+    console.log('contains ytInitialData:', html.includes('ytInitialData'))
 
     // Thumbnail
     let imageBase64 = null
