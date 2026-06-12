@@ -238,62 +238,115 @@ export function extractYouTubeId(url) {
 }
 
 export async function extractRecipeFromYoutube(url) {
-  console.log('=== YT DEBUG START ===')
-  const videoId = extractYouTubeId(url)
-  const proxyUrl = `https://rezeptor-proxy.brr-kroeske.workers.dev/fetch?url=${encodeURIComponent(
-    `https://www.youtube.com/watch?v=${videoId}`
-  )}`
-  const response = await fetch(proxyUrl)
-  const html = await response.text()
+    const videoId = extractYouTubeId(url)
+    if (!videoId) throw new Error('Keine gültige YouTube-URL.')
 
-  console.log('1. HTML length:', html.length)
-  console.log('1b. HTML content:', html)
+    // Video-Infos über YouTube Data API (via Worker)
+    const infoProxy = `https://rezeptor-proxy.brr-kroeske.workers.dev/videoinfo?videoId=${videoId}`
+    const infoResponse = await fetch(infoProxy)
+    const info = await infoResponse.json()
 
-  const startMarker = 'ytInitialPlayerResponse = '
-  const startIdx = html.indexOf(startMarker)
-  console.log('2. startIdx:', startIdx)
+    if (info.error) throw new Error('YouTube-Video konnte nicht geladen werden: ' + info.error)
 
-  if (startIdx === -1) {
-    console.log('=== ABORT: marker not found ===')
-    return { noRecipeFound: true, title: '', description: '', imageBase64: null, sourceUrl: url }
-  }
+    const pageTitle = info.title || ''
+    const description = info.description || ''
 
-  const jsonStart = startIdx + startMarker.length
-  let depth = 0, inString = false, escapeNext = false, endIdx = -1
-  for (let i = jsonStart; i < html.length; i++) {
-    const ch = html[i]
-    if (escapeNext) { escapeNext = false; continue }
-    if (ch === '\\') { escapeNext = true; continue }
-    if (ch === '"') { inString = !inString; continue }
-    if (inString) continue
-    if (ch === '{') depth++
-    else if (ch === '}') { depth--; if (depth === 0) { endIdx = i + 1; break } }
-  }
-  console.log('3. endIdx:', endIdx, 'jsonStart:', jsonStart)
+    // Thumbnail
+    let imageBase64 = null
+    if (info.thumbnail) {
+        try {
+            const imgProxy = `https://rezeptor-proxy.brr-kroeske.workers.dev/?url=${encodeURIComponent(info.thumbnail)}`
+            const imgResponse = await fetch(imgProxy)
+            const blob = await imgResponse.blob()
+            imageBase64 = await new Promise(resolve => {
+                const reader = new FileReader()
+                reader.onloadend = () => resolve(reader.result)
+                reader.readAsDataURL(blob)
+            })
+        } catch (e) {
+            console.log('Thumbnail konnte nicht geladen werden:', e)
+        }
+    }
 
-  if (endIdx === -1) {
-    console.log('=== ABORT: no matching closing brace ===')
-    return { noRecipeFound: true, title: '', description: '', imageBase64: null, sourceUrl: url }
-  }
+    const hasRecipeHints = (text) =>
+        /\d+\s*(g|kg|ml|l|EL|TL|tbsp|tsp|Stück|Zehe|Prise|Bund|cup|oz|lb)\b/i.test(text)
+        || /zutaten|ingredients|rezept|recipe/i.test(text)
 
-  const jsonStr = html.slice(jsonStart, endIdx)
-  console.log('4. jsonStr length:', jsonStr.length, 'first 100:', jsonStr.slice(0, 100))
+    // Quelle 1: Beschreibung prüfen
+    let sourceText = ''
+    let sourceLabel = ''
+    if (description && hasRecipeHints(description)) {
+        sourceText = description
+        sourceLabel = 'Videobeschreibung'
+    }
 
-  let playerResponse
-  try {
-    playerResponse = JSON.parse(jsonStr)
-    console.log('5. PARSE OK. Top-level keys:', Object.keys(playerResponse))
-  } catch (e) {
-    console.log('5. PARSE FAILED:', e.message)
-    console.log('   char at error position:', jsonStr.slice(Math.max(0, +e.message.match(/position (\d+)/)?.[1] - 20 || 0), +e.message.match(/position (\d+)/)?.[1] + 20))
-    return { noRecipeFound: true, title: '', description: '', imageBase64: null, sourceUrl: url }
-  }
+    // Quelle 2: Erster Kommentar prüfen, falls Beschreibung nichts brachte
+    let topComments = []
+    if (!sourceText) {
+        try {
+            const commentProxy = `https://rezeptor-proxy.brr-kroeske.workers.dev/comment?videoId=${videoId}`
+            const commentResponse = await fetch(commentProxy)
+            const commentData = await commentResponse.json()
+            topComments = commentData.comments || []
 
-  console.log('6. videoDetails:', playerResponse.videoDetails)
-  console.log('playabilityStatus:', JSON.stringify(playerResponse.playabilityStatus))
-  const description = playerResponse?.videoDetails?.shortDescription || ''
-  console.log('7. description:', description)
-  console.log('=== YT DEBUG END ===')
+            const recipeComment = topComments.find(c => hasRecipeHints(c))
+            if (recipeComment) {
+                sourceText = recipeComment
+                sourceLabel = 'Kommentar'
+            }
+        } catch (e) {
+            console.log('Kommentare konnten nicht geladen werden:', e)
+        }
+    }
 
-  return { noRecipeFound: true, title: playerResponse?.videoDetails?.title || '', description, imageBase64: null, sourceUrl: url }
+    // Nichts gefunden -> Dialog im Frontend
+    if (!sourceText) {
+        return {
+            noRecipeFound: true,
+            title: pageTitle,
+            description,
+            topComments,
+            imageBase64,
+            sourceUrl: url,
+        }
+    }
+
+    // Gemini mit Titel + gefundenem Text
+    const prompt = `
+Du bist ein Kochbuch-Assistent. Extrahiere aus diesem Text (Quelle: ${sourceLabel} eines YouTube-Videos) ein strukturiertes Rezept.
+Videotitel: ${pageTitle}
+
+Text:
+${sourceText.slice(0, 8000)}
+
+Antworte NUR mit einem JSON-Objekt, ohne Markdown-Backticks, ohne Erklärungen.
+{
+  "title": "Rezeptname",
+  "subtitle": "Kurze Beschreibung oder leer",
+  "servings": 4,
+  "prepTime": 10,
+  "cookTime": 20,
+  "ingredients": [{ "name": "Zutat", "amount": "200", "unit": "g" }],
+  "steps": "<p>Schritt 1</p><p>Schritt 2</p>",
+  "confidence": "high"
 }
+
+Regeln:
+- confidence ist "high" wenn Zutaten UND Zubereitung klar erkennbar sind, sonst "low"
+- steps ist HTML mit <p> Tags
+- prepTime und cookTime sind Zahlen in Minuten
+- Antworte ausschließlich mit dem JSON
+`
+    const result = await generateContent(prompt)
+    const clean = result.replace(/```json|```/g, '').trim()
+    const recipe = JSON.parse(clean)
+
+    return {
+        ...recipe,
+        noRecipeFound: recipe.confidence === 'low' && (!recipe.ingredients?.length),
+        description,
+        imageBase64,
+        sourceUrl: url,
+    }
+}
+
