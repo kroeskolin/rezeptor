@@ -254,19 +254,14 @@ export async function extractRecipeFromYoutube(url) {
 
     // Beschreibung
     let description = ''
-    const descMatch = html.match(/"description":\{"simpleText":"([\s\S]*?)"\}/)
-    console.log('HTML length:', html.length)
-    console.log('HTML snippet:', html.slice(0, 2000))
-    console.log('contains shortDescription:', html.includes('shortDescription'))
-    console.log('contains "description":{"simpleText"', html.includes('"description":{"simpleText"'))
-    if (descMatch) {
-        description = descMatch[1].replace(/\\n/g, '\n').replace(/\\"/g, '"')
-    }
-    if (!description) {
-        const shortMatch = html.match(/"shortDescription":"([\s\S]*?)",\s*"isCrawlable"/)
-        if (shortMatch) {
-            description = shortMatch[1].replace(/\\n/g, '\n').replace(/\\"/g, '"')
+    try {
+        const playerMatch = html.match(/ytInitialPlayerResponse\s*=\s*(\{.+?\})\s*;/s)
+        if (playerMatch) {
+            const playerResponse = JSON.parse(playerMatch[1])
+            description = playerResponse?.videoDetails?.shortDescription || ''
         }
+    } catch (e) {
+        console.log('ytInitialPlayerResponse konnte nicht geparst werden:', e)
     }
 
     console.log('YT description:', description)
