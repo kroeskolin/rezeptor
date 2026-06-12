@@ -440,7 +440,7 @@ export default function RecipeDetail({ recipe, onBack, onEdit, onStartCook, onTo
                 <Icon name="link" size={20} color="var(--espresso)" />
                 <div>
                   <div style={{ fontFamily: 'var(--serif)', fontSize: 15, fontWeight: 700, color: 'var(--espresso)' }}>An Rezeptor senden</div>
-                  <div style={{ fontFamily: 'var(--serif)', fontSize: 13, color: 'var(--green)', fontStyle: 'italic' }}>Link für andere Rezeptor-Nutzer (ohne Foto)</div>
+                  <div style={{ fontFamily: 'var(--serif)', fontSize: 13, color: 'var(--green)', fontStyle: 'italic' }}>Link für andere Rezeptor-Nutzende (ohne Foto)</div>
                 </div>
               </button>
               <button onClick={handleShareText} style={{
@@ -451,8 +451,8 @@ export default function RecipeDetail({ recipe, onBack, onEdit, onStartCook, onTo
                 <Icon name="share" size={20} color="var(--espresso)" />
                 <div>
                   <div style={{ fontFamily: 'var(--serif)', fontSize: 15, fontWeight: 700, color: 'var(--espresso)' }}>Als Text teilen</div>
-                  <div style={{ fontFamily: 'var(--serif)', fontSize: 13, color: 'var(--mute)', fontStyle: 'italic' }}>WhatsApp, Mail, Notizen …</div>
-                </div>ƒ
+                  <div style={{ fontFamily: 'var(--serif)', fontSize: 13, color: 'var(--mute)', fontStyle: 'italic' }}>WhatsApp, Mail, Notizen…</div>
+                </div>
               </button>
               <button onClick={handleSharePdf} style={{
                 display: 'flex', alignItems: 'center', gap: 14,
@@ -473,7 +473,7 @@ export default function RecipeDetail({ recipe, onBack, onEdit, onStartCook, onTo
                 <Icon name="import" size={20} color="var(--espresso)" />
                 <div>
                   <div style={{ fontFamily: 'var(--serif)', fontSize: 15, fontWeight: 700, color: 'var(--espresso)' }}>Als JSON teilen</div>
-                  <div style={{ fontFamily: 'var(--serif)', fontSize: 13, color: 'var(--mute)', fontStyle: 'italic' }}>Für den Import in Rezeptor</div>
+                  <div style={{ fontFamily: 'var(--serif)', fontSize: 13, color: 'var(--mute)', fontStyle: 'italic' }}>Für den Import in Rezeptor (mit Foto)</div>
                 </div>
               </button>
             </div>
