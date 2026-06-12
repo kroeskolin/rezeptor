@@ -254,21 +254,30 @@ export async function extractRecipeFromYoutube(url) {
 
     // Beschreibung
     let description = ''
-    const playerMatch = html.match(/ytInitialPlayerResponse\s*=\s*(\{.+?\})\s*;/s)
-    console.log('playerMatch found:', !!playerMatch)
-    if (playerMatch) {
-        console.log('playerMatch length:', playerMatch[1].length)
-        try {
-            const playerResponse = JSON.parse(playerMatch[1])
-            console.log('videoDetails keys:', Object.keys(playerResponse?.videoDetails || {}))
-            description = playerResponse?.videoDetails?.shortDescription || ''
-        } catch (e) {
-            console.log('JSON.parse Fehler:', e.message)
+    const startMarker = 'ytInitialPlayerResponse = '
+    const startIdx = html.indexOf(startMarker)
+    if (startIdx !== -1) {
+        const jsonStart = startIdx + startMarker.length
+        // Klammern zählen um das vollständige JSON-Objekt zu finden
+        let depth = 0
+        let endIdx = -1
+        for (let i = jsonStart; i < html.length; i++) {
+            if (html[i] === '{') depth++
+            else if (html[i] === '}') {
+                depth--
+                if (depth === 0) { endIdx = i + 1; break }
+            }
+        }
+        if (endIdx !== -1) {
+            try {
+                const playerResponse = JSON.parse(html.slice(jsonStart, endIdx))
+                description = playerResponse?.videoDetails?.shortDescription || ''
+            } catch (e) {
+                console.log('JSON.parse Fehler:', e.message)
+            }
         }
     }
     console.log('YT description:', description)
-    console.log('contains ytInitialPlayerResponse:', html.includes('ytInitialPlayerResponse'))
-    console.log('contains ytInitialData:', html.includes('ytInitialData'))
 
     // Thumbnail
     let imageBase64 = null
