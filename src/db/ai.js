@@ -290,6 +290,7 @@ export async function extractRecipeFromYoutube(url) {
   }
 
   console.log('6. videoDetails:', playerResponse.videoDetails)
+  console.log('playabilityStatus:', JSON.stringify(playerResponse.playabilityStatus))
   const description = playerResponse?.videoDetails?.shortDescription || ''
   console.log('7. description:', description)
   console.log('=== YT DEBUG END ===')
