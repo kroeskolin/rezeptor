@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import './RecipeDetail.css';
 import { Icon, coverTint, totalTime } from './DesignTokens';
+import { compressToEncodedURIComponent } from 'lz-string'
 
 function HeartBtn({ recipe, onToggle, glass = false }) {
   const isFav = !!recipe.favorite;
@@ -207,6 +208,33 @@ export default function RecipeDetail({ recipe, onBack, onEdit, onStartCook, onTo
     setShowShareSheet(false)
   }
 
+  const handleShareLink = async () => {
+    const exportData = {
+      title: recipe.title,
+      subtitle: recipe.subtitle || '',
+      servings: recipe.servings,
+      prepTime: recipe.prepTime,
+      cookTime: recipe.cookTime,
+      ingredients: recipe.ingredients,
+      steps: recipe.steps,
+      tags: recipe.tags,
+      source: recipe.source || '',
+      // Bild bewusst weggelassen — zu groß für URL
+    }
+    const compressed = compressToEncodedURIComponent(JSON.stringify(exportData))
+    const link = `https://kroeskolin.github.io/rezeptor/#import=${compressed}`
+
+    const text = `Ich teile mein Rezept "${recipe.title}" mit dir aus meiner Rezeptor-App! 🍳\nTipp einfach auf den Link:\n${link}`
+
+    if (navigator.share) {
+      await navigator.share({ title: recipe.title, text })
+    } else {
+      await navigator.clipboard.writeText(text)
+      alert('Link in Zwischenablage kopiert!')
+    }
+    setShowShareSheet(false)
+  }
+
   return (
     <div className="recipe-detail">
       {hasPhoto ? (
@@ -404,6 +432,17 @@ export default function RecipeDetail({ recipe, onBack, onEdit, onStartCook, onTo
               Rezept <span style={{ fontStyle: 'italic' }}>teilen</span>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <button onClick={handleShareLink} style={{
+                display: 'flex', alignItems: 'center', gap: 14,
+                background: 'var(--sage)', border: '1px solid var(--sage-2)',
+                borderRadius: 14, padding: '14px 16px', cursor: 'pointer', textAlign: 'left',
+              }}>
+                <Icon name="link" size={20} color="var(--espresso)" />
+                <div>
+                  <div style={{ fontFamily: 'var(--serif)', fontSize: 15, fontWeight: 700, color: 'var(--espresso)' }}>An Rezeptor senden</div>
+                  <div style={{ fontFamily: 'var(--serif)', fontSize: 13, color: 'var(--green)', fontStyle: 'italic' }}>Link für andere Rezeptor-Nutzer (ohne Foto)</div>
+                </div>
+              </button>
               <button onClick={handleShareText} style={{
                 display: 'flex', alignItems: 'center', gap: 14,
                 background: 'var(--paper-2)', border: '1px solid var(--line-2)',
