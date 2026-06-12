@@ -256,30 +256,38 @@ export async function extractRecipeFromYoutube(url) {
     let description = ''
     const startMarker = 'ytInitialPlayerResponse = '
     const startIdx = html.indexOf(startMarker)
+    let endIdx = -1
     if (startIdx !== -1) {
         const jsonStart = startIdx + startMarker.length
-        // Klammern zählen um das vollständige JSON-Objekt zu finden
+        // Klammern zählen (string-aware) um das vollständige JSON-Objekt zu finden
         let depth = 0
-        let endIdx = -1
+        let inString = false
+        let escapeNext = false
         for (let i = jsonStart; i < html.length; i++) {
-            if (html[i] === '{') depth++
-            else if (html[i] === '}') {
+            const ch = html[i]
+            if (escapeNext) { escapeNext = false; continue }
+            if (ch === '\\') { escapeNext = true; continue }
+            if (ch === '"') { inString = !inString; continue }
+            if (inString) continue
+            if (ch === '{') depth++
+            else if (ch === '}') {
                 depth--
                 if (depth === 0) { endIdx = i + 1; break }
             }
         }
+        console.log('endIdx found:', endIdx)
         if (endIdx !== -1) {
+            const jsonStr = html.slice(jsonStart, endIdx)
+            console.log('parsed length:', jsonStr.length)
             try {
-                const playerResponse = JSON.parse(html.slice(jsonStart, endIdx))
+                const playerResponse = JSON.parse(jsonStr)
+                console.log('videoDetails:', playerResponse?.videoDetails)
                 description = playerResponse?.videoDetails?.shortDescription || ''
             } catch (e) {
-                console.log('JSON.parse Fehler:', e.message)
+                console.log('Parse error:', e.message)
             }
         }
     }
-
-    const idx1 = html.indexOf('ytInitialPlayerResponse')
-    console.log('Kontext um ytInitialPlayerResponse:', html.slice(idx1, idx1 + 60))
     console.log('YT description:', description)
 
     // Thumbnail
