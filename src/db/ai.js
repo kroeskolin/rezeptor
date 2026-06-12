@@ -247,6 +247,7 @@ export async function extractRecipeFromYoutube(url) {
   const html = await response.text()
 
   console.log('1. HTML length:', html.length)
+  console.log('1b. HTML content:', html)
 
   const startMarker = 'ytInitialPlayerResponse = '
   const startIdx = html.indexOf(startMarker)
