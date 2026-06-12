@@ -1,12 +1,5 @@
-import { useState } from 'react';
 import './Community.css';
-import { Monogram, Icon, LoveDot, totalTime } from './DesignTokens';
-
-const MOCK_FEED = [
-  { who: 'Mara',  when: 'vor 2 Std.', verb: 'hat ein Rezept hinzugefügt', likes: 12, idx: 0 },
-  { who: 'Jonas', when: 'gestern',     verb: 'kocht gerade',               likes: 8,  idx: 1 },
-  { who: 'Elif',  when: 'vor 2 Tagen', verb: 'empfiehlt',                  likes: 21, idx: 2 },
-];
+import { Icon } from './DesignTokens';
 
 function CircleMono({ name, size = 40, idx = 0 }) {
   const tints = [
@@ -26,13 +19,7 @@ function CircleMono({ name, size = 40, idx = 0 }) {
   );
 }
 
-export default function Community({ recipes }) {
-  const [activeTab, setActiveTab] = useState('Freunde');
-  const tabs = ['Freunde', 'Entdecken'];
-
-  // Use real recipes for mock feed
-  const feedRecipes = (recipes || []).slice(0, 3);
-
+export default function Community() {
   return (
     <div className="community">
       <div className="community-header">
@@ -42,87 +29,17 @@ export default function Community({ recipes }) {
         <CircleMono name="Du" size={38} idx={3} />
       </div>
 
-      {/* Toggle */}
-      <div className="community-toggle-row">
-        {tabs.map((t, i) => (
-          <button
-            key={t}
-            className="community-toggle-pill"
-            style={{
-              background: activeTab === t ? 'var(--sage)' : 'var(--card)',
-              borderColor: activeTab === t ? 'var(--sage-2)' : 'var(--line-2)',
-              color: 'var(--espresso)',
-              fontWeight: activeTab === t ? 700 : 500,
-            }}
-            onClick={() => setActiveTab(t)}
-          >
-            {t}
-          </button>
-        ))}
+      <div style={{
+        margin: '60px 20px 0',
+        textAlign: 'center', padding: '40px 24px', color: 'var(--mute)',
+        fontFamily: 'var(--serif)', fontSize: 15, fontStyle: 'italic',
+        background: 'var(--paper-2)', borderRadius: 16, border: '1px solid var(--line)',
+        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12,
+      }}>
+        <Icon name="heart" size={28} color="var(--sage-2)" />
+        <div>Das Community-Feature folgt bald!</div>
       </div>
 
-      {/* Feed */}
-      <div className="community-feed">
-        {MOCK_FEED.map((item, i) => {
-          const recipe = feedRecipes[i] || null;
-          return (
-            <div key={i} className="community-card">
-              <div className="community-card-top">
-                <CircleMono name={item.who} size={38} idx={item.idx} />
-                <div style={{ flex: 1 }}>
-                  <div className="community-card-name">{item.who}</div>
-                  <div className="community-card-action">{item.verb}</div>
-                </div>
-                <span className="community-card-time">{item.when}</span>
-              </div>
-
-              {recipe && (
-                <div className="community-recipe-mini">
-                  <Monogram recipe={recipe} size={42} radius={10} />
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontFamily: 'var(--serif)', fontWeight: 700, fontSize: 14.5, color: 'var(--espresso)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {recipe.title}
-                    </div>
-                    <div style={{ fontSize: 12, color: 'var(--mute)', marginTop: 2, fontStyle: 'italic' }}>
-                      {totalTime(recipe) > 0 ? `${totalTime(recipe)} Min.` : 'Kein Zeitangabe'}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {!recipe && (
-                <div className="community-recipe-mini">
-                  <div style={{ width: 42, height: 42, borderRadius: 10, background: 'var(--line)', flexShrink: 0 }} />
-                  <div style={{ flex: 1 }}>
-                    <div style={{ height: 14, background: 'var(--line)', borderRadius: 6, marginBottom: 6, width: '60%' }} />
-                    <div style={{ height: 10, background: 'var(--line)', borderRadius: 4, width: '40%' }} />
-                  </div>
-                </div>
-              )}
-
-              <div className="community-card-footer">
-                <div className="community-likes">
-                  <Icon name="heart" size={15} color="var(--rose-ink)" fill strokeWidth={0} />
-                  <span>{item.likes}</span>
-                </div>
-                <button className="community-save-btn">
-                  <Icon name="bookmark" size={14} color="var(--paper)" />
-                  Speichern
-                </button>
-              </div>
-            </div>
-          );
-        })}
-
-        {/* Coming soon note */}
-        <div style={{
-          textAlign: 'center', padding: '20px', color: 'var(--mute)',
-          fontFamily: 'var(--serif)', fontSize: 13, fontStyle: 'italic',
-          background: 'var(--paper-2)', borderRadius: 14, border: '1px solid var(--line)',
-        }}>
-          Community-Features kommen bald! 🌱
-        </div>
-      </div>
       <div style={{ height: 20 }} />
     </div>
   );

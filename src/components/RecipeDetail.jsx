@@ -113,51 +113,68 @@ export default function RecipeDetail({ recipe, onBack, onEdit, onStartCook, onTo
     setShowShareSheet(false)
   }
 
-  const handleSharePdf = () => {
+  const handleSharePdf = async () => {
+    const { default: html2canvas } = await import('html2canvas')
+    const { default: jsPDF } = await import('jspdf')
+
     const escape = (str) => String(str || '')
       .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
 
     const ingredientRows = ingredients.map(ing =>
-      `<tr><td>${escape(ing.name)}</td><td style="text-align:right;color:#9A8C7E;padding-left:16px">${escape(ing.amount)}${ing.unit ? ' ' + escape(ing.unit) : ''}</td></tr>`
+      `<tr><td>${escape(ing.name)}</td><td style="text-align:right;color:#9A8C7E;padding-left:16px;white-space:nowrap">${escape(ing.amount)}${ing.unit ? ' ' + escape(ing.unit) : ''}</td></tr>`
     ).join('')
 
     const stepRows = steps.map((step, i) =>
       `<div style="display:flex;gap:16px;margin-bottom:12px"><span style="font-weight:700;color:#C8D9BF;font-size:18px;flex-shrink:0;min-width:24px">${i + 1}</span><span>${escape(step)}</span></div>`
     ).join('')
 
-    const html = `<!DOCTYPE html><html><head><meta charset="UTF-8">
-  <style>
-    body { font-family: Georgia, serif; max-width: 680px; margin: 40px auto; padding: 0 24px; color: #473528; }
-    h1 { font-size: 32px; margin-bottom: 4px; }
-    .subtitle { font-style: italic; color: #6A5546; margin-bottom: 16px; }
-    .meta { color: #9A8C7E; font-size: 14px; margin-bottom: 24px; }
-    img { width: 100%; max-height: 320px; object-fit: cover; border-radius: 12px; margin-bottom: 24px; display: block; }
-    h2 { font-size: 18px; border-bottom: 1px solid #E9EBE3; padding-bottom: 6px; margin-top: 28px; }
-    table { width: 100%; border-collapse: collapse; }
-    td { padding: 7px 0; border-bottom: 1px solid #E9EBE3; font-size: 15px; vertical-align: top; }
-    .source { margin-top: 32px; font-size: 13px; color: #9A8C7E; font-style: italic; }
-    .footer { margin-top: 40px; font-size: 12px; color: #C8D9BF; text-align: center; }
-  </style></head><body>
-  ${recipe.image ? `<img src="${recipe.image}" />` : ''}
-  <h1>${escape(recipe.title)}</h1>
-  ${recipe.subtitle ? `<div class="subtitle">${escape(recipe.subtitle)}</div>` : ''}
-  <div class="meta">${[time > 0 ? `${time} Min.` : null, recipe.servings > 0 ? `${recipe.servings} Portionen` : null].filter(Boolean).join(' · ')}</div>
-  <h2>Zutaten</h2>
-  <table>${ingredientRows}</table>
-  <h2>Zubereitung</h2>
-  ${stepRows}
-  ${recipe.source ? `<div class="source">Quelle: ${escape(recipe.source)}</div>` : ''}
-  <div class="footer">Erstellt mit Rezeptor</div>
-  </body></html>`
+    // Container off-screen rendern
+    const container = document.createElement('div')
+    container.style.position = 'fixed'
+    container.style.top = '-99999px'
+    container.style.left = '0'
+    container.style.width = '700px'
+    container.style.background = '#fff'
+    container.innerHTML = `
+      <div style="font-family: Georgia, serif; padding: 40px; color: #473528; box-sizing: border-box; width: 700px;">
+        ${recipe.image ? `<img src="${recipe.image}" style="width:100%;max-height:320px;object-fit:cover;border-radius:12px;margin-bottom:24px;display:block" />` : ''}
+        <h1 style="font-size:32px;margin-bottom:4px">${escape(recipe.title)}</h1>
+        ${recipe.subtitle ? `<div style="font-style:italic;color:#6A5546;margin-bottom:16px">${escape(recipe.subtitle)}</div>` : ''}
+        <div style="color:#9A8C7E;font-size:14px;margin-bottom:24px">${[time > 0 ? `${time} Min.` : null, recipe.servings > 0 ? `${recipe.servings} Portionen` : null].filter(Boolean).join(' · ')}</div>
+        <h2 style="font-size:18px;border-bottom:1px solid #E9EBE3;padding-bottom:6px;margin-top:28px">Zutaten</h2>
+        <table style="width:100%;border-collapse:collapse">${ingredientRows.replace(/<td/g, '<td style="padding:7px 0;border-bottom:1px solid #E9EBE3;font-size:15px;vertical-align:top"')}</table>
+        <h2 style="font-size:18px;border-bottom:1px solid #E9EBE3;padding-bottom:6px;margin-top:28px">Zubereitung</h2>
+        ${stepRows}
+        ${recipe.source ? `<div style="margin-top:32px;font-size:13px;color:#9A8C7E;font-style:italic">Quelle: ${escape(recipe.source)}</div>` : ''}
+        <div style="margin-top:40px;font-size:12px;color:#C8D9BF;text-align:center">Erstellt mit Rezeptor</div>
+      </div>
+    `
+    document.body.appendChild(container)
 
-    const blob = new Blob([html], { type: 'text/html' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `${recipe.title}.html`
-    a.click()
-    URL.revokeObjectURL(url)
-    setShowShareSheet(false)
+    try {
+      const canvas = await html2canvas(container, { scale: 2, useCORS: true })
+      const imgData = canvas.toDataURL('image/jpeg', 0.92)
+
+      const pdf = new jsPDF({ unit: 'px', format: [canvas.width, canvas.height] })
+      pdf.addImage(imgData, 'JPEG', 0, 0, canvas.width, canvas.height)
+
+      const blob = pdf.output('blob')
+      const file = new File([blob], `${recipe.title}.pdf`, { type: 'application/pdf' })
+
+      if (navigator.canShare?.({ files: [file] })) {
+        await navigator.share({ files: [file], title: recipe.title })
+      } else {
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `${recipe.title}.pdf`
+        a.click()
+        URL.revokeObjectURL(url)
+      }
+    } finally {
+      document.body.removeChild(container)
+      setShowShareSheet(false)
+    }
   }
 
   const handleShareJson = async () => {
@@ -396,7 +413,7 @@ export default function RecipeDetail({ recipe, onBack, onEdit, onStartCook, onTo
                 <div>
                   <div style={{ fontFamily: 'var(--serif)', fontSize: 15, fontWeight: 700, color: 'var(--espresso)' }}>Als Text teilen</div>
                   <div style={{ fontFamily: 'var(--serif)', fontSize: 13, color: 'var(--mute)', fontStyle: 'italic' }}>WhatsApp, Mail, Notizen …</div>
-                </div>
+                </div>ƒ
               </button>
               <button onClick={handleSharePdf} style={{
                 display: 'flex', alignItems: 'center', gap: 14,
@@ -405,8 +422,8 @@ export default function RecipeDetail({ recipe, onBack, onEdit, onStartCook, onTo
               }}>
                 <Icon name="globe" size={20} color="var(--espresso)" />
                 <div>
-                  <div style={{ fontFamily: 'var(--serif)', fontSize: 15, fontWeight: 700, color: 'var(--espresso)' }}>Als HTML teilen</div>
-                  <div style={{ fontFamily: 'var(--serif)', fontSize: 13, color: 'var(--mute)', fontStyle: 'italic' }}>Dann Screenshot machen oder zu PDF umwandeln</div>
+                  <div style={{ fontFamily: 'var(--serif)', fontSize: 15, fontWeight: 700, color: 'var(--espresso)' }}>Als PDF teilen</div>
+                  <div style={{ fontFamily: 'var(--serif)', fontSize: 13, color: 'var(--mute)', fontStyle: 'italic' }}>Zum Ausdrucken oder Versenden</div>
                 </div>
               </button>
               <button onClick={handleShareJson} style={{
