@@ -255,6 +255,10 @@ export async function extractRecipeFromYoutube(url) {
     // Beschreibung
     let description = ''
     const descMatch = html.match(/"description":\{"simpleText":"([\s\S]*?)"\}/)
+    console.log('HTML length:', html.length)
+    console.log('HTML snippet:', html.slice(0, 2000))
+    console.log('contains shortDescription:', html.includes('shortDescription'))
+    console.log('contains "description":{"simpleText"', html.includes('"description":{"simpleText"'))
     if (descMatch) {
         description = descMatch[1].replace(/\\n/g, '\n').replace(/\\"/g, '"')
     }
