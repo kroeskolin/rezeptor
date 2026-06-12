@@ -1,87 +1,331 @@
 .tinder {
-  min-height: 100%; background: var(--paper);
-  display: flex; flex-direction: column; padding-bottom: 40px;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding-bottom: 16px;
+  touch-action: pan-y;
 }
+
 .tinder-header {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 14px 20px 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 20px 8px;
 }
-.tinder-back {
-  font-family: var(--serif); font-size: 15px; color: var(--cocoa);
-  font-style: italic; cursor: pointer; background: none; border: none;
+
+.tinder-back-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: var(--card);
+  border: 1px solid var(--line-2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
 }
-.tinder-counter {
-  font-family: var(--serif); font-size: 13.5px; color: var(--mute); font-weight: 500;
+
+.tinder-title {
+  font-size: 26px;
+  color: var(--espresso);
 }
-.tinder-card-stack {
-  position: relative; margin: 22px 20px 0; height: 380px;
+
+.tinder-round-hint {
+  text-align: center;
+  font-family: var(--serif);
+  font-size: 13.5px;
+  font-style: italic;
+  color: var(--rose-ink);
+  padding: 2px 0 0;
 }
+
+/* Jetzt kochen über der Karte */
+.tinder-cook-row {
+  display: flex;
+  justify-content: center;
+  padding: 10px 0 12px;
+}
+
+.tinder-cook-btn {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  background: var(--card);
+  border: 1.5px solid var(--sage-2);
+  border-radius: 20px;
+  padding: 8px 18px;
+  font-family: var(--serif);
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--green);
+  cursor: pointer;
+}
+
+/* Kartenbereich */
+.tinder-card-area {
+  position: relative;
+  flex: 1;
+  min-height: 340px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 24px;
+}
+
 .tinder-card {
-  position: absolute; left: 0; right: 0; top: 0;
-  transform-origin: top center;
-  transition: transform 0.24s ease;
+  position: absolute;
+  width: min(82vw, 330px);
+  background: var(--card);
+  border: 1.5px solid var(--line-2);
+  border-radius: 22px;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(71, 53, 40, 0.12);
+  user-select: none;
 }
-.tinder-card-inner {
-  background: var(--card); border-radius: 22px; overflow: hidden;
-  border: 1px solid var(--line);
-  box-shadow: 0 24px 44px -26px rgba(71,53,40,0.5);
+
+.tinder-card-active {
+  z-index: 2;
+  cursor: grab;
+  touch-action: none;
 }
-.tinder-card-cover {
-  position: relative; height: 230px; overflow: hidden;
+
+.tinder-card-active:active {
+  cursor: grabbing;
 }
-.tinder-card-initial {
-  position: absolute; right: -16px; bottom: -82px;
-  font-family: var(--logo); font-weight: 600; font-size: 300px;
-  opacity: 0.16; line-height: 1; user-select: none; pointer-events: none;
+
+.tinder-card-behind {
+  z-index: 1;
+  transform: scale(0.94) translateY(12px);
+  opacity: 0.7;
 }
-.tinder-card-tags {
-  position: absolute; left: 16px; top: 16px; display: flex; gap: 6px;
+
+.tinder-card-img {
+  width: 100%;
+  height: 230px;
+  object-fit: cover;
+  display: block;
+  pointer-events: none;
 }
-.tinder-tag-pill {
-  padding: 5px 11px; border-radius: 999px;
-  background: rgba(249,251,248,0.85);
-  font-family: var(--serif); font-size: 11.5px; font-weight: 700;
+
+.tinder-card-img-placeholder {
+  width: 100%;
+  height: 230px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--paper-2);
 }
-.tinder-card-body { padding: 18px 20px 22px; }
+
+.tinder-card-info {
+  padding: 14px 18px 18px;
+}
+
 .tinder-card-title {
-  font-family: var(--serif); font-weight: 700; font-size: 24px;
-  color: var(--espresso); line-height: 1.14;
-  font-variation-settings: "opsz" 36; letter-spacing: -0.015em;
+  font-family: var(--serif);
+  font-weight: 700;
+  font-size: 19px;
+  color: var(--espresso);
+  line-height: 1.2;
 }
+
+.tinder-card-subtitle {
+  font-family: var(--serif);
+  font-size: 13.5px;
+  font-style: italic;
+  color: var(--mute);
+  margin-top: 3px;
+}
+
 .tinder-card-meta {
-  display: flex; align-items: center; gap: 7px; margin-top: 13px;
+  font-family: var(--serif);
+  font-size: 13px;
+  color: var(--cocoa);
+  margin-top: 7px;
 }
+
+/* Stempel */
 .tinder-stamp {
-  position: absolute; top: 22px;
-  padding: 6px 14px; border-radius: 10px; border-width: 3px; border-style: solid;
-  font-family: var(--serif); font-size: 22px; font-weight: 700; pointer-events: none;
+  position: absolute;
+  top: 22px;
+  font-family: var(--serif);
+  font-weight: 800;
+  font-size: 26px;
+  letter-spacing: 2px;
+  padding: 4px 14px;
+  border-radius: 8px;
+  border: 3px solid;
+  pointer-events: none;
 }
-.tinder-actions {
-  display: flex; align-items: center; justify-content: center; gap: 16px;
-  padding: 24px 20px 0;
+
+.tinder-stamp-like {
+  left: 16px;
+  color: var(--green);
+  border-color: var(--green);
+  transform: rotate(-14deg);
+  background: rgba(255, 255, 255, 0.75);
 }
-.tinder-btn {
-  border: none; cursor: pointer; display: flex; align-items: center; justify-content: center;
-  transition: transform 0.1s;
+
+.tinder-stamp-nope {
+  right: 16px;
+  color: var(--rose-ink);
+  border-color: var(--rose-ink);
+  transform: rotate(14deg);
+  background: rgba(255, 255, 255, 0.75);
 }
-.tinder-btn:active { transform: scale(0.92); }
-.tinder-btn-sm {
-  width: 46px; height: 46px; border-radius: 50%;
-  background: var(--card); border: 1px solid var(--line-2) !important;
-  box-shadow: var(--shadow-card);
+
+/* Match-Popup */
+.tinder-match-pop {
+  position: absolute;
+  top: 40%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 10;
+  font-family: var(--serif);
+  font-weight: 800;
+  font-size: 28px;
+  color: var(--green);
+  background: var(--paper);
+  border: 2px solid var(--sage-2);
+  border-radius: 18px;
+  padding: 12px 26px;
+  box-shadow: 0 8px 24px rgba(71, 53, 40, 0.18);
+  animation: matchPop 0.6s ease-out forwards;
+  pointer-events: none;
+  white-space: nowrap;
 }
-.tinder-btn-nope {
-  width: 62px; height: 62px; border-radius: 50%;
-  background: var(--card); border: 2px solid var(--rose-2) !important;
-  box-shadow: var(--shadow-card);
+
+@keyframes matchPop {
+  0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
+  30% { transform: translate(-50%, -50%) scale(1.08); opacity: 1; }
+  70% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(0.95); opacity: 0; }
 }
-.tinder-btn-like {
-  width: 62px; height: 62px; border-radius: 50%;
-  background: var(--green-grad);
-  box-shadow: 0 10px 22px -8px rgba(84,113,63,0.5);
-  border: none !important;
+
+/* Mini-Anleitung */
+.tinder-help-row {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  padding: 12px 0 6px;
+  font-family: var(--serif);
+  font-size: 13px;
+  font-style: italic;
+  color: var(--mute);
 }
-.tinder-done {
-  text-align: center; padding: 60px 20px; color: var(--mute);
-  font-style: italic; font-size: 18px;
+
+/* Match-Stapel unten */
+.tinder-matches-bar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 24px 6px;
+  min-height: 72px;
+}
+
+.tinder-matches-stack {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-width: 110px;
+  height: 54px;
+}
+
+.tinder-matches-mini {
+  position: absolute;
+  left: 0;
+  border-radius: 12px;
+  box-shadow: 0 3px 10px rgba(71, 53, 40, 0.15);
+}
+
+.tinder-fly-in {
+  animation: flyToStack 0.5s ease-in forwards;
+}
+
+@keyframes flyToStack {
+  0% { transform: translate(120px, -180px) scale(1.6) rotate(10deg); opacity: 0.9; }
+  100% { transform: translate(0, 0) scale(1) rotate(0deg); opacity: 1; }
+}
+
+.tinder-matches-count {
+  font-family: var(--serif);
+  font-size: 13.5px;
+  font-style: italic;
+  color: var(--cocoa);
+}
+
+/* Finale-Screens */
+.tinder-final {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 22px;
+  padding: 0 24px 40px;
+}
+
+.tinder-final-label {
+  font-family: var(--serif);
+  font-weight: 800;
+  font-size: 26px;
+  color: var(--espresso);
+  text-align: center;
+}
+
+.tinder-final-sub {
+  font-family: var(--serif);
+  font-size: 15px;
+  font-style: italic;
+  color: var(--mute);
+  margin-top: -12px;
+}
+
+.tinder-card-final {
+  position: relative;
+  animation: finalReveal 0.5s ease-out;
+}
+
+@keyframes finalReveal {
+  0% { transform: scale(0.85); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.tinder-stack-preview {
+  position: relative;
+  display: flex;
+  height: 80px;
+  align-items: center;
+}
+
+.tinder-stack-mini {
+  position: absolute;
+  border-radius: 14px;
+  box-shadow: 0 4px 12px rgba(71, 53, 40, 0.15);
+}
+
+.tinder-cook-btn-big {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--green);
+  color: var(--paper);
+  border: none;
+  border-radius: 16px;
+  padding: 15px 30px;
+  font-family: var(--serif);
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.tinder-retry-link {
+  background: none;
+  border: none;
+  font-family: var(--serif);
+  font-size: 14px;
+  font-style: italic;
+  color: var(--mute);
+  cursor: pointer;
+  text-decoration: underline;
 }
