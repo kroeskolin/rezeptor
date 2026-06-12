@@ -411,7 +411,7 @@ export default function AddRecipe({ onSave, onClose }) {
               <Icon name="chev" size={20} color="#F9FBF8" strokeWidth={2} />
             </button>
           </div>
-          <div className="add-link-caption">URL zu einer Rezept-Webseite</div>
+          <div className="add-link-caption">Rezept-Webseite oder YouTube-Link</div>
         </div>
         <div className="add-divider">oder</div>
         <div className="add-methods">
