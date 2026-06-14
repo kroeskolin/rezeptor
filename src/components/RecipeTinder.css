@@ -215,6 +215,32 @@
   100% { transform: translate(-50%, -50%) scale(1.05); opacity: 0; }
 }
 
+/* Nope-Popup — analog, in Rosé, etwas kürzer */
+.tinder-nope-pop {
+  position: absolute;
+  top: 40%;
+  left: 50%;
+  z-index: 10;
+  font-size: 30px;
+  color: var(--rose-ink);
+  background: var(--paper);
+  border: 2.5px solid var(--rose-2, var(--rose));
+  border-radius: 20px;
+  padding: 14px 28px;
+  box-shadow: 0 12px 34px rgba(71, 53, 40, 0.22);
+  animation: nopeZoom 0.9s ease-out forwards;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+@keyframes nopeZoom {
+  0% { transform: translate(-50%, -50%) scale(0.1); opacity: 0; }
+  30% { transform: translate(-50%, -50%) scale(1.12); opacity: 1; }
+  55% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+  80% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(1.05); opacity: 0; }
+}
+
 /* Mini-Anleitung — direkt unter dem Stapel, größer & bunt */
 .tinder-help-row {
   display: flex;
@@ -229,6 +255,8 @@
   display: inline-flex;
   align-items: center;
   gap: 7px;
+  font-family: 'Henny Penny', var(--serif), cursive;
+  font-size: 17px;
 }
 
 .tinder-help-nope { color: var(--rose-ink); }
@@ -247,8 +275,9 @@
   position: relative;
   display: flex;
   align-items: center;
-  min-width: 110px;
+  min-width: 100px;
   height: 50px;
+  padding-left: 4px;
 }
 
 .tinder-matches-mini {
@@ -261,7 +290,7 @@
 .tinder-fly-in { animation: flyToStack 0.6s ease-in forwards; }
 
 @keyframes flyToStack {
-  0% { transform: translate(60px, -240px) scale(2) rotate(8deg); opacity: 0.95; }
+  0% { transform: translate(40px, -240px) scale(2) rotate(8deg); opacity: 0.95; }
   100% { transform: translate(0, 0) scale(1) rotate(0deg); opacity: 1; }
 }
 

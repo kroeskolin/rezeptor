@@ -12,6 +12,7 @@ export default function RecipeTinder({ recipes, onSelectRecipe, onBack }) {
   const [matches, setMatches] = useState([])
   const [round, setRound] = useState(1)
   const [showMatchPop, setShowMatchPop] = useState(false)
+  const [showNopePop, setShowNopePop] = useState(false)
   const [flyToStack, setFlyToStack] = useState(null)
   const [leaving, setLeaving] = useState(null)
 
@@ -64,6 +65,9 @@ export default function RecipeTinder({ recipes, onSelectRecipe, onBack }) {
       setFlyToStack(card)
       setTimeout(() => setShowMatchPop(false), 1200)
       setTimeout(() => setFlyToStack(null), 600)
+    } else {
+      setShowNopePop(true)
+      setTimeout(() => setShowNopePop(false), 900)
     }
     setTimeout(() => setLeaving(null), 320)
   }
@@ -187,7 +191,7 @@ export default function RecipeTinder({ recipes, onSelectRecipe, onBack }) {
             key={leaving.key}
             className="tinder-card tinder-card-leaving"
             style={{
-              transform: `translate(${leaving.direction === 'right' ? window.innerWidth : -window.innerWidth}px, ${leaving.startY}px) rotate(${leaving.direction === 'right' ? 22 : -22}deg)`,
+              transform: `translateX(${leaving.direction === 'right' ? window.innerWidth : -window.innerWidth}px) rotate(${leaving.direction === 'right' ? 22 : -22}deg)`,
             }}
           >
             <CardContent recipe={leaving.recipe} />
@@ -201,7 +205,7 @@ export default function RecipeTinder({ recipes, onSelectRecipe, onBack }) {
             ref={cardRef}
             className="tinder-card tinder-card-active"
             style={{
-              transform: `translate(${drag.x}px, ${drag.y * 0.4}px) rotate(${rotation}deg)`,
+              transform: `translateX(${drag.x}px) rotate(${rotation}deg)`,
               transition: drag.active ? 'none' : 'transform 0.25s ease-out',
             }}
             onPointerDown={handlePointerDown}
@@ -217,6 +221,9 @@ export default function RecipeTinder({ recipes, onSelectRecipe, onBack }) {
 
         {showMatchPop && (
           <div className="tinder-match-pop game-font">It's a Match! 💚</div>
+        )}
+        {showNopePop && (
+          <div className="tinder-nope-pop game-font">Nope! 🙅</div>
         )}
       </div>
 
@@ -235,7 +242,7 @@ export default function RecipeTinder({ recipes, onSelectRecipe, onBack }) {
         <div className="tinder-matches-stack">
           {matches.slice(-5).map((r, i, arr) => (
             <div key={cardKey(r, i)} className="tinder-matches-mini" style={{
-              transform: `translateX(${i * -10}px) rotate(${(i - arr.length / 2) * 4}deg)`,
+              transform: `translateX(${i * 10}px) rotate(${(i - arr.length / 2) * 4}deg)`,
               zIndex: i,
             }}>
               <Monogram recipe={r} size={48} radius={11} />
