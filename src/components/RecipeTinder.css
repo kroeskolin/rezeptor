@@ -69,11 +69,11 @@
   cursor: pointer;
 }
 
-/* Kartenbereich — feste Höhe, Karte sitzt hoch */
+/* Kartenbereich — feste Höhe passend zur fixen Kartenhöhe */
 .tinder-card-area {
   position: relative;
   flex: 0 0 auto;
-  height: 340px;
+  height: 380px;
   display: flex;
   align-items: flex-start;
   justify-content: center;
@@ -84,12 +84,15 @@
   position: absolute;
   top: 8px;
   width: min(82vw, 330px);
+  height: 348px;            /* FIX: alle Karten exakt gleich hoch */
   background: var(--card);
   border: 1.5px solid var(--line-2);
   border-radius: 22px;
   overflow: hidden;
   box-shadow: 0 10px 30px rgba(71, 53, 40, 0.12);
   user-select: none;
+  display: flex;
+  flex-direction: column;
 }
 
 .tinder-card-active {
@@ -122,22 +125,31 @@
 
 .tinder-card-img {
   width: 100%;
-  height: 220px;
+  height: 210px;           /* FIX */
   object-fit: cover;
   display: block;
   pointer-events: none;
+  flex-shrink: 0;
 }
 
 .tinder-card-img-placeholder {
   width: 100%;
-  height: 220px;
+  height: 210px;           /* FIX */
   display: flex;
   align-items: center;
   justify-content: center;
   background: var(--paper-2);
+  flex-shrink: 0;
 }
 
-.tinder-card-info { padding: 13px 18px 16px; }
+.tinder-card-info {
+  padding: 13px 18px 16px;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
 
 .tinder-card-title {
   font-family: var(--serif);
@@ -145,6 +157,11 @@
   font-size: 19px;
   color: var(--espresso);
   line-height: 1.2;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;    /* max 2 Zeilen */
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  flex-shrink: 0;
 }
 
 .tinder-card-subtitle {
@@ -153,13 +170,21 @@
   font-style: italic;
   color: var(--mute);
   margin-top: 3px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;    /* max 2 Zeilen */
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  flex-shrink: 1;
+  min-height: 0;
 }
 
 .tinder-card-meta {
   font-family: var(--serif);
   font-size: 13px;
   color: var(--cocoa);
-  margin-top: 7px;
+  margin-top: auto;         /* immer am unteren Kartenrand */
+  padding-top: 7px;
+  flex-shrink: 0;
 }
 
 /* Stempel */
