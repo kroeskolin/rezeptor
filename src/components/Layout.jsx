@@ -52,7 +52,7 @@ export default function Layout({ activeTab, onTabChange, onFabClick, children, h
 
       <div
         className="app-content"
-        style={hideNav ? { paddingTop: 'env(safe-area-inset-top, 44px)' } : {}}
+        style={hideNav ? { paddingTop: 'var(--sat, env(safe-area-inset-top, 44px))' } : {}}
       >
         {children}
       </div>

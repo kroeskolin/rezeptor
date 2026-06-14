@@ -34,14 +34,14 @@ html, body, #root {
   align-items: flex-end;
   justify-content: space-between;
   padding: 0 16px 12px;
-  padding-top: env(safe-area-inset-top, 44px);
-  min-height: calc(56px + env(safe-area-inset-top, 44px));
+  padding-top: var(--sat, env(safe-area-inset-top, 44px));
+  min-height: calc(56px + var(--sat, env(safe-area-inset-top, 44px)));
 }
 
 /* Wenn safe-area-inset-top vorhanden, Header höher machen */
 @supports (padding-top: env(safe-area-inset-top)) {
   .app-header {
-    height: calc(56px + env(safe-area-inset-top, 0px));
+    height: calc(56px + var(--sat, env(safe-area-inset-top, 0px)));
     align-items: flex-end;
     padding-bottom: 10px;
   }
