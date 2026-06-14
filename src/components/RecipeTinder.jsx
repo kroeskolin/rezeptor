@@ -116,11 +116,10 @@ export default function RecipeTinder({ recipes, onSelectRecipe, onBack }) {
           <div className="tinder-final-label game-font">
             {matches.length} Matches!
           </div>
-          <div className="tinder-final-sub">Runde {round} geschafft 🎉</div>
           <div className="tinder-stack-preview">
-            {matches.slice(0, 5).map((r, i) => (
+            {matches.slice(0, 5).map((r, i, arr) => (
               <div key={cardKey(r, i)} className="tinder-stack-mini" style={{
-                transform: `translateX(${i * 14}px) rotate(${(i - 2) * 3}deg)`,
+                transform: `translateX(${(i - (arr.length - 1) / 2) * 26}px) rotate(${(i - (arr.length - 1) / 2) * 4}deg)`,
                 zIndex: i,
               }}>
                 <Monogram recipe={r} size={64} radius={14} />
@@ -128,7 +127,7 @@ export default function RecipeTinder({ recipes, onSelectRecipe, onBack }) {
             ))}
           </div>
           <button className="tinder-cook-btn-big" onClick={startNextRound}>
-            Finale ausswipen
+            Favoriten ausswipen
             <span style={{ fontSize: 20 }}>🔥</span>
           </button>
         </div>
@@ -237,13 +236,8 @@ export default function RecipeTinder({ recipes, onSelectRecipe, onBack }) {
         </span>
       </div>
 
-      {/* Match-Sammlung — zentriert, Label drüber */}
+      {/* Match-Sammlung — zentriert, Label drunter */}
       <div className="tinder-matches-bar">
-        {matches.length > 0 && (
-          <div className="tinder-matches-count game-font">
-            {matches.length} {matches.length === 1 ? 'Match' : 'Matches'}
-          </div>
-        )}
         <div className="tinder-matches-stack">
           {matches.slice(-6).map((r, i, arr) => (
             <div key={cardKey(r, i)} className="tinder-matches-mini" style={{
@@ -259,6 +253,11 @@ export default function RecipeTinder({ recipes, onSelectRecipe, onBack }) {
             </div>
           )}
         </div>
+        {matches.length > 0 && (
+          <div className="tinder-matches-count game-font">
+            {matches.length} {matches.length === 1 ? 'Match' : 'Matches'}
+          </div>
+        )}
       </div>
     </div>
   )

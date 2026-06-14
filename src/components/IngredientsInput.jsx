@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import {
     DndContext,
     closestCenter,
@@ -16,6 +16,33 @@ import {
 import { CSS } from '@dnd-kit/utilities'
 import { suggestUnit, allUnits } from '../db/units'
 import './IngredientsInput.css'
+
+// Stabile, eindeutige ID erzeugen
+let idCounter = 0
+function makeId() {
+    idCounter += 1
+    return `ing-${Date.now()}-${idCounter}`
+}
+
+// Stellt sicher, dass JEDE Zutat eine eindeutige, stabile id hat.
+// Gibt [normalisierteListe, hatSichGeaendert] zurück.
+function ensureIds(list) {
+    if (!Array.isArray(list)) return [[], false]
+    const seen = new Set()
+    let changed = false
+    const next = list.map(ing => {
+        // id fehlt ODER ist doppelt -> neue id vergeben
+        if (!ing.id || seen.has(ing.id)) {
+            changed = true
+            const id = makeId()
+            seen.add(id)
+            return { ...ing, id }
+        }
+        seen.add(ing.id)
+        return ing
+    })
+    return [next, changed]
+}
 
 function SortableIngredient({ id, ing, index, onRemove, onEdit }) {
     const {
@@ -82,6 +109,14 @@ function IngredientsInput({ ingredients, onChange }) {
         useSensor(PointerSensor)
     )
 
+    // Beim Mount und bei Änderung der eingehenden Liste: fehlende/doppelte ids ergänzen.
+    // Schreibt nur zurück, wenn sich wirklich etwas geändert hat (kein Endlos-Loop).
+    useEffect(() => {
+        const [normalized, changed] = ensureIds(ingredients)
+        if (changed) onChange(normalized)
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [ingredients])
+
     const handleNameChange = (value) => {
         setNewName(value)
         if (value.trim().length > 2) {
@@ -92,7 +127,7 @@ function IngredientsInput({ ingredients, onChange }) {
     const handleAdd = () => {
         if (!newName.trim()) return
         const ingredient = {
-            id: Date.now().toString(),
+            id: makeId(),
             amount: newAmount,
             unit: newUnit,
             name: newName.trim()
@@ -115,11 +150,11 @@ function IngredientsInput({ ingredients, onChange }) {
 
     const handleDragEnd = (event) => {
         const { active, over } = event
-        if (active.id !== over?.id) {
-            const oldIndex = ingredients.findIndex(i => i.id === active.id)
-            const newIndex = ingredients.findIndex(i => i.id === over.id)
-            onChange(arrayMove(ingredients, oldIndex, newIndex))
-        }
+        if (!over || active.id === over.id) return
+        const oldIndex = ingredients.findIndex(i => i.id === active.id)
+        const newIndex = ingredients.findIndex(i => i.id === over.id)
+        if (oldIndex === -1 || newIndex === -1) return
+        onChange(arrayMove(ingredients, oldIndex, newIndex))
     }
 
     return (
@@ -130,15 +165,15 @@ function IngredientsInput({ ingredients, onChange }) {
                 onDragEnd={handleDragEnd}
             >
                 <SortableContext
-                    items={ingredients.map(i => i.id || i.name)}
+                    items={ingredients.map(i => i.id)}
                     strategy={verticalListSortingStrategy}
                 >
                     {ingredients.length > 0 && (
                         <ul className="ingredients-list">
                             {ingredients.map((ing, index) => (
                                 <SortableIngredient
-                                    key={ing.id || ing.name}
-                                    id={ing.id || ing.name}
+                                    key={ing.id}
+                                    id={ing.id}
                                     ing={ing}
                                     index={index}
                                     onRemove={handleRemove}
