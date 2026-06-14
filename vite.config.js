@@ -11,12 +11,19 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg'],
+      workbox: {
+        // Neuer Service Worker übernimmt sofort, statt auf App-Schließen zu warten
+        clientsClaim: true,
+        skipWaiting: true,
+        // Alte Caches aus früheren Versionen aufräumen
+        cleanupOutdatedCaches: true,
+      },
       manifest: {
         name: 'Rezeptor',
         short_name: 'Rezeptor',
         description: 'Deine persönliche Rezeptdatenbank',
-        theme_color: '#534AB7',
-        background_color: '#ffffff',
+        theme_color: '#3A5230',
+        background_color: '#F9FBF8',
         display: 'standalone',
         orientation: 'portrait',
         scope: '/rezeptor/',
