@@ -3,7 +3,7 @@
   flex-direction: column;
   min-height: 100vh;
   min-height: 100dvh;
-  padding-bottom: 16px;
+  padding-bottom: 12px;
   touch-action: pan-y;
 }
 
@@ -11,7 +11,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 18px 20px 8px;
+  padding: 18px 20px 4px;
 }
 
 .tinder-back-btn {
@@ -44,7 +44,7 @@
 .tinder-cook-row {
   display: flex;
   justify-content: center;
-  padding: 10px 0 12px;
+  padding: 6px 0 10px;
 }
 
 .tinder-cook-btn {
@@ -62,19 +62,20 @@
   cursor: pointer;
 }
 
-/* Kartenbereich */
+/* Kartenbereich — kompakter, Karte sitzt höher */
 .tinder-card-area {
   position: relative;
   flex: 1;
-  min-height: 340px;
+  min-height: 300px;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
-  padding: 0 24px;
+  padding: 8px 24px 0;
 }
 
 .tinder-card {
   position: absolute;
+  top: 8px;
   width: min(82vw, 330px);
   background: var(--card);
   border: 1.5px solid var(--line-2);
@@ -85,7 +86,7 @@
 }
 
 .tinder-card-active {
-  z-index: 2;
+  z-index: 3;
   cursor: grab;
   touch-action: none;
 }
@@ -94,10 +95,22 @@
   cursor: grabbing;
 }
 
-.tinder-card-behind {
+/* Stapel-Andeutung: zwei Karten dahinter, leicht nach unten + rotiert */
+.tinder-card-behind-1 {
+  z-index: 2;
+  transform: translateY(10px) scale(0.965) rotate(-1.5deg);
+}
+
+.tinder-card-behind-2 {
   z-index: 1;
-  transform: scale(0.94) translateY(12px);
-  opacity: 0.7;
+  transform: translateY(20px) scale(0.93) rotate(2deg);
+}
+
+/* Wegfliegende Karte — animiert raus */
+.tinder-card-leaving {
+  z-index: 4;
+  transition: transform 0.3s ease-in;
+  pointer-events: none;
 }
 
 .tinder-card-img {
@@ -174,44 +187,51 @@
   background: rgba(255, 255, 255, 0.75);
 }
 
-/* Match-Popup */
+/* Match-Popup — fliegt von klein aus der Mitte auf den Nutzer zu */
 .tinder-match-pop {
   position: absolute;
-  top: 40%;
+  top: 42%;
   left: 50%;
-  transform: translate(-50%, -50%);
   z-index: 10;
   font-family: var(--serif);
   font-weight: 800;
-  font-size: 28px;
+  font-size: 30px;
   color: var(--green);
   background: var(--paper);
-  border: 2px solid var(--sage-2);
-  border-radius: 18px;
-  padding: 12px 26px;
-  box-shadow: 0 8px 24px rgba(71, 53, 40, 0.18);
-  animation: matchPop 0.6s ease-out forwards;
+  border: 2.5px solid var(--sage-2);
+  border-radius: 20px;
+  padding: 14px 30px;
+  box-shadow: 0 12px 34px rgba(71, 53, 40, 0.22);
+  animation: matchZoom 1.2s ease-out forwards;
   pointer-events: none;
   white-space: nowrap;
 }
 
-@keyframes matchPop {
-  0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
-  30% { transform: translate(-50%, -50%) scale(1.08); opacity: 1; }
-  70% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
-  100% { transform: translate(-50%, -50%) scale(0.95); opacity: 0; }
+@keyframes matchZoom {
+  0% { transform: translate(-50%, -50%) scale(0.1); opacity: 0; }
+  25% { transform: translate(-50%, -50%) scale(1.15); opacity: 1; }
+  45% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+  80% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(1.05); opacity: 0; }
 }
 
-/* Mini-Anleitung */
+/* Mini-Anleitung — näher an die Karte */
 .tinder-help-row {
   display: flex;
   justify-content: center;
+  align-items: center;
   gap: 10px;
-  padding: 12px 0 6px;
+  padding: 6px 0 4px;
   font-family: var(--serif);
   font-size: 13px;
   font-style: italic;
   color: var(--mute);
+}
+
+.tinder-help-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
 }
 
 /* Match-Stapel unten */
@@ -219,8 +239,8 @@
   display: flex;
   align-items: center;
   gap: 16px;
-  padding: 10px 24px 6px;
-  min-height: 72px;
+  padding: 8px 24px 4px;
+  min-height: 64px;
 }
 
 .tinder-matches-stack {
@@ -228,7 +248,7 @@
   display: flex;
   align-items: center;
   min-width: 110px;
-  height: 54px;
+  height: 50px;
 }
 
 .tinder-matches-mini {
@@ -239,11 +259,11 @@
 }
 
 .tinder-fly-in {
-  animation: flyToStack 0.5s ease-in forwards;
+  animation: flyToStack 0.6s ease-in forwards;
 }
 
 @keyframes flyToStack {
-  0% { transform: translate(120px, -180px) scale(1.6) rotate(10deg); opacity: 0.9; }
+  0% { transform: translate(60px, -260px) scale(2.2) rotate(8deg); opacity: 0.95; }
   100% { transform: translate(0, 0) scale(1) rotate(0deg); opacity: 1; }
 }
 
