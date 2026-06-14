@@ -237,25 +237,27 @@ export default function RecipeTinder({ recipes, onSelectRecipe, onBack }) {
         </span>
       </div>
 
-      {/* Match-Stapel */}
+      {/* Match-Sammlung — zentriert, Label drüber */}
       <div className="tinder-matches-bar">
+        {matches.length > 0 && (
+          <div className="tinder-matches-count game-font">
+            {matches.length} {matches.length === 1 ? 'Match' : 'Matches'}
+          </div>
+        )}
         <div className="tinder-matches-stack">
-          {matches.slice(-5).map((r, i, arr) => (
+          {matches.slice(-6).map((r, i, arr) => (
             <div key={cardKey(r, i)} className="tinder-matches-mini" style={{
-              transform: `translateX(${i * 10}px) rotate(${(i - arr.length / 2) * 4}deg)`,
+              transform: `translateX(${(i - (arr.length - 1) / 2) * 30}px) rotate(${(i - (arr.length - 1) / 2) * 5}deg)`,
               zIndex: i,
             }}>
-              <Monogram recipe={r} size={48} radius={11} />
+              <Monogram recipe={r} size={64} radius={14} />
             </div>
           ))}
           {flyToStack && (
             <div className="tinder-matches-mini tinder-fly-in" style={{ zIndex: 99 }}>
-              <Monogram recipe={flyToStack} size={48} radius={11} />
+              <Monogram recipe={flyToStack} size={64} radius={14} />
             </div>
           )}
-        </div>
-        <div className="tinder-matches-count">
-          {matches.length === 0 ? 'Noch keine Matches' : `${matches.length} Match${matches.length > 1 ? 'es' : ''}`}
         </div>
       </div>
     </div>

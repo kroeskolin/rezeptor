@@ -69,11 +69,11 @@
   cursor: pointer;
 }
 
-/* Kartenbereich — kompakt, Karte sitzt hoch */
+/* Kartenbereich — feste Höhe, Karte sitzt hoch */
 .tinder-card-area {
   position: relative;
   flex: 0 0 auto;
-  height: 360px;
+  height: 340px;
   display: flex;
   align-items: flex-start;
   justify-content: center;
@@ -100,15 +100,17 @@
 
 .tinder-card-active:active { cursor: grabbing; }
 
-/* Stapel-Andeutung */
+/* Stapel-Andeutung — KEINE transition, damit beim Kartenwechsel nichts nachrutscht */
 .tinder-card-behind-1 {
   z-index: 2;
   transform: translateY(10px) scale(0.965) rotate(-1.5deg);
+  transition: none;
 }
 
 .tinder-card-behind-2 {
   z-index: 1;
   transform: translateY(20px) scale(0.93) rotate(2deg);
+  transition: none;
 }
 
 /* Wegfliegende Karte */
@@ -262,35 +264,43 @@
 .tinder-help-nope { color: var(--rose-ink); }
 .tinder-help-like { color: var(--green); }
 
-/* Match-Stapel unten */
+/* Match-Sammlung unten — zentriert, Label über dem Stapel */
 .tinder-matches-bar {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 16px;
-  padding: 6px 24px 4px;
-  min-height: 60px;
+  justify-content: flex-start;
+  gap: 14px;
+  padding: 12px 24px 4px;
+  flex: 1;
+  min-height: 120px;
+}
+
+.tinder-matches-count {
+  font-size: 20px;
+  color: var(--espresso);
+  text-align: center;
 }
 
 .tinder-matches-stack {
   position: relative;
   display: flex;
   align-items: center;
-  min-width: 100px;
-  height: 50px;
-  padding-left: 4px;
+  justify-content: center;
+  width: 100%;
+  height: 70px;
 }
 
 .tinder-matches-mini {
   position: absolute;
-  left: 0;
-  border-radius: 12px;
-  box-shadow: 0 3px 10px rgba(71, 53, 40, 0.15);
+  border-radius: 14px;
+  box-shadow: 0 4px 12px rgba(71, 53, 40, 0.16);
 }
 
 .tinder-fly-in { animation: flyToStack 0.6s ease-in forwards; }
 
 @keyframes flyToStack {
-  0% { transform: translate(40px, -240px) scale(2) rotate(8deg); opacity: 0.95; }
+  0% { transform: translate(0, -240px) scale(2) rotate(8deg); opacity: 0.95; }
   100% { transform: translate(0, 0) scale(1) rotate(0deg); opacity: 1; }
 }
 
