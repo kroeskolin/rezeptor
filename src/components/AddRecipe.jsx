@@ -242,7 +242,7 @@ export default function AddRecipe({ onSave, onClose }) {
       })
       setMode('manual')
     } catch (error) {
-      alert('Rezept konnte nicht erstellt werden.')
+      throw error // an VoiceInput weiterreichen, damit der Transcript erhalten bleibt
     } finally {
       setIsLoading(false); setLoadingMsg('')
     }

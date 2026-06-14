@@ -4,6 +4,7 @@ import './VoiceInput.css'
 function VoiceInput({ onTranscript }) {
   const [isRecording, setIsRecording] = useState(false)
   const [isProcessing, setIsProcessing] = useState(false)
+  const [isCreating, setIsCreating] = useState(false)
   const [transcript, setTranscript] = useState('')
   const [error, setError] = useState('')
   const mediaRecorderRef = useRef(null)
@@ -60,6 +61,19 @@ function VoiceInput({ onTranscript }) {
     }
   }
 
+  const handleCreate = async () => {
+    setError('')
+    setIsCreating(true)
+    try {
+      await onTranscript(transcript)
+      // Erfolg: AddRecipe wechselt den Mode, diese Komponente wird ohnehin unmounted
+    } catch (e) {
+      setError('Rezept-Erstellung fehlgeschlagen. Der Text bleibt erhalten — bitte nochmal versuchen.')
+    } finally {
+      setIsCreating(false)
+    }
+  }
+
   const blobToBase64 = (blob) => new Promise((resolve, reject) => {
     const reader = new FileReader()
     reader.onloadend = () => resolve(reader.result.split(',')[1])
@@ -69,7 +83,7 @@ function VoiceInput({ onTranscript }) {
 
   return (
     <div className="voice-input">
-      {!isRecording && !isProcessing && (
+      {!isRecording && !isProcessing && !transcript && (
         <button className="voice-button" onClick={startRecording}>
           🎤 Sprechen
         </button>
@@ -88,7 +102,7 @@ function VoiceInput({ onTranscript }) {
         </div>
       )}
 
-      {error && (
+      {error && !transcript && (
         <div className="voice-error">{error}</div>
       )}
 
@@ -97,8 +111,23 @@ function VoiceInput({ onTranscript }) {
           <div className="transcript">
             <p>{transcript}</p>
           </div>
-          <button className="save-button" onClick={() => onTranscript(transcript)}>
-            Rezept daraus erstellen ✨
+          {error && (
+            <div className="voice-error" style={{ marginBottom: 10 }}>{error}</div>
+          )}
+          <button className="save-button" onClick={handleCreate} disabled={isCreating}>
+            {isCreating ? 'Wird erstellt …' : (error ? 'Nochmal versuchen ✨' : 'Rezept daraus erstellen ✨')}
+          </button>
+          <button
+            className="voice-redo-button"
+            onClick={startRecording}
+            disabled={isCreating}
+            style={{
+              marginTop: 10, background: 'none', border: 'none',
+              color: 'var(--mute)', fontFamily: 'var(--serif)', fontStyle: 'italic',
+              fontSize: 14, cursor: 'pointer', textDecoration: 'underline',
+            }}
+          >
+            Neu aufnehmen
           </button>
         </>
       )}
