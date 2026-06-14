@@ -1,3 +1,10 @@
+/* Henny Penny für die verspielte Game-Optik */
+@import url('https://fonts.googleapis.com/css2?family=Henny+Penny&display=swap');
+
+.game-font {
+  font-family: 'Henny Penny', var(--serif), cursive;
+}
+
 .tinder {
   display: flex;
   flex-direction: column;
@@ -44,7 +51,7 @@
 .tinder-cook-row {
   display: flex;
   justify-content: center;
-  padding: 6px 0 10px;
+  padding: 6px 0 8px;
 }
 
 .tinder-cook-btn {
@@ -62,11 +69,11 @@
   cursor: pointer;
 }
 
-/* Kartenbereich — kompakter, Karte sitzt höher */
+/* Kartenbereich — kompakt, Karte sitzt hoch */
 .tinder-card-area {
   position: relative;
-  flex: 1;
-  min-height: 300px;
+  flex: 0 0 auto;
+  height: 360px;
   display: flex;
   align-items: flex-start;
   justify-content: center;
@@ -91,11 +98,9 @@
   touch-action: none;
 }
 
-.tinder-card-active:active {
-  cursor: grabbing;
-}
+.tinder-card-active:active { cursor: grabbing; }
 
-/* Stapel-Andeutung: zwei Karten dahinter, leicht nach unten + rotiert */
+/* Stapel-Andeutung */
 .tinder-card-behind-1 {
   z-index: 2;
   transform: translateY(10px) scale(0.965) rotate(-1.5deg);
@@ -106,16 +111,16 @@
   transform: translateY(20px) scale(0.93) rotate(2deg);
 }
 
-/* Wegfliegende Karte — animiert raus */
+/* Wegfliegende Karte */
 .tinder-card-leaving {
   z-index: 4;
-  transition: transform 0.3s ease-in;
+  transition: transform 0.32s ease-in;
   pointer-events: none;
 }
 
 .tinder-card-img {
   width: 100%;
-  height: 230px;
+  height: 220px;
   object-fit: cover;
   display: block;
   pointer-events: none;
@@ -123,16 +128,14 @@
 
 .tinder-card-img-placeholder {
   width: 100%;
-  height: 230px;
+  height: 220px;
   display: flex;
   align-items: center;
   justify-content: center;
   background: var(--paper-2);
 }
 
-.tinder-card-info {
-  padding: 14px 18px 18px;
-}
+.tinder-card-info { padding: 13px 18px 16px; }
 
 .tinder-card-title {
   font-family: var(--serif);
@@ -161,12 +164,11 @@
 .tinder-stamp {
   position: absolute;
   top: 22px;
-  font-family: var(--serif);
-  font-weight: 800;
-  font-size: 26px;
-  letter-spacing: 2px;
+  font-family: 'Henny Penny', var(--serif), cursive;
+  font-size: 24px;
+  letter-spacing: 1px;
   padding: 4px 14px;
-  border-radius: 8px;
+  border-radius: 10px;
   border: 3px solid;
   pointer-events: none;
 }
@@ -176,7 +178,7 @@
   color: var(--green);
   border-color: var(--green);
   transform: rotate(-14deg);
-  background: rgba(255, 255, 255, 0.75);
+  background: rgba(255, 255, 255, 0.78);
 }
 
 .tinder-stamp-nope {
@@ -184,23 +186,21 @@
   color: var(--rose-ink);
   border-color: var(--rose-ink);
   transform: rotate(14deg);
-  background: rgba(255, 255, 255, 0.75);
+  background: rgba(255, 255, 255, 0.78);
 }
 
-/* Match-Popup — fliegt von klein aus der Mitte auf den Nutzer zu */
+/* Match-Popup — zoomt aus der Mitte auf den Nutzer zu */
 .tinder-match-pop {
   position: absolute;
-  top: 42%;
+  top: 40%;
   left: 50%;
   z-index: 10;
-  font-family: var(--serif);
-  font-weight: 800;
   font-size: 30px;
   color: var(--green);
   background: var(--paper);
   border: 2.5px solid var(--sage-2);
   border-radius: 20px;
-  padding: 14px 30px;
+  padding: 14px 28px;
   box-shadow: 0 12px 34px rgba(71, 53, 40, 0.22);
   animation: matchZoom 1.2s ease-out forwards;
   pointer-events: none;
@@ -215,32 +215,32 @@
   100% { transform: translate(-50%, -50%) scale(1.05); opacity: 0; }
 }
 
-/* Mini-Anleitung — näher an die Karte */
+/* Mini-Anleitung — direkt unter dem Stapel, größer & bunt */
 .tinder-help-row {
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 10px;
-  padding: 6px 0 4px;
-  font-family: var(--serif);
-  font-size: 13px;
-  font-style: italic;
-  color: var(--mute);
+  gap: 22px;
+  padding: 2px 0 6px;
+  font-size: 17px;
 }
 
 .tinder-help-item {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
+  gap: 7px;
 }
+
+.tinder-help-nope { color: var(--rose-ink); }
+.tinder-help-like { color: var(--green); }
 
 /* Match-Stapel unten */
 .tinder-matches-bar {
   display: flex;
   align-items: center;
   gap: 16px;
-  padding: 8px 24px 4px;
-  min-height: 64px;
+  padding: 6px 24px 4px;
+  min-height: 60px;
 }
 
 .tinder-matches-stack {
@@ -258,12 +258,10 @@
   box-shadow: 0 3px 10px rgba(71, 53, 40, 0.15);
 }
 
-.tinder-fly-in {
-  animation: flyToStack 0.6s ease-in forwards;
-}
+.tinder-fly-in { animation: flyToStack 0.6s ease-in forwards; }
 
 @keyframes flyToStack {
-  0% { transform: translate(60px, -260px) scale(2.2) rotate(8deg); opacity: 0.95; }
+  0% { transform: translate(60px, -240px) scale(2) rotate(8deg); opacity: 0.95; }
   100% { transform: translate(0, 0) scale(1) rotate(0deg); opacity: 1; }
 }
 
@@ -281,16 +279,15 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 22px;
+  gap: 20px;
   padding: 0 24px 40px;
 }
 
 .tinder-final-label {
-  font-family: var(--serif);
-  font-weight: 800;
-  font-size: 26px;
+  font-size: 30px;
   color: var(--espresso);
   text-align: center;
+  line-height: 1.15;
 }
 
 .tinder-final-sub {
@@ -298,7 +295,7 @@
   font-size: 15px;
   font-style: italic;
   color: var(--mute);
-  margin-top: -12px;
+  margin-top: -8px;
 }
 
 .tinder-card-final {
@@ -315,6 +312,8 @@
   position: relative;
   display: flex;
   height: 80px;
+  width: 100%;
+  justify-content: center;
   align-items: center;
 }
 
