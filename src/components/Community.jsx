@@ -1,46 +1,54 @@
-import './Community.css';
-import { Icon } from './DesignTokens';
-
-function CircleMono({ name, size = 40, idx = 0 }) {
-  const tints = [
-    { bg: '#C8D9BF', ink: '#3C5232' },
-    { bg: '#EDD4CF', ink: '#8A4F46' },
-    { bg: '#E7DCC6', ink: '#6A5230' },
-    { bg: '#DCE7D0', ink: '#46603A' },
-  ];
-  const t = tints[idx % tints.length];
-  const initial = (name || '?').trim().charAt(0).toUpperCase();
-  return (
-    <div className="community-card-avatar" style={{ background: t.bg, width: size, height: size }}>
-      <span style={{ fontFamily: 'var(--logo)', fontWeight: 600, fontSize: size * 0.46, color: t.ink, lineHeight: 1 }}>
-        {initial}
-      </span>
-    </div>
-  );
-}
+import { useAuth } from '../contexts/AuthContext'
 
 export default function Community() {
+  const { user, signInWithGoogle, logout } = useAuth()
+
+  // user === undefined → Auth lädt noch
+  if (user === undefined) {
+    return (
+      <div style={{ padding: '80px 22px', textAlign: 'center', color: 'var(--mute)', fontFamily: 'var(--serif)' }}>
+        Lädt…
+      </div>
+    )
+  }
+
   return (
-    <div className="community">
-      <div className="community-header">
-        <h1 className="display" style={{ fontSize: 34, color: 'var(--espresso)' }}>
-          Comm<span style={{ fontStyle: 'italic', fontWeight: 600 }}>un</span>ity
-        </h1>
-        <CircleMono name="Du" size={38} idx={3} />
-      </div>
-
-      <div style={{
-        margin: '60px 20px 0',
-        textAlign: 'center', padding: '40px 24px', color: 'var(--mute)',
-        fontFamily: 'var(--serif)', fontSize: 15, fontStyle: 'italic',
-        background: 'var(--paper-2)', borderRadius: 16, border: '1px solid var(--line)',
-        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12,
-      }}>
-        <Icon name="heart" size={28} color="var(--sage-2)" />
-        <div>Das Community-Feature folgt bald!</div>
-      </div>
-
-      <div style={{ height: 20 }} />
+    <div style={{ padding: '80px 22px 0', display: 'flex', flexDirection: 'column', gap: 20, alignItems: 'center' }}>
+      {user === null ? (
+        <>
+          <div style={{ fontFamily: 'var(--serif)', fontSize: 18, color: 'var(--cocoa)', textAlign: 'center' }}>
+            Noch nicht eingeloggt.
+          </div>
+          <button
+            onClick={() => signInWithGoogle().catch(err => alert('Login-Fehler: ' + err.message))}
+            style={{
+              background: 'var(--green)', color: 'var(--paper)', border: 'none',
+              borderRadius: 14, padding: '15px 28px', fontSize: 16, fontWeight: 700,
+              fontFamily: 'var(--serif)', cursor: 'pointer',
+            }}>
+            Mit Google anmelden
+          </button>
+        </>
+      ) : (
+        <>
+          {user.photoURL && (
+            <img src={user.photoURL} alt="" style={{ width: 64, height: 64, borderRadius: '50%' }} />
+          )}
+          <div style={{ fontFamily: 'var(--serif)', fontSize: 18, color: 'var(--espresso)', textAlign: 'center' }}>
+            Eingeloggt als<br />
+            <strong>{user.displayName}</strong>
+          </div>
+          <button
+            onClick={() => logout()}
+            style={{
+              background: 'var(--card)', color: 'var(--cocoa)', border: '1px solid var(--line-2)',
+              borderRadius: 14, padding: '12px 24px', fontSize: 15,
+              fontFamily: 'var(--serif)', cursor: 'pointer',
+            }}>
+            Abmelden
+          </button>
+        </>
+      )}
     </div>
-  );
+  )
 }
