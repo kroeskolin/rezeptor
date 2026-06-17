@@ -169,7 +169,7 @@ function App() {
         </div>
       )
     }
-    
+
     if (showAddRecipe) {
       return <AddRecipe onSave={handleSave} onClose={() => { setShowAddRecipe(false); goToMainPage() }} />
     }
@@ -220,7 +220,7 @@ function App() {
           onBack={() => { setTodayMode(null); goToMainPage() }} />
         return <TodayTab onSelectMode={(mode) => { setTodayMode(mode); goToSubPage() }} />
       case 'community':
-        return <Community recipes={recipes} />
+        return <Community recipes={recipes} onLocalSave={handleSave} />
       case 'settings':
         return <Settings
           onImport={handleSave}

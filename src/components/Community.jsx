@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { getFeed } from '../db/community'
+import CommunityRecipeDetail from './CommunityRecipeDetail'
 
-export default function Community() {
+export default function Community({ onLocalSave }) {
   const { user, signInWithGoogle, logout } = useAuth()
   const [feed, setFeed] = useState([])
   const [loading, setLoading] = useState(true)
+  const [selectedFeedRecipe, setSelectedFeedRecipe] = useState(null)
 
   useEffect(() => {
     getFeed()
@@ -20,6 +22,17 @@ export default function Community() {
       <div style={{ padding: '80px 22px', textAlign: 'center', color: 'var(--mute)', fontFamily: 'var(--serif)' }}>
         Lädt…
       </div>
+    )
+  }
+
+  // Ein Feed-Rezept ist geöffnet → Detailansicht statt Feed
+  if (selectedFeedRecipe) {
+    return (
+      <CommunityRecipeDetail
+        recipe={selectedFeedRecipe}
+        onBack={() => setSelectedFeedRecipe(null)}
+        onLocalSave={onLocalSave}
+      />
     )
   }
 
@@ -70,10 +83,12 @@ export default function Community() {
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           {feed.map(recipe => (
-            <div key={recipe.id} style={{
-              background: 'var(--card)', border: '1.5px solid var(--line-2)',
-              borderRadius: 16, padding: 16,
-            }}>
+            <div key={recipe.id}
+              onClick={() => setSelectedFeedRecipe(recipe)}
+              style={{
+                background: 'var(--card)', border: '1.5px solid var(--line-2)',
+                borderRadius: 16, padding: 16, cursor: 'pointer',
+              }}>
               <div style={{ fontFamily: 'var(--serif)', fontWeight: 700, fontSize: 18, color: 'var(--espresso)' }}>
                 {recipe.title}
               </div>
