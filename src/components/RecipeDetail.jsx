@@ -2,6 +2,8 @@ import { useState } from 'react';
 import './RecipeDetail.css';
 import { Icon, coverTint, totalTime } from './DesignTokens';
 import { compressToEncodedURIComponent } from 'lz-string'
+import { publishRecipe } from '../db/community'
+import { useAuth } from '../contexts/AuthContext'
 
 function HeartBtn({ recipe, onToggle, glass = false }) {
   const isFav = !!recipe.favorite;
@@ -50,6 +52,7 @@ function PhotoFullscreen({ src, onClose }) {
 export default function RecipeDetail({ recipe, onBack, onEdit, onStartCook, onToggleFavorite }) {
   const [showFullscreen, setShowFullscreen] = useState(false);
   const [showShareSheet, setShowShareSheet] = useState(false);
+  const { user, signInWithGoogle } = useAuth();
 
   if (!recipe) return null;
 
@@ -234,6 +237,24 @@ export default function RecipeDetail({ recipe, onBack, onEdit, onStartCook, onTo
     }
     setShowShareSheet(false)
   }
+
+  const handlePublish = async () => {
+    if (!user) {
+      try {
+        await signInWithGoogle();
+      } catch (err) {
+        alert('Login nötig zum Veröffentlichen: ' + err.message);
+        return;
+      }
+    }
+    try {
+      await publishRecipe(recipe, user);
+      alert('Rezept in der Community veröffentlicht! 🎉');
+      setShowShareSheet(false);
+    } catch (err) {
+      alert('Fehler beim Veröffentlichen: ' + err.message);
+    }
+  };
 
   return (
     <div className="recipe-detail">
@@ -432,6 +453,17 @@ export default function RecipeDetail({ recipe, onBack, onEdit, onStartCook, onTo
               Rezept <span style={{ fontStyle: 'italic' }}>teilen</span>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <button onClick={handlePublish} style={{
+                display: 'flex', alignItems: 'center', gap: 14,
+                background: 'var(--green)', border: 'none',
+                borderRadius: 14, padding: '14px 16px', cursor: 'pointer', textAlign: 'left',
+              }}>
+                <Icon name="globe" size={20} color="var(--paper)" />
+                <div>
+                  <div style={{ fontFamily: 'var(--serif)', fontSize: 15, fontWeight: 700, color: 'var(--paper)' }}>In der Community veröffentlichen</div>
+                  <div style={{ fontFamily: 'var(--serif)', fontSize: 13, color: 'var(--paper)', opacity: 0.85, fontStyle: 'italic' }}>Für alle Rezeptor-Nutzenden sichtbar</div>
+                </div>
+              </button>
               <button onClick={handleShareLink} style={{
                 display: 'flex', alignItems: 'center', gap: 14,
                 background: 'var(--sage)', border: '1px solid var(--sage-2)',
