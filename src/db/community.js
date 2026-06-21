@@ -44,20 +44,32 @@ export async function publishRecipe(recipe, user, caption = '') {
 
     const ref = await addDoc(collection(db, 'recipes'), docData);
 
-    // Foto in Firebase Storage hochladen (falls vorhanden) und URL nachtragen
-    if (recipe.image && recipe.image.startsWith('data:')) {
-        try {
-            const imgRef = storageRef(storage, `community/${ref.id}.jpg`);
-            await uploadString(imgRef, recipe.image, 'data_url');
-            const url = await getDownloadURL(imgRef);
-            await updateDoc(ref, { image: url });
-        } catch (e) {
-            // Foto ist optional – Rezept bleibt auch ohne Bild veröffentlicht
-            console.error('Foto-Upload fehlgeschlagen:', e);
+    // Foto verarbeiten (optional – Rezept bleibt auch ohne Bild veröffentlicht)
+    let photoError = null;
+    if (recipe.image) {
+        if (recipe.image.startsWith('data:')) {
+            // Lokales Foto (Base64) → in Firebase Storage hochladen, URL nachtragen
+            try {
+                const imgRef = storageRef(storage, `community/${ref.id}.jpg`);
+                await uploadString(imgRef, recipe.image, 'data_url');
+                const url = await getDownloadURL(imgRef);
+                await updateDoc(ref, { image: url });
+            } catch (e) {
+                console.error('Foto-Upload fehlgeschlagen:', e);
+                photoError = e?.code || e?.message || 'Unbekannter Fehler';
+            }
+        } else {
+            // Bereits eine URL (z. B. importiert oder aus der Community) → direkt übernehmen
+            try {
+                await updateDoc(ref, { image: recipe.image });
+            } catch (e) {
+                console.error('Foto-Übernahme fehlgeschlagen:', e);
+                photoError = e?.code || e?.message || 'Unbekannter Fehler';
+            }
         }
     }
 
-    return ref.id; // die neue Firestore-ID
+    return { id: ref.id, photoError };
 }
 
 // Alle veröffentlichten Rezepte laden, neueste zuerst.

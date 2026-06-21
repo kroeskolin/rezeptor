@@ -1,5 +1,6 @@
 import { coverTint, totalTime } from './DesignTokens'
 import { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { toggleLike, hasLiked, getComments, addComment, deleteComment, deleteRecipe } from '../db/community'
 import { addRecipe } from '../db/recipes'
@@ -373,11 +374,11 @@ export default function CommunityRecipeDetail({ recipe, onBack, onDeleted, onLoc
                 </div>
             )}
 
-            {/* Rezept-Overlay */}
-            {showRecipe && (
+            {/* Rezept-Overlay (per Portal an document.body, sonst iOS-fixed-Bug) */}
+            {showRecipe && createPortal((
                 <div style={{
                     position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)',
-                    zIndex: 300, display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
+                    zIndex: 1000, display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
                 }} onClick={() => setShowRecipe(false)}>
                     <div onClick={e => e.stopPropagation()} style={{
                         background: 'var(--paper)', borderRadius: '20px 20px 0 0',
@@ -490,7 +491,7 @@ export default function CommunityRecipeDetail({ recipe, onBack, onDeleted, onLoc
                         </div>
                     </div>
                 </div>
-            )}
+            ), document.body)}
         </div>
     )
 }

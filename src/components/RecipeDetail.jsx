@@ -260,9 +260,13 @@ export default function RecipeDetail({ recipe, onBack, onEdit, onStartCook, onTo
     if (publishBusy) return;
     setPublishBusy(true);
     try {
-      await publishRecipe(recipe, user, captionText);
+      const res = await publishRecipe(recipe, user, captionText);
       setShowCaptionOverlay(false);
-      alert('Rezept in der Community veröffentlicht! 🎉');
+      if (res?.photoError) {
+        alert('Veröffentlicht! 🎉 Aber das Foto konnte nicht hochgeladen werden:\n' + res.photoError);
+      } else {
+        alert('Rezept in der Community veröffentlicht! 🎉');
+      }
     } catch (err) {
       alert('Fehler beim Veröffentlichen: ' + err.message);
     } finally {

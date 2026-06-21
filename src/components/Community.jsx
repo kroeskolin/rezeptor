@@ -1,10 +1,21 @@
 import { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { getFeed, getRecipeById } from '../db/community'
 import CommunityRecipeDetail from './CommunityRecipeDetail'
 
+// Sprechblasen-Icon (gleiches wie im Header)
+function SpeechBubble({ size = 14, color = 'var(--mute)' }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" style={{ display: 'block' }}>
+      <path d="M21 11.5a8.4 8.4 0 0 1-8.5 8.5 8.5 8.5 0 0 1-3.6-.8L3 21l1.8-5.9A8.5 8.5 0 1 1 21 11.5z"
+        stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
 export default function Community({ onLocalSave, activities = [], unreadCount = 0, lastSeen = 0, onSeen }) {
-  const { user, signInWithGoogle, logout } = useAuth()
+  const { user, signInWithGoogle } = useAuth()
   const [feed, setFeed] = useState([])
   const [loading, setLoading] = useState(true)
   const [selectedFeedRecipe, setSelectedFeedRecipe] = useState(null)
@@ -89,41 +100,24 @@ export default function Community({ onLocalSave, activities = [], unreadCount = 
             Anmelden
           </button>
         ) : (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            {/* Aktivitäten-Sprechblase */}
-            <button
-              onClick={openActivities}
-              aria-label="Aktivitäten"
-              style={{
-                width: 40, height: 40, borderRadius: '50%', flexShrink: 0,
-                background: unreadCount > 0 ? 'var(--rose)' : 'var(--card)',
-                border: `1px solid ${unreadCount > 0 ? 'var(--rose-2)' : 'var(--line-2)'}`,
-                cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-              }}>
-              {unreadCount > 0 ? (
-                <span style={{ fontFamily: 'var(--serif)', fontSize: 14, fontWeight: 700, color: 'var(--rose-ink)' }}>
-                  {unreadCount > 9 ? '9+' : unreadCount}
-                </span>
-              ) : (
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                  <path d="M21 11.5a8.4 8.4 0 0 1-8.5 8.5 8.5 8.5 0 0 1-3.6-.8L3 21l1.8-5.9A8.5 8.5 0 1 1 21 11.5z"
-                    stroke="var(--mute)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              )}
-            </button>
-            {user.photoURL && (
-              <img src={user.photoURL} alt="" style={{ width: 32, height: 32, borderRadius: '50%' }} />
+          // Aktivitäten-Sprechblase (ganz rechts); Account-Verwaltung liegt in den Einstellungen
+          <button
+            onClick={openActivities}
+            aria-label="Aktivitäten"
+            style={{
+              width: 40, height: 40, borderRadius: '50%', flexShrink: 0,
+              background: unreadCount > 0 ? 'var(--rose)' : 'var(--card)',
+              border: `1px solid ${unreadCount > 0 ? 'var(--rose-2)' : 'var(--line-2)'}`,
+              cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+            {unreadCount > 0 ? (
+              <span style={{ fontFamily: 'var(--serif)', fontSize: 14, fontWeight: 700, color: 'var(--rose-ink)' }}>
+                {unreadCount > 9 ? '9+' : unreadCount}
+              </span>
+            ) : (
+              <SpeechBubble size={18} />
             )}
-            <button
-              onClick={() => logout()}
-              style={{
-                background: 'var(--card)', color: 'var(--cocoa)', border: '1px solid var(--line-2)',
-                borderRadius: 12, padding: '8px 14px', fontSize: 13,
-                fontFamily: 'var(--serif)', cursor: 'pointer',
-              }}>
-              Abmelden
-            </button>
-          </div>
+          </button>
         )}
       </div>
 
@@ -186,20 +180,22 @@ export default function Community({ onLocalSave, activities = [], unreadCount = 
               </div>
 
               {/* Likes/Kommentare – immer sichtbar */}
-              <div style={{ display: 'flex', gap: 16, fontFamily: 'var(--serif)', fontSize: 13, color: 'var(--mute)', marginTop: 10 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 16, fontFamily: 'var(--serif)', fontSize: 13, color: 'var(--mute)', marginTop: 10 }}>
                 <span>♥ {recipe.likeCount || 0}</span>
-                <span>💬 {recipe.commentCount || 0}</span>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                  <SpeechBubble size={14} /> {recipe.commentCount || 0}
+                </span>
               </div>
             </div>
           ))}
         </div>
       )}
 
-      {/* Aktivitäten-Panel */}
-      {showActivities && (
+      {/* Aktivitäten-Panel (per Portal an document.body, sonst iOS-fixed-Bug) */}
+      {showActivities && createPortal((
         <div style={{
           position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)',
-          zIndex: 300, display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
+          zIndex: 1000, display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
         }} onClick={() => setShowActivities(false)}>
           <div onClick={e => e.stopPropagation()} style={{
             background: 'var(--paper)', borderRadius: '20px 20px 0 0',
@@ -226,8 +222,10 @@ export default function Community({ onLocalSave, activities = [], unreadCount = 
                       border: `1px solid ${isNew ? 'var(--rose-2)' : 'var(--line-2)'}`,
                       borderRadius: 14, padding: '12px 14px', cursor: 'pointer',
                     }}>
-                      <span style={{ fontSize: 18, flexShrink: 0, color: a.type === 'like' ? 'var(--rose-ink)' : 'var(--green)' }}>
-                        {a.type === 'like' ? '♥' : '💬'}
+                      <span style={{ flexShrink: 0, display: 'flex', color: a.type === 'like' ? 'var(--rose-ink)' : 'var(--green)' }}>
+                        {a.type === 'like'
+                          ? <span style={{ fontSize: 18, lineHeight: 1 }}>♥</span>
+                          : <SpeechBubble size={17} color="var(--green)" />}
                       </span>
                       <span style={{ flex: 1, minWidth: 0, fontFamily: 'var(--serif)', fontSize: 14, color: 'var(--espresso)', lineHeight: 1.4 }}>
                         {activityText(a)}
@@ -242,7 +240,7 @@ export default function Community({ onLocalSave, activities = [], unreadCount = 
             )}
           </div>
         </div>
-      )}
+      ), document.body)}
     </div>
   )
 }
