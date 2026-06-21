@@ -1,7 +1,7 @@
 import './Layout.css';
 import { Icon, Wordmark } from './DesignTokens';
 
-export default function Layout({ activeTab, onTabChange, onFabClick, children, hideNav, onFavClick, favActive, onSearchClick }) {
+export default function Layout({ activeTab, onTabChange, onFabClick, children, hideNav, onFavClick, favActive, onSearchClick, communityBadge = 0 }) {
   const tabs = [
     { id: 'home', icon: 'book', label: 'Rezepte' },
     { id: 'today', icon: 'plate', label: 'Inspiration' },
@@ -90,6 +90,7 @@ export default function Layout({ activeTab, onTabChange, onFabClick, children, h
                 key={tab.id}
                 className={`bottom-nav-tab${activeTab === tab.id ? ' active' : ''}`}
                 onClick={() => onTabChange(tab.id)}
+                style={{ position: 'relative' }}
               >
                 <Icon
                   name={tab.icon}
@@ -98,6 +99,18 @@ export default function Layout({ activeTab, onTabChange, onFabClick, children, h
                   strokeWidth={activeTab === tab.id ? 1.95 : 1.5}
                   fill={activeTab === tab.id && tab.icon === 'heartnav'}
                 />
+                {tab.id === 'community' && communityBadge > 0 && (
+                  <span style={{
+                    position: 'absolute', top: -2, right: 'calc(50% - 22px)',
+                    minWidth: 18, height: 18, padding: '0 5px', boxSizing: 'border-box',
+                    background: '#C24B33', color: 'var(--paper)',
+                    borderRadius: 9, fontSize: 11, fontWeight: 700,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    lineHeight: 1,
+                  }}>
+                    {communityBadge > 9 ? '9+' : communityBadge}
+                  </span>
+                )}
                 <span>{tab.label}</span>
               </button>
             ))}

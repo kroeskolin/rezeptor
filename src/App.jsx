@@ -17,6 +17,8 @@ import { loadTheme } from './useTheme'
 import SplashScreen from './components/SplashScreen'
 import { decompressFromEncodedURIComponent } from 'lz-string'
 import { addRecipe } from './db/recipes'
+import { useAuth } from './contexts/AuthContext'
+import { getActivities } from './db/community'
 
 loadTheme()
 
@@ -34,9 +36,35 @@ function App() {
   const [isOnMainPage, setIsOnMainPage] = useState(true)
   const [importRecipe, setImportRecipe] = useState(null)
 
+  const { user } = useAuth()
+  const [activities, setActivities] = useState([])
+  const [lastSeen, setLastSeen] = useState(0)
+
+  const seenKey = user ? `rezeptor_activitySeen_${user.uid}` : null
+
   useEffect(() => {
     getAllRecipes().then(setRecipes)
   }, [])
+
+  // Aktivitäten laden, sobald ein Nutzer eingeloggt ist (und beim Wiederanzeigen der App)
+  useEffect(() => {
+    if (!user) { setActivities([]); setLastSeen(0); return }
+    setLastSeen(Number(localStorage.getItem(`rezeptor_activitySeen_${user.uid}`) || 0))
+    const load = () => getActivities(user).then(setActivities).catch(err => console.error('Aktivitäten laden fehlgeschlagen:', err))
+    load()
+    const onVisible = () => { if (!document.hidden) load() }
+    document.addEventListener('visibilitychange', onVisible)
+    return () => document.removeEventListener('visibilitychange', onVisible)
+  }, [user])
+
+  const unreadCount = activities.filter(a => a.createdAtMs > lastSeen).length
+
+  const markActivitiesSeen = () => {
+    if (!seenKey) return
+    const now = Date.now()
+    localStorage.setItem(seenKey, String(now))
+    setLastSeen(now)
+  }
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
@@ -220,7 +248,14 @@ function App() {
           onBack={() => { setTodayMode(null); goToMainPage() }} />
         return <TodayTab onSelectMode={(mode) => { setTodayMode(mode); goToSubPage() }} />
       case 'community':
-        return <Community recipes={recipes} onLocalSave={handleSave} />
+        return <Community
+          recipes={recipes}
+          onLocalSave={handleSave}
+          activities={activities}
+          unreadCount={unreadCount}
+          lastSeen={lastSeen}
+          onSeen={markActivitiesSeen}
+        />
       case 'settings':
         return <Settings
           onImport={handleSave}
@@ -238,6 +273,7 @@ function App() {
     <>
       <Layout
         activeTab={activeTab}
+        communityBadge={unreadCount}
         onTabChange={(tab) => {
           setActiveTab(tab)
           setTodayMode(null)

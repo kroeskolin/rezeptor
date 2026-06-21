@@ -1,26 +1,33 @@
 import {
     collection,
+    collectionGroup,
     addDoc,
     getDocs,
     getDoc,
     doc,
     query,
+    where,
     orderBy,
     serverTimestamp,
     writeBatch,
     increment,
+    updateDoc,
+    deleteDoc,
 } from 'firebase/firestore';
 
-import { db } from './firebase';
+import { ref as storageRef, uploadString, getDownloadURL, deleteObject } from 'firebase/storage';
+
+import { db, storage } from './firebase';
 
 // Ein lokales Rezept in die öffentliche Firestore-Sammlung hochladen.
 // user = das eingeloggte Firebase-User-Objekt (aus useAuth)
-export async function publishRecipe(recipe, user) {
+export async function publishRecipe(recipe, user, caption = '') {
     if (!user) throw new Error('Nicht eingeloggt');
 
     const docData = {
         authorId: user.uid,
         authorName: user.displayName || 'Unbekannt',
+        caption: (caption || '').trim(),
         title: recipe.title || '',
         subtitle: recipe.subtitle || '',
         servings: Number(recipe.servings) || 0,
@@ -29,12 +36,27 @@ export async function publishRecipe(recipe, user) {
         ingredients: recipe.ingredients || [],
         steps: recipe.steps || '',
         tags: recipe.tags || [],
+        image: null,
         likeCount: 0,
         commentCount: 0,
         createdAt: serverTimestamp(),
     };
 
     const ref = await addDoc(collection(db, 'recipes'), docData);
+
+    // Foto in Firebase Storage hochladen (falls vorhanden) und URL nachtragen
+    if (recipe.image && recipe.image.startsWith('data:')) {
+        try {
+            const imgRef = storageRef(storage, `community/${ref.id}.jpg`);
+            await uploadString(imgRef, recipe.image, 'data_url');
+            const url = await getDownloadURL(imgRef);
+            await updateDoc(ref, { image: url });
+        } catch (e) {
+            // Foto ist optional – Rezept bleibt auch ohne Bild veröffentlicht
+            console.error('Foto-Upload fehlgeschlagen:', e);
+        }
+    }
+
     return ref.id; // die neue Firestore-ID
 }
 
@@ -68,8 +90,12 @@ export async function toggleLike(recipeId, user) {
         batch.delete(likeRef);
         batch.update(recipeRef, { likeCount: increment(-1) });
     } else {
-        // Like setzen + Zähler +1
-        batch.set(likeRef, { createdAt: serverTimestamp() });
+        // Like setzen + Zähler +1 (Name mitspeichern für Aktivitäten)
+        batch.set(likeRef, {
+            authorId: user.uid,
+            authorName: user.displayName || 'Unbekannt',
+            createdAt: serverTimestamp(),
+        });
         batch.update(recipeRef, { likeCount: increment(1) });
     }
 
@@ -87,7 +113,7 @@ export async function getComments(recipeId) {
     return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
 }
 
-// Einen Kommentar schreiben. Gibt das neue Kommentar-Objekt zurück.
+// Einen Kommentar schreiben. Gibt die neue Kommentar-ID zurück.
 export async function addComment(recipeId, text, user) {
     if (!user) throw new Error('Nicht eingeloggt');
     const clean = (text || '').trim();
@@ -99,5 +125,109 @@ export async function addComment(recipeId, text, user) {
         text: clean,
         createdAt: serverTimestamp(),
     });
+    // Zähler best-effort hochzählen (kritisch ist nur der Kommentar selbst)
+    try {
+        await updateDoc(doc(db, 'recipes', recipeId), { commentCount: increment(1) });
+    } catch (e) { /* Zähler nicht kritisch */ }
     return ref.id;
+}
+
+// Einen eigenen Kommentar löschen.
+export async function deleteComment(recipeId, commentId, user) {
+    if (!user) throw new Error('Nicht eingeloggt');
+    await deleteDoc(doc(db, 'recipes', recipeId, 'comments', commentId));
+    // Zähler best-effort runterzählen
+    try {
+        await updateDoc(doc(db, 'recipes', recipeId), { commentCount: increment(-1) });
+    } catch (e) { /* Zähler nicht kritisch */ }
+}
+
+// Ein eigenes Rezept aus der Community löschen.
+// (Unter-Sammlungen likes/comments bleiben verwaist – für diese App ok.)
+export async function deleteRecipe(recipeId, user) {
+    if (!user) throw new Error('Nicht eingeloggt');
+    await deleteDoc(doc(db, 'recipes', recipeId));
+    // Zugehöriges Foto best-effort aus dem Storage löschen
+    try {
+        await deleteObject(storageRef(storage, `community/${recipeId}.jpg`));
+    } catch (e) { /* evtl. kein Foto vorhanden */ }
+}
+
+// Ein einzelnes Community-Rezept per ID laden (Fallback fürs Öffnen aus Aktivitäten).
+export async function getRecipeById(recipeId) {
+    const snap = await getDoc(doc(db, 'recipes', recipeId));
+    return snap.exists() ? { id: snap.id, ...snap.data() } : null;
+}
+
+// Aktivitäten zum eingeloggten Nutzer sammeln:
+//  - Likes & Kommentare auf meinen Rezepten
+//  - weitere Kommentare auf Rezepten, die ich kommentiert habe (nicht meine)
+// Gibt eine flache Liste zurück, neueste zuerst.
+export async function getActivities(user) {
+    if (!user) return [];
+    const me = user.uid;
+    const activities = [];
+
+    const ms = (ts) => ts?.toMillis?.() ?? 0;
+
+    // 1. Meine eigenen Rezepte → Likes + Kommentare anderer
+    const myRecipesSnap = await getDocs(query(collection(db, 'recipes'), where('authorId', '==', me)));
+    const myRecipeIds = new Set();
+    for (const recDoc of myRecipesSnap.docs) {
+        const rec = recDoc.data();
+        const rid = recDoc.id;
+        myRecipeIds.add(rid);
+
+        const likesSnap = await getDocs(collection(db, 'recipes', rid, 'likes'));
+        likesSnap.forEach((l) => {
+            if (l.id === me) return; // eigener Like
+            const d = l.data();
+            activities.push({
+                id: `like_${rid}_${l.id}`, type: 'like',
+                recipeId: rid, recipeTitle: rec.title || '',
+                actorName: d.authorName || 'Jemand', actorId: l.id,
+                createdAtMs: ms(d.createdAt),
+            });
+        });
+
+        const comSnap = await getDocs(collection(db, 'recipes', rid, 'comments'));
+        comSnap.forEach((c) => {
+            const d = c.data();
+            if (d.authorId === me) return; // eigener Kommentar
+            activities.push({
+                id: `comment_${rid}_${c.id}`, type: 'comment',
+                recipeId: rid, recipeTitle: rec.title || '',
+                actorName: d.authorName || 'Jemand', actorId: d.authorId,
+                text: d.text || '', createdAtMs: ms(d.createdAt),
+            });
+        });
+    }
+
+    // 2. Rezepte, die ich kommentiert habe (aber nicht selbst gepostet) → weitere Kommentare
+    const myCommentsSnap = await getDocs(query(collectionGroup(db, 'comments'), where('authorId', '==', me)));
+    const commentedRecipeIds = new Set();
+    myCommentsSnap.forEach((c) => {
+        const parent = c.ref.parent.parent;
+        if (parent && !myRecipeIds.has(parent.id)) commentedRecipeIds.add(parent.id);
+    });
+
+    for (const rid of commentedRecipeIds) {
+        const recDoc = await getDoc(doc(db, 'recipes', rid));
+        if (!recDoc.exists()) continue;
+        const rec = recDoc.data();
+        const comSnap = await getDocs(collection(db, 'recipes', rid, 'comments'));
+        comSnap.forEach((c) => {
+            const d = c.data();
+            if (d.authorId === me) return; // eigener Kommentar
+            activities.push({
+                id: `cocomment_${rid}_${c.id}`, type: 'cocomment',
+                recipeId: rid, recipeTitle: rec.title || '',
+                actorName: d.authorName || 'Jemand', actorId: d.authorId,
+                text: d.text || '', createdAtMs: ms(d.createdAt),
+            });
+        });
+    }
+
+    activities.sort((a, b) => b.createdAtMs - a.createdAtMs);
+    return activities;
 }

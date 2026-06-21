@@ -52,6 +52,9 @@ function PhotoFullscreen({ src, onClose }) {
 export default function RecipeDetail({ recipe, onBack, onEdit, onStartCook, onToggleFavorite }) {
   const [showFullscreen, setShowFullscreen] = useState(false);
   const [showShareSheet, setShowShareSheet] = useState(false);
+  const [showCaptionOverlay, setShowCaptionOverlay] = useState(false);
+  const [captionText, setCaptionText] = useState('');
+  const [publishBusy, setPublishBusy] = useState(false);
   const { user, signInWithGoogle } = useAuth();
 
   if (!recipe) return null;
@@ -247,12 +250,23 @@ export default function RecipeDetail({ recipe, onBack, onEdit, onStartCook, onTo
         return;
       }
     }
+    // Statt sofort zu posten: Overlay für den Textbeitrag öffnen
+    setShowShareSheet(false);
+    setCaptionText('');
+    setShowCaptionOverlay(true);
+  };
+
+  const handleConfirmPublish = async () => {
+    if (publishBusy) return;
+    setPublishBusy(true);
     try {
-      await publishRecipe(recipe, user);
+      await publishRecipe(recipe, user, captionText);
+      setShowCaptionOverlay(false);
       alert('Rezept in der Community veröffentlicht! 🎉');
-      setShowShareSheet(false);
     } catch (err) {
       alert('Fehler beim Veröffentlichen: ' + err.message);
+    } finally {
+      setPublishBusy(false);
     }
   };
 
@@ -509,6 +523,49 @@ export default function RecipeDetail({ recipe, onBack, onEdit, onStartCook, onTo
                 </div>
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Textbeitrag-Overlay vor dem Veröffentlichen */}
+      {showCaptionOverlay && (
+        <div style={{
+          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)',
+          zIndex: 320, display: 'flex', alignItems: 'flex-end',
+        }} onClick={() => { if (!publishBusy) setShowCaptionOverlay(false); }}>
+          <div style={{
+            background: 'var(--paper)', borderRadius: '20px 20px 0 0',
+            padding: '20px 20px 40px', width: '100%',
+          }} onClick={e => e.stopPropagation()}>
+            <div style={{ width: 36, height: 4, borderRadius: 2, background: 'var(--line-2)', margin: '0 auto 20px' }} />
+            <div style={{ fontFamily: 'var(--serif)', fontSize: 18, fontWeight: 700, color: 'var(--espresso)', marginBottom: 6 }}>
+              Dein <span style={{ fontStyle: 'italic' }}>Textbeitrag</span>
+            </div>
+            <div style={{ fontFamily: 'var(--serif)', fontSize: 13, color: 'var(--mute)', fontStyle: 'italic', marginBottom: 14 }}>
+              Erzähl etwas zu „{recipe.title}" – das steht im Feed ganz oben.
+            </div>
+            <textarea
+              value={captionText}
+              onChange={e => setCaptionText(e.target.value)}
+              autoFocus
+              rows={4}
+              placeholder="Wie schmeckt es? Wann gibt's das bei dir? Tipps?"
+              style={{
+                width: '100%', boxSizing: 'border-box', resize: 'none',
+                border: '1px solid var(--line-2)', borderRadius: 14,
+                padding: '12px 14px', fontFamily: 'var(--serif)', fontSize: 15,
+                color: 'var(--espresso)', background: 'var(--card)', outline: 'none',
+                lineHeight: 1.5,
+              }}
+            />
+            <button onClick={handleConfirmPublish} disabled={publishBusy} style={{
+              width: '100%', marginTop: 16, background: 'var(--green)', border: 'none',
+              borderRadius: 14, padding: '14px 16px', cursor: publishBusy ? 'default' : 'pointer',
+              fontFamily: 'var(--serif)', fontSize: 15, fontWeight: 700, color: 'var(--paper)',
+              opacity: publishBusy ? 0.6 : 1,
+            }}>
+              {publishBusy ? 'Wird veröffentlicht…' : 'Veröffentlichen'}
+            </button>
           </div>
         </div>
       )}
