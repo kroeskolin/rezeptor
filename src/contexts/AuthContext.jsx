@@ -2,6 +2,8 @@ import { createContext, useContext, useEffect, useState } from 'react';
 import {
   GoogleAuthProvider,
   signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   signOut,
   onAuthStateChanged,
 } from 'firebase/auth';
@@ -12,6 +14,11 @@ const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(undefined); // undefined = noch am Laden
+
+  // Falls der Login per Redirect lief: Ergebnis nach Rückkehr abholen (Fehler sichtbar machen)
+  useEffect(() => {
+    getRedirectResult(auth).catch((err) => console.error('Redirect-Login fehlgeschlagen:', err));
+  }, []);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
@@ -33,7 +40,21 @@ export function AuthProvider({ children }) {
 
   const signInWithGoogle = async () => {
     const provider = new GoogleAuthProvider();
-    return signInWithPopup(auth, provider);
+    try {
+      return await signInWithPopup(auth, provider);
+    } catch (e) {
+      // Popup von Browser/COOP blockiert → auf Redirect-Login ausweichen
+      const popupProblem = [
+        'auth/popup-blocked',
+        'auth/popup-closed-by-user',
+        'auth/cancelled-popup-request',
+        'auth/internal-error',
+      ].includes(e?.code);
+      if (popupProblem) {
+        return signInWithRedirect(auth, provider);
+      }
+      throw e;
+    }
   };
 
   const logout = () => signOut(auth);
