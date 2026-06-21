@@ -216,28 +216,34 @@ export async function getActivities(user) {
     }
 
     // 2. Rezepte, die ich kommentiert habe (aber nicht selbst gepostet) → weitere Kommentare
-    const myCommentsSnap = await getDocs(query(collectionGroup(db, 'comments'), where('authorId', '==', me)));
-    const commentedRecipeIds = new Set();
-    myCommentsSnap.forEach((c) => {
-        const parent = c.ref.parent.parent;
-        if (parent && !myRecipeIds.has(parent.id)) commentedRecipeIds.add(parent.id);
-    });
-
-    for (const rid of commentedRecipeIds) {
-        const recDoc = await getDoc(doc(db, 'recipes', rid));
-        if (!recDoc.exists()) continue;
-        const rec = recDoc.data();
-        const comSnap = await getDocs(collection(db, 'recipes', rid, 'comments'));
-        comSnap.forEach((c) => {
-            const d = c.data();
-            if (d.authorId === me) return; // eigener Kommentar
-            activities.push({
-                id: `cocomment_${rid}_${c.id}`, type: 'cocomment',
-                recipeId: rid, recipeTitle: rec.title || '',
-                actorName: d.authorName || 'Jemand', actorId: d.authorId,
-                text: d.text || '', createdAtMs: ms(d.createdAt),
-            });
+    //    Eigener try/catch: scheitert die collectionGroup-Abfrage (z. B. fehlender Index),
+    //    bleiben wenigstens die Aktivitäten zu meinen eigenen Rezepten erhalten.
+    try {
+        const myCommentsSnap = await getDocs(query(collectionGroup(db, 'comments'), where('authorId', '==', me)));
+        const commentedRecipeIds = new Set();
+        myCommentsSnap.forEach((c) => {
+            const parent = c.ref.parent.parent;
+            if (parent && !myRecipeIds.has(parent.id)) commentedRecipeIds.add(parent.id);
         });
+
+        for (const rid of commentedRecipeIds) {
+            const recDoc = await getDoc(doc(db, 'recipes', rid));
+            if (!recDoc.exists()) continue;
+            const rec = recDoc.data();
+            const comSnap = await getDocs(collection(db, 'recipes', rid, 'comments'));
+            comSnap.forEach((c) => {
+                const d = c.data();
+                if (d.authorId === me) return; // eigener Kommentar
+                activities.push({
+                    id: `cocomment_${rid}_${c.id}`, type: 'cocomment',
+                    recipeId: rid, recipeTitle: rec.title || '',
+                    actorName: d.authorName || 'Jemand', actorId: d.authorId,
+                    text: d.text || '', createdAtMs: ms(d.createdAt),
+                });
+            });
+        }
+    } catch (e) {
+        console.error('„Ebenfalls kommentiert"-Aktivitäten konnten nicht geladen werden (evtl. fehlender Firestore-Index):', e);
     }
 
     activities.sort((a, b) => b.createdAtMs - a.createdAtMs);
