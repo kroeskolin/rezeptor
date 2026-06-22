@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { getFeed, getRecipeById } from '../db/community'
 import CommunityRecipeDetail from './CommunityRecipeDetail'
+import JoinCommunity from './JoinCommunity'
 
 // Sprechblasen-Icon (gleiches wie im Header)
 function SpeechBubble({ size = 14, color = 'var(--mute)' }) {
@@ -15,12 +16,13 @@ function SpeechBubble({ size = 14, color = 'var(--mute)' }) {
 }
 
 export default function Community({ onLocalSave, activities = [], unreadCount = 0, lastSeen = 0, onSeen }) {
-  const { user, signInWithGoogle } = useAuth()
+  const { user } = useAuth()
   const [feed, setFeed] = useState([])
   const [loading, setLoading] = useState(true)
   const [selectedFeedRecipe, setSelectedFeedRecipe] = useState(null)
   const [showActivities, setShowActivities] = useState(false)
   const [seenThreshold, setSeenThreshold] = useState(0)
+  const [showJoin, setShowJoin] = useState(false)
 
   useEffect(() => {
     getFeed()
@@ -91,13 +93,13 @@ export default function Community({ onLocalSave, activities = [], unreadCount = 
         </h1>
         {user === null ? (
           <button
-            onClick={() => signInWithGoogle().catch(err => alert('Login-Fehler: ' + err.message))}
+            onClick={() => setShowJoin(true)}
             style={{
               background: 'var(--green)', color: 'var(--paper)', border: 'none',
               borderRadius: 12, padding: '10px 16px', fontSize: 14, fontWeight: 700,
               fontFamily: 'var(--serif)', cursor: 'pointer',
             }}>
-            Anmelden
+            Beitreten
           </button>
         ) : (
           // Aktivitäten-Sprechblase (ganz rechts); Account-Verwaltung liegt in den Einstellungen
@@ -238,6 +240,28 @@ export default function Community({ onLocalSave, activities = [], unreadCount = 
                 })}
               </div>
             )}
+          </div>
+        </div>
+      ), document.body)}
+
+      {/* Beitreten-Sheet */}
+      {showJoin && createPortal((
+        <div style={{
+          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)',
+          zIndex: 1000, display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
+        }} onClick={() => setShowJoin(false)}>
+          <div onClick={e => e.stopPropagation()} style={{
+            background: 'var(--paper)', borderRadius: '20px 20px 0 0',
+            width: '100%', maxWidth: 640, padding: '20px 22px 40px',
+          }}>
+            <div style={{ width: 36, height: 4, borderRadius: 2, background: 'var(--line-2)', margin: '0 auto 18px' }} />
+            <div style={{ fontFamily: 'var(--serif)', fontSize: 20, fontWeight: 700, color: 'var(--espresso)', marginBottom: 6 }}>
+              Bei der <span style={{ fontStyle: 'italic' }}>Community</span> mitmachen
+            </div>
+            <div style={{ fontFamily: 'var(--serif)', fontSize: 13, color: 'var(--mute)', marginBottom: 16 }}>
+              Zum Liken, Kommentieren und Veröffentlichen.
+            </div>
+            <JoinCommunity onDone={() => setShowJoin(false)} />
           </div>
         </div>
       ), document.body)}

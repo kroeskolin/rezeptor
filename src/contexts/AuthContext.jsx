@@ -4,6 +4,8 @@ import {
   signInWithPopup,
   signInWithRedirect,
   getRedirectResult,
+  signInAnonymously,
+  updateProfile,
   signOut,
   onAuthStateChanged,
 } from 'firebase/auth';
@@ -14,6 +16,7 @@ const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(undefined); // undefined = noch am Laden
+  const [, bumpRefresh] = useState(0); // erzwingt Re-Render nach Profiländerung
 
   // Falls der Login per Redirect lief: Ergebnis nach Rückkehr abholen (Fehler sichtbar machen)
   useEffect(() => {
@@ -23,15 +26,11 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
-        await setDoc(
-          doc(db, 'users', firebaseUser.uid),
-          {
-            displayName: firebaseUser.displayName,
-            photoURL:    firebaseUser.photoURL,
-            lastSeen:    serverTimestamp(),
-          },
-          { merge: true }
-        );
+        // displayName nur schreiben, wenn vorhanden – sonst würde der bei anonymem
+        // Login (noch ohne Namen) gesetzte Name wieder auf null überschrieben.
+        const data = { photoURL: firebaseUser.photoURL || null, lastSeen: serverTimestamp() };
+        if (firebaseUser.displayName) data.displayName = firebaseUser.displayName;
+        await setDoc(doc(db, 'users', firebaseUser.uid), data, { merge: true });
       }
       setUser(firebaseUser);
     });
@@ -57,10 +56,25 @@ export function AuthProvider({ children }) {
     }
   };
 
+  // Ohne Google: anonym mit selbstgewähltem Namen beitreten
+  const signInWithName = async (name) => {
+    const clean = (name || '').trim();
+    if (!clean) throw new Error('Bitte gib einen Namen ein.');
+    const cred = await signInAnonymously(auth);
+    await updateProfile(cred.user, { displayName: clean });
+    await setDoc(
+      doc(db, 'users', cred.user.uid),
+      { displayName: clean, photoURL: null, lastSeen: serverTimestamp() },
+      { merge: true }
+    );
+    // currentUser ist dasselbe Objekt im State; Re-Render anstoßen, damit der Name erscheint
+    bumpRefresh((n) => n + 1);
+  };
+
   const logout = () => signOut(auth);
 
   return (
-    <AuthContext.Provider value={{ user, signInWithGoogle, logout }}>
+    <AuthContext.Provider value={{ user, signInWithGoogle, signInWithName, logout }}>
       {children}
     </AuthContext.Provider>
   );

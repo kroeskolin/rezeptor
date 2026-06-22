@@ -3,6 +3,7 @@ import { getAllTags, addTag, updateTag, deleteTag, exportRecipes, importRecipes 
 import { Icon } from './DesignTokens'
 import { THEMES, applyTheme } from '../useTheme'
 import { useAuth } from '../contexts/AuthContext'
+import JoinCommunity from './JoinCommunity'
 import './Settings.css'
 
 const COLORS = [
@@ -126,7 +127,7 @@ function TagSheet({ tag, onSave, onClose }) {
 }
 
 export default function Settings({ onImport, onShowTagManager, onHideTagManager }) {
-  const { user, signInWithGoogle, logout } = useAuth()
+  const { user, logout } = useAuth()
   const [tags, setTags] = useState([])
   const [importStatus, setImportStatus] = useState(null)
   const [notifications, setNotifications] = useState(false)
@@ -406,8 +407,17 @@ export default function Settings({ onImport, onShowTagManager, onHideTagManager 
         <SettingsGroup title="Community-Konto">
           {user ? (
             <div style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
-              {user.photoURL && (
+              {user.photoURL ? (
                 <img src={user.photoURL} alt="" style={{ width: 40, height: 40, borderRadius: '50%', flexShrink: 0 }} />
+              ) : (
+                <div style={{
+                  width: 40, height: 40, borderRadius: '50%', flexShrink: 0,
+                  background: 'var(--green)', color: 'var(--paper)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontFamily: 'var(--serif)', fontWeight: 700, fontSize: 17,
+                }}>
+                  {(user.displayName || '?').trim().charAt(0).toUpperCase()}
+                </div>
               )}
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontFamily: 'var(--serif)', fontWeight: 700, fontSize: 15, color: 'var(--espresso)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -430,17 +440,7 @@ export default function Settings({ onImport, onShowTagManager, onHideTagManager 
             </div>
           ) : (
             <div style={{ padding: '12px 16px' }}>
-              <button onClick={() => signInWithGoogle().catch(err => alert('Login-Fehler: ' + err.message))}
-                style={{
-                  width: '100%', background: 'var(--green)', color: 'var(--paper)', border: 'none',
-                  borderRadius: 12, padding: '12px 16px', fontSize: 14, fontWeight: 700,
-                  fontFamily: 'var(--serif)', cursor: 'pointer',
-                }}>
-                Mit Google anmelden
-              </button>
-              <div style={{ padding: '8px 2px 0', fontFamily: 'var(--serif)', fontSize: 12, color: 'var(--mute)', fontStyle: 'italic' }}>
-                Zum Liken, Kommentieren und Veröffentlichen in der Community.
-              </div>
+              <JoinCommunity />
             </div>
           )}
         </SettingsGroup>
