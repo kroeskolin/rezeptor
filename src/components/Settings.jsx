@@ -130,7 +130,6 @@ export default function Settings({ onImport, onShowTagManager, onHideTagManager 
   const { user, logout } = useAuth()
   const [tags, setTags] = useState([])
   const [importStatus, setImportStatus] = useState(null)
-  const [notifications, setNotifications] = useState(false)
   const [showTagManager, setShowTagManager] = useState(false)
   const [editMode, setEditMode] = useState(false)
   const [showThemePicker, setShowThemePicker] = useState(false)
@@ -138,9 +137,6 @@ export default function Settings({ onImport, onShowTagManager, onHideTagManager 
   const [showSheet, setShowSheet] = useState(false)
   const [activeTheme, setActiveTheme] = useState('default')
   const [loadingStarter, setLoadingStarter] = useState(false)
-  const [displayName, setDisplayName] = useState('')
-  const [editingName, setEditingName] = useState(false)
-  const [nameInput, setNameInput] = useState('')
   const fileInputRef = useRef(null)
 
   const reload = () => getAllTags().then(setTags)
@@ -149,16 +145,7 @@ export default function Settings({ onImport, onShowTagManager, onHideTagManager 
     reload()
     const saved = localStorage.getItem('rezeptor-theme') || 'default'
     setActiveTheme(saved)
-    const profile = JSON.parse(localStorage.getItem('rezeptor-user-profile') || '{}')
-    setDisplayName(profile.displayName || '')
   }, [])
-
-  const handleSaveName = () => {
-    const profile = { displayName: nameInput.trim() }
-    localStorage.setItem('rezeptor-user-profile', JSON.stringify(profile))
-    setDisplayName(nameInput.trim())
-    setEditingName(false)
-  }
 
   const openTagManager = () => {
     setShowTagManager(true)
@@ -368,41 +355,6 @@ export default function Settings({ onImport, onShowTagManager, onHideTagManager 
         </h1>
       </div>
 
-      <SettingsGroup title="Profil">
-        {editingName ? (
-          <div style={{ padding: '12px 16px', display: 'flex', gap: 10, alignItems: 'center' }}>
-            <input
-              className="form-input"
-              type="text"
-              placeholder="Dein Name …"
-              value={nameInput}
-              onChange={e => setNameInput(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && handleSaveName()}
-              autoFocus
-              style={{ flex: 1, margin: 0 }}
-            />
-            <button onClick={handleSaveName}
-              style={{ background: 'var(--green)', border: 'none', borderRadius: 10, padding: '8px 14px', color: '#fff', fontFamily: 'var(--serif)', fontSize: 14, cursor: 'pointer' }}>
-              OK
-            </button>
-            <button onClick={() => setEditingName(false)}
-              style={{ background: 'var(--line-2)', border: 'none', borderRadius: 10, padding: '8px 14px', fontFamily: 'var(--serif)', fontSize: 14, cursor: 'pointer', color: 'var(--cocoa)' }}>
-              Abbrechen
-            </button>
-          </div>
-        ) : (
-          <SettingRow
-            icon="user"
-            label="Dein Name"
-            value={displayName || 'Noch kein Name'}
-            onClick={() => { setNameInput(displayName); setEditingName(true) }}
-          />
-        )}
-        <div style={{ padding: '4px 16px 12px', fontFamily: 'var(--serif)', fontSize: 12, color: 'var(--mute)', fontStyle: 'italic' }}>
-          Wird später im Community-Feed sichtbar sein.
-        </div>
-      </SettingsGroup>
-
       {user !== undefined && (
         <SettingsGroup title="Community-Konto">
           {user ? (
@@ -445,11 +397,6 @@ export default function Settings({ onImport, onShowTagManager, onHideTagManager 
           )}
         </SettingsGroup>
       )}
-
-      <SettingsGroup title="Benachrichtigungen">
-        <SettingRow icon="bell" label="Benachrichtigungen"
-          toggle on={notifications} onToggle={() => setNotifications(v => !v)} />
-      </SettingsGroup>
 
       <SettingsGroup title="Kategorien & Tags">
         <SettingRow icon="bookmark" label="Tags verwalten"

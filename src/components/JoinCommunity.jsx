@@ -31,8 +31,29 @@ export default function JoinCommunity({ onDone }) {
     }
   }
 
+  const hintStyle = { padding: '8px 2px 0', fontFamily: 'var(--serif)', fontSize: 12, color: 'var(--mute)', fontStyle: 'italic', lineHeight: 1.4 }
+
   return (
     <div>
+      {/* Google zuerst */}
+      <button onClick={google} style={{
+        width: '100%', background: 'var(--green)', color: 'var(--paper)', border: 'none',
+        borderRadius: 12, padding: '12px 16px',
+        fontFamily: 'var(--serif)', fontSize: 14, fontWeight: 700, cursor: 'pointer',
+      }}>
+        Mit Google anmelden
+      </button>
+      <div style={hintStyle}>
+        Mit deinem Google-Konto kannst du dich auf verschiedenen Geräten bei Rezeptor einloggen und den Account „mitnehmen".
+      </div>
+
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '14px 0' }}>
+        <div style={{ flex: 1, height: 1, background: 'var(--line-2)' }} />
+        <span style={{ fontFamily: 'var(--serif)', fontSize: 12, color: 'var(--mute)' }}>oder</span>
+        <div style={{ flex: 1, height: 1, background: 'var(--line-2)' }} />
+      </div>
+
+      {/* Name darunter */}
       <div style={{ display: 'flex', gap: 8 }}>
         <input
           type="text"
@@ -48,7 +69,8 @@ export default function JoinCommunity({ onDone }) {
           }}
         />
         <button onClick={join} disabled={!name.trim() || busy} style={{
-          background: 'var(--green)', color: 'var(--paper)', border: 'none',
+          background: 'var(--card)', color: 'var(--espresso)',
+          border: '1px solid var(--line-2)',
           borderRadius: 12, padding: '0 18px', fontFamily: 'var(--serif)',
           fontSize: 15, fontWeight: 700,
           cursor: (!name.trim() || busy) ? 'default' : 'pointer',
@@ -57,23 +79,8 @@ export default function JoinCommunity({ onDone }) {
           {busy ? '…' : 'Beitreten'}
         </button>
       </div>
-
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '14px 0' }}>
-        <div style={{ flex: 1, height: 1, background: 'var(--line-2)' }} />
-        <span style={{ fontFamily: 'var(--serif)', fontSize: 12, color: 'var(--mute)' }}>oder</span>
-        <div style={{ flex: 1, height: 1, background: 'var(--line-2)' }} />
-      </div>
-
-      <button onClick={google} style={{
-        width: '100%', background: 'var(--card)', color: 'var(--espresso)',
-        border: '1px solid var(--line-2)', borderRadius: 12, padding: '11px 16px',
-        fontFamily: 'var(--serif)', fontSize: 14, fontWeight: 700, cursor: 'pointer',
-      }}>
-        Mit Google anmelden
-      </button>
-
-      <div style={{ padding: '10px 2px 0', fontFamily: 'var(--serif)', fontSize: 12, color: 'var(--mute)', fontStyle: 'italic' }}>
-        Mit Namen beizutreten ist am schnellsten. Hinweis: Dein Konto gilt dann nur auf diesem Gerät.
+      <div style={hintStyle}>
+        Bei Login mit deinem Namen gilt das Konto nur auf diesem Gerät.
       </div>
     </div>
   )
