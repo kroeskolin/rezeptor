@@ -1,12 +1,10 @@
 import {
     collection,
-    collectionGroup,
     addDoc,
     getDocs,
     getDoc,
     doc,
     query,
-    where,
     orderBy,
     serverTimestamp,
     writeBatch,
@@ -174,63 +172,50 @@ export async function getRecipeById(recipeId) {
 // Aktivitäten zum eingeloggten Nutzer sammeln:
 //  - Likes & Kommentare auf meinen Rezepten
 //  - weitere Kommentare auf Rezepten, die ich kommentiert habe (nicht meine)
+// Liest die Rezepte direkt (keine collectionGroup) → kein Extra-Index, keine Extra-Regel.
 // Gibt eine flache Liste zurück, neueste zuerst.
 export async function getActivities(user) {
     if (!user) return [];
     const me = user.uid;
     const activities = [];
-
     const ms = (ts) => ts?.toMillis?.() ?? 0;
 
-    // 1. Meine eigenen Rezepte → Likes + Kommentare anderer
-    const myRecipesSnap = await getDocs(query(collection(db, 'recipes'), where('authorId', '==', me)));
-    const myRecipeIds = new Set();
-    for (const recDoc of myRecipesSnap.docs) {
+    const recipesSnap = await getDocs(query(collection(db, 'recipes'), orderBy('createdAt', 'desc')));
+
+    for (const recDoc of recipesSnap.docs) {
         const rec = recDoc.data();
         const rid = recDoc.id;
-        myRecipeIds.add(rid);
 
-        const likesSnap = await getDocs(collection(db, 'recipes', rid, 'likes'));
-        likesSnap.forEach((l) => {
-            if (l.id === me) return; // eigener Like
-            const d = l.data();
-            activities.push({
-                id: `like_${rid}_${l.id}`, type: 'like',
-                recipeId: rid, recipeTitle: rec.title || '',
-                actorName: d.authorName || 'Jemand', actorId: l.id,
-                createdAtMs: ms(d.createdAt),
+        if (rec.authorId === me) {
+            // Mein Rezept → Likes + Kommentare anderer
+            const likesSnap = await getDocs(collection(db, 'recipes', rid, 'likes'));
+            likesSnap.forEach((l) => {
+                if (l.id === me) return; // eigener Like
+                const d = l.data();
+                activities.push({
+                    id: `like_${rid}_${l.id}`, type: 'like',
+                    recipeId: rid, recipeTitle: rec.title || '',
+                    actorName: d.authorName || 'Jemand', actorId: l.id,
+                    createdAtMs: ms(d.createdAt),
+                });
             });
-        });
 
-        const comSnap = await getDocs(collection(db, 'recipes', rid, 'comments'));
-        comSnap.forEach((c) => {
-            const d = c.data();
-            if (d.authorId === me) return; // eigener Kommentar
-            activities.push({
-                id: `comment_${rid}_${c.id}`, type: 'comment',
-                recipeId: rid, recipeTitle: rec.title || '',
-                actorName: d.authorName || 'Jemand', actorId: d.authorId,
-                text: d.text || '', createdAtMs: ms(d.createdAt),
-            });
-        });
-    }
-
-    // 2. Rezepte, die ich kommentiert habe (aber nicht selbst gepostet) → weitere Kommentare
-    //    Eigener try/catch: scheitert die collectionGroup-Abfrage (z. B. fehlender Index),
-    //    bleiben wenigstens die Aktivitäten zu meinen eigenen Rezepten erhalten.
-    try {
-        const myCommentsSnap = await getDocs(query(collectionGroup(db, 'comments'), where('authorId', '==', me)));
-        const commentedRecipeIds = new Set();
-        myCommentsSnap.forEach((c) => {
-            const parent = c.ref.parent.parent;
-            if (parent && !myRecipeIds.has(parent.id)) commentedRecipeIds.add(parent.id);
-        });
-
-        for (const rid of commentedRecipeIds) {
-            const recDoc = await getDoc(doc(db, 'recipes', rid));
-            if (!recDoc.exists()) continue;
-            const rec = recDoc.data();
             const comSnap = await getDocs(collection(db, 'recipes', rid, 'comments'));
+            comSnap.forEach((c) => {
+                const d = c.data();
+                if (d.authorId === me) return; // eigener Kommentar
+                activities.push({
+                    id: `comment_${rid}_${c.id}`, type: 'comment',
+                    recipeId: rid, recipeTitle: rec.title || '',
+                    actorName: d.authorName || 'Jemand', actorId: d.authorId,
+                    text: d.text || '', createdAtMs: ms(d.createdAt),
+                });
+            });
+        } else {
+            // Fremdes Rezept → nur relevant, wenn ICH dort kommentiert habe
+            const comSnap = await getDocs(collection(db, 'recipes', rid, 'comments'));
+            const iCommented = comSnap.docs.some((c) => c.data().authorId === me);
+            if (!iCommented) continue;
             comSnap.forEach((c) => {
                 const d = c.data();
                 if (d.authorId === me) return; // eigener Kommentar
@@ -242,8 +227,6 @@ export async function getActivities(user) {
                 });
             });
         }
-    } catch (e) {
-        console.error('„Ebenfalls kommentiert"-Aktivitäten konnten nicht geladen werden (evtl. fehlender Firestore-Index):', e);
     }
 
     activities.sort((a, b) => b.createdAtMs - a.createdAtMs);
