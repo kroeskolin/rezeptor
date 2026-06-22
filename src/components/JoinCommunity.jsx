@@ -37,8 +37,8 @@ export default function JoinCommunity({ onDone }) {
     <div>
       {/* Google zuerst */}
       <button onClick={google} style={{
-        width: '100%', background: 'var(--green)', color: 'var(--paper)', border: 'none',
-        borderRadius: 12, padding: '12px 16px',
+        width: '100%', background: 'var(--card)', color: 'var(--green)',
+        border: '1.5px solid var(--green)', borderRadius: 12, padding: '12px 16px',
         fontFamily: 'var(--serif)', fontSize: 14, fontWeight: 700, cursor: 'pointer',
       }}>
         Mit Google anmelden
