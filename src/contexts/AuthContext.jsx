@@ -25,14 +25,19 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      // Zuerst den Login-Zustand setzen – darf NIE an einem Firestore-Write hängen
+      setUser(firebaseUser);
       if (firebaseUser) {
         // displayName nur schreiben, wenn vorhanden – sonst würde der bei anonymem
         // Login (noch ohne Namen) gesetzte Name wieder auf null überschrieben.
         const data = { photoURL: firebaseUser.photoURL || null, lastSeen: serverTimestamp() };
         if (firebaseUser.displayName) data.displayName = firebaseUser.displayName;
-        await setDoc(doc(db, 'users', firebaseUser.uid), data, { merge: true });
+        try {
+          await setDoc(doc(db, 'users', firebaseUser.uid), data, { merge: true });
+        } catch (e) {
+          console.error('users-Dokument konnte nicht geschrieben werden:', e);
+        }
       }
-      setUser(firebaseUser);
     });
     return unsubscribe;
   }, []);
@@ -62,11 +67,15 @@ export function AuthProvider({ children }) {
     if (!clean) throw new Error('Bitte gib einen Namen ein.');
     const cred = await signInAnonymously(auth);
     await updateProfile(cred.user, { displayName: clean });
-    await setDoc(
-      doc(db, 'users', cred.user.uid),
-      { displayName: clean, photoURL: null, lastSeen: serverTimestamp() },
-      { merge: true }
-    );
+    try {
+      await setDoc(
+        doc(db, 'users', cred.user.uid),
+        { displayName: clean, photoURL: null, lastSeen: serverTimestamp() },
+        { merge: true }
+      );
+    } catch (e) {
+      console.error('users-Dokument konnte nicht geschrieben werden:', e);
+    }
     // currentUser ist dasselbe Objekt im State; Re-Render anstoßen, damit der Name erscheint
     bumpRefresh((n) => n + 1);
   };
