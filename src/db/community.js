@@ -195,17 +195,23 @@ export function shareRecipe(recipe, user) {
     };
 
     const done = (async () => {
-        await setDoc(ref, docData);
+        // Foto ZUERST hochladen, dann genau EIN setDoc mit Bild-URL.
+        // (kein nachträgliches updateDoc → die shared-Regel braucht nur `create`)
+        let imageUrl = null;
         if (recipe.image) {
             if (recipe.image.startsWith('data:')) {
-                const imgRef = storageRef(storage, `shared/${ref.id}.jpg`);
-                await uploadString(imgRef, recipe.image, 'data_url');
-                const url = await getDownloadURL(imgRef);
-                await updateDoc(ref, { image: url });
+                try {
+                    const imgRef = storageRef(storage, `shared/${ref.id}.jpg`);
+                    await uploadString(imgRef, recipe.image, 'data_url');
+                    imageUrl = await getDownloadURL(imgRef);
+                } catch (e) {
+                    console.error('Foto-Upload (Teilen) fehlgeschlagen:', e); // ohne Foto weiter
+                }
             } else {
-                await updateDoc(ref, { image: recipe.image });
+                imageUrl = recipe.image;
             }
         }
+        await setDoc(ref, { ...docData, image: imageUrl });
     })();
 
     return { id: ref.id, done };
