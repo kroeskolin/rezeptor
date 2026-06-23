@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import './RecipeDetail.css';
 import { Icon, coverTint, totalTime } from './DesignTokens';
-import { publishRecipe, createSharedRecipe } from '../db/community'
+import { publishRecipe, shareRecipe } from '../db/community'
 import { useAuth } from '../contexts/AuthContext'
 import JoinCommunity from './JoinCommunity'
 
@@ -57,7 +57,6 @@ export default function RecipeDetail({ recipe, onBack, onEdit, onStartCook, onTo
   const [captionText, setCaptionText] = useState('');
   const [publishBusy, setPublishBusy] = useState(false);
   const [showJoin, setShowJoin] = useState(false);
-  const [shareBusy, setShareBusy] = useState(false);
   const { user, signInWithGoogle } = useAuth();
 
   if (!recipe) return null;
@@ -187,41 +186,47 @@ export default function RecipeDetail({ recipe, onBack, onEdit, onStartCook, onTo
     }
   }
 
-  const handleShareLink = async () => {
+  const fallbackCopy = async (link) => {
+    try {
+      await navigator.clipboard.writeText(link)
+      alert('Link in Zwischenablage kopiert:\n' + link)
+    } catch {
+      prompt('Link zum Kopieren:', link)
+    }
+  }
+
+  const handleShareLink = () => {
     if (!user) {
       // Kurzlink erfordert Login → Beitreten-Sheet zeigen
       setShowShareSheet(false)
       setShowJoin(true)
       return
     }
-    if (shareBusy) return
-    setShareBusy(true)
-    let link
+    let id, done
     try {
-      const id = await createSharedRecipe(recipe, user)
-      link = `https://kroeskolin.github.io/rezeptor/#s=${id}`
+      ({ id, done } = shareRecipe(recipe, user)) // ID sofort, Speichern im Hintergrund
     } catch (err) {
       alert('Teilen fehlgeschlagen: ' + err.message)
-      setShareBusy(false)
       return
     }
+    const link = `https://kroeskolin.github.io/rezeptor/#s=${id}`
     const text = `Ich teile mein Rezept "${recipe.title}" mit dir aus Rezeptor! 🍳\nTipp einfach auf den Link:\n${link}`
-    // navigator.share kann nach dem await die Nutzergeste „verlieren“ → robust mit Fallback
-    try {
-      if (navigator.share) {
-        await navigator.share({ title: recipe.title, text })
-      } else {
-        throw new Error('share-not-supported')
-      }
-    } catch (e) {
-      try {
-        await navigator.clipboard.writeText(link)
-        alert('Link in Zwischenablage kopiert:\n' + link)
-      } catch {
-        prompt('Link zum Kopieren:', link)
-      }
+
+    // navigator.share SOFORT (in der Geste) aufrufen, nicht nach einem await
+    if (navigator.share) {
+      navigator.share({ title: recipe.title, text }).catch(err => {
+        if (err && err.name !== 'AbortError') fallbackCopy(link) // AbortError = vom Nutzer abgebrochen
+      })
+    } else {
+      fallbackCopy(link)
     }
-    setShareBusy(false)
+
+    // Hintergrund-Speichern überwachen – falls es scheitert, Bescheid geben
+    done.catch(err => {
+      console.error('Teilen-Speichern fehlgeschlagen:', err)
+      alert('Achtung: Der geteilte Link konnte nicht gespeichert werden:\n' + (err?.code || err?.message || 'Unbekannter Fehler'))
+    })
+
     setShowShareSheet(false)
   }
 
@@ -466,18 +471,14 @@ export default function RecipeDetail({ recipe, onBack, onEdit, onStartCook, onTo
                   <div style={{ fontFamily: 'var(--serif)', fontSize: 13, color: 'var(--paper)', opacity: 0.85, fontStyle: 'italic' }}>Für alle Rezeptor-Nutzenden sichtbar</div>
                 </div>
               </button>
-              <button onClick={handleShareLink} disabled={shareBusy} style={{
+              <button onClick={handleShareLink} style={{
                 display: 'flex', alignItems: 'center', gap: 14,
                 background: 'var(--sage)', border: '1px solid var(--sage-2)',
-                borderRadius: 14, padding: '14px 16px',
-                cursor: shareBusy ? 'default' : 'pointer', textAlign: 'left',
-                opacity: shareBusy ? 0.6 : 1,
+                borderRadius: 14, padding: '14px 16px', cursor: 'pointer', textAlign: 'left',
               }}>
                 <Icon name="link" size={20} color="var(--espresso)" />
                 <div>
-                  <div style={{ fontFamily: 'var(--serif)', fontSize: 15, fontWeight: 700, color: 'var(--espresso)' }}>
-                    {shareBusy ? 'Erstellt Link…' : 'Kurzlink an Rezeptor senden'}
-                  </div>
+                  <div style={{ fontFamily: 'var(--serif)', fontSize: 15, fontWeight: 700, color: 'var(--espresso)' }}>Kurzlink an Rezeptor senden</div>
                   <div style={{ fontFamily: 'var(--serif)', fontSize: 13, color: 'var(--green)', fontStyle: 'italic' }}>Kurzer Link mit Foto, zum Importieren</div>
                 </div>
               </button>

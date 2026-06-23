@@ -1,6 +1,7 @@
 import {
     collection,
     addDoc,
+    setDoc,
     getDocs,
     getDoc,
     doc,
@@ -169,11 +170,14 @@ export async function getRecipeById(recipeId) {
     return snap.exists() ? { id: snap.id, ...snap.data() } : null;
 }
 
-// Rezept zum Teilen ablegen (eigene `shared`-Sammlung) und Kurzlink-ID zurückgeben.
-// Inkl. Foto via Storage. Erfordert Login.
-export async function createSharedRecipe(recipe, user) {
+// Rezept zum Teilen ablegen (eigene `shared`-Sammlung).
+// Die Kurzlink-ID wird SOFORT (ohne Netzwerk) erzeugt, damit navigator.share noch in
+// der Nutzergeste aufgerufen werden kann; das Speichern läuft im Hintergrund (`done`).
+// Erfordert Login.
+export function shareRecipe(recipe, user) {
     if (!user) throw new Error('Nicht eingeloggt');
 
+    const ref = doc(collection(db, 'shared')); // ID lokal erzeugt
     const docData = {
         authorId: user.uid,
         authorName: user.displayName || 'Unbekannt',
@@ -190,24 +194,21 @@ export async function createSharedRecipe(recipe, user) {
         createdAt: serverTimestamp(),
     };
 
-    const ref = await addDoc(collection(db, 'shared'), docData);
-
-    if (recipe.image) {
-        if (recipe.image.startsWith('data:')) {
-            try {
+    const done = (async () => {
+        await setDoc(ref, docData);
+        if (recipe.image) {
+            if (recipe.image.startsWith('data:')) {
                 const imgRef = storageRef(storage, `shared/${ref.id}.jpg`);
                 await uploadString(imgRef, recipe.image, 'data_url');
                 const url = await getDownloadURL(imgRef);
                 await updateDoc(ref, { image: url });
-            } catch (e) {
-                console.error('Foto-Upload (Teilen) fehlgeschlagen:', e);
+            } else {
+                await updateDoc(ref, { image: recipe.image });
             }
-        } else {
-            try { await updateDoc(ref, { image: recipe.image }); } catch (e) { /* optional */ }
         }
-    }
+    })();
 
-    return ref.id;
+    return { id: ref.id, done };
 }
 
 // Geteiltes Rezept per Kurzlink-ID laden.
