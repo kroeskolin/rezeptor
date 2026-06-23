@@ -169,6 +169,53 @@ export async function getRecipeById(recipeId) {
     return snap.exists() ? { id: snap.id, ...snap.data() } : null;
 }
 
+// Rezept zum Teilen ablegen (eigene `shared`-Sammlung) und Kurzlink-ID zurückgeben.
+// Inkl. Foto via Storage. Erfordert Login.
+export async function createSharedRecipe(recipe, user) {
+    if (!user) throw new Error('Nicht eingeloggt');
+
+    const docData = {
+        authorId: user.uid,
+        authorName: user.displayName || 'Unbekannt',
+        title: recipe.title || '',
+        subtitle: recipe.subtitle || '',
+        servings: Number(recipe.servings) || 0,
+        prepTime: Number(recipe.prepTime) || 0,
+        cookTime: Number(recipe.cookTime) || 0,
+        ingredients: recipe.ingredients || [],
+        steps: recipe.steps || '',
+        tags: recipe.tags || [],
+        source: recipe.source || '',
+        image: null,
+        createdAt: serverTimestamp(),
+    };
+
+    const ref = await addDoc(collection(db, 'shared'), docData);
+
+    if (recipe.image) {
+        if (recipe.image.startsWith('data:')) {
+            try {
+                const imgRef = storageRef(storage, `shared/${ref.id}.jpg`);
+                await uploadString(imgRef, recipe.image, 'data_url');
+                const url = await getDownloadURL(imgRef);
+                await updateDoc(ref, { image: url });
+            } catch (e) {
+                console.error('Foto-Upload (Teilen) fehlgeschlagen:', e);
+            }
+        } else {
+            try { await updateDoc(ref, { image: recipe.image }); } catch (e) { /* optional */ }
+        }
+    }
+
+    return ref.id;
+}
+
+// Geteiltes Rezept per Kurzlink-ID laden.
+export async function getSharedRecipe(id) {
+    const snap = await getDoc(doc(db, 'shared', id));
+    return snap.exists() ? { id: snap.id, ...snap.data() } : null;
+}
+
 // Aktivitäten zum eingeloggten Nutzer sammeln:
 //  - Likes & Kommentare auf meinen Rezepten
 //  - weitere Kommentare auf Rezepten, die ich kommentiert habe (nicht meine)

@@ -1,9 +1,10 @@
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import './RecipeDetail.css';
 import { Icon, coverTint, totalTime } from './DesignTokens';
-import { compressToEncodedURIComponent } from 'lz-string'
-import { publishRecipe } from '../db/community'
+import { publishRecipe, createSharedRecipe } from '../db/community'
 import { useAuth } from '../contexts/AuthContext'
+import JoinCommunity from './JoinCommunity'
 
 function HeartBtn({ recipe, onToggle, glass = false }) {
   const isFav = !!recipe.favorite;
@@ -55,6 +56,8 @@ export default function RecipeDetail({ recipe, onBack, onEdit, onStartCook, onTo
   const [showCaptionOverlay, setShowCaptionOverlay] = useState(false);
   const [captionText, setCaptionText] = useState('');
   const [publishBusy, setPublishBusy] = useState(false);
+  const [showJoin, setShowJoin] = useState(false);
+  const [shareBusy, setShareBusy] = useState(false);
   const { user, signInWithGoogle } = useAuth();
 
   if (!recipe) return null;
@@ -184,60 +187,41 @@ export default function RecipeDetail({ recipe, onBack, onEdit, onStartCook, onTo
     }
   }
 
-  const handleShareJson = async () => {
-    const exportData = {
-      title: recipe.title,
-      subtitle: recipe.subtitle || '',
-      servings: recipe.servings,
-      prepTime: recipe.prepTime,
-      cookTime: recipe.cookTime,
-      ingredients: recipe.ingredients,
-      steps: recipe.steps,
-      tags: recipe.tags,
-      source: recipe.source || '',
-      image: recipe.image || null,
-    }
-    const json = JSON.stringify([exportData], null, 2)
-    const blob = new Blob([json], { type: 'application/json' })
-    const file = new File([blob], `${recipe.title}.json`, { type: 'application/json' })
-
-    if (navigator.canShare?.({ files: [file] })) {
-      await navigator.share({ files: [file], title: recipe.title })
-    } else {
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `${recipe.title}.json`
-      a.click()
-      URL.revokeObjectURL(url)
-    }
-    setShowShareSheet(false)
-  }
-
   const handleShareLink = async () => {
-    const exportData = {
-      title: recipe.title,
-      subtitle: recipe.subtitle || '',
-      servings: recipe.servings,
-      prepTime: recipe.prepTime,
-      cookTime: recipe.cookTime,
-      ingredients: recipe.ingredients,
-      steps: recipe.steps,
-      tags: recipe.tags,
-      source: recipe.source || '',
-      // Bild bewusst weggelassen — zu groß für URL
+    if (!user) {
+      // Kurzlink erfordert Login → Beitreten-Sheet zeigen
+      setShowShareSheet(false)
+      setShowJoin(true)
+      return
     }
-    const compressed = compressToEncodedURIComponent(JSON.stringify(exportData))
-    const link = `https://kroeskolin.github.io/rezeptor/#import=${compressed}`
-
-    const text = `Ich teile mein Rezept "${recipe.title}" mit dir aus meiner Rezeptor-App! 🍳\nTipp einfach auf den Link:\n${link}`
-
-    if (navigator.share) {
-      await navigator.share({ title: recipe.title, text })
-    } else {
-      await navigator.clipboard.writeText(text)
-      alert('Link in Zwischenablage kopiert!')
+    if (shareBusy) return
+    setShareBusy(true)
+    let link
+    try {
+      const id = await createSharedRecipe(recipe, user)
+      link = `https://kroeskolin.github.io/rezeptor/#s=${id}`
+    } catch (err) {
+      alert('Teilen fehlgeschlagen: ' + err.message)
+      setShareBusy(false)
+      return
     }
+    const text = `Ich teile mein Rezept "${recipe.title}" mit dir aus Rezeptor! 🍳\nTipp einfach auf den Link:\n${link}`
+    // navigator.share kann nach dem await die Nutzergeste „verlieren“ → robust mit Fallback
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: recipe.title, text })
+      } else {
+        throw new Error('share-not-supported')
+      }
+    } catch (e) {
+      try {
+        await navigator.clipboard.writeText(link)
+        alert('Link in Zwischenablage kopiert:\n' + link)
+      } catch {
+        prompt('Link zum Kopieren:', link)
+      }
+    }
+    setShareBusy(false)
     setShowShareSheet(false)
   }
 
@@ -482,15 +466,19 @@ export default function RecipeDetail({ recipe, onBack, onEdit, onStartCook, onTo
                   <div style={{ fontFamily: 'var(--serif)', fontSize: 13, color: 'var(--paper)', opacity: 0.85, fontStyle: 'italic' }}>Für alle Rezeptor-Nutzenden sichtbar</div>
                 </div>
               </button>
-              <button onClick={handleShareLink} style={{
+              <button onClick={handleShareLink} disabled={shareBusy} style={{
                 display: 'flex', alignItems: 'center', gap: 14,
                 background: 'var(--sage)', border: '1px solid var(--sage-2)',
-                borderRadius: 14, padding: '14px 16px', cursor: 'pointer', textAlign: 'left',
+                borderRadius: 14, padding: '14px 16px',
+                cursor: shareBusy ? 'default' : 'pointer', textAlign: 'left',
+                opacity: shareBusy ? 0.6 : 1,
               }}>
                 <Icon name="link" size={20} color="var(--espresso)" />
                 <div>
-                  <div style={{ fontFamily: 'var(--serif)', fontSize: 15, fontWeight: 700, color: 'var(--espresso)' }}>An Rezeptor senden</div>
-                  <div style={{ fontFamily: 'var(--serif)', fontSize: 13, color: 'var(--green)', fontStyle: 'italic' }}>Link für andere Rezeptor-Nutzende (ohne Foto)</div>
+                  <div style={{ fontFamily: 'var(--serif)', fontSize: 15, fontWeight: 700, color: 'var(--espresso)' }}>
+                    {shareBusy ? 'Erstellt Link…' : 'Kurzlink an Rezeptor senden'}
+                  </div>
+                  <div style={{ fontFamily: 'var(--serif)', fontSize: 13, color: 'var(--green)', fontStyle: 'italic' }}>Kurzer Link mit Foto, zum Importieren</div>
                 </div>
               </button>
               <button onClick={handleShareText} style={{
@@ -515,21 +503,32 @@ export default function RecipeDetail({ recipe, onBack, onEdit, onStartCook, onTo
                   <div style={{ fontFamily: 'var(--serif)', fontSize: 13, color: 'var(--mute)', fontStyle: 'italic' }}>Zum Ausdrucken oder Versenden</div>
                 </div>
               </button>
-              <button onClick={handleShareJson} style={{
-                display: 'flex', alignItems: 'center', gap: 14,
-                background: 'var(--paper-2)', border: '1px solid var(--line-2)',
-                borderRadius: 14, padding: '14px 16px', cursor: 'pointer', textAlign: 'left',
-              }}>
-                <Icon name="import" size={20} color="var(--espresso)" />
-                <div>
-                  <div style={{ fontFamily: 'var(--serif)', fontSize: 15, fontWeight: 700, color: 'var(--espresso)' }}>Als JSON teilen</div>
-                  <div style={{ fontFamily: 'var(--serif)', fontSize: 13, color: 'var(--mute)', fontStyle: 'italic' }}>Für den Import in Rezeptor (mit Foto)</div>
-                </div>
-              </button>
             </div>
           </div>
         </div>
       )}
+
+      {/* Beitreten-Sheet (Kurzlink erfordert Login) */}
+      {showJoin && createPortal((
+        <div style={{
+          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)',
+          zIndex: 1000, display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
+        }} onClick={() => setShowJoin(false)}>
+          <div onClick={e => e.stopPropagation()} style={{
+            background: 'var(--paper)', borderRadius: '20px 20px 0 0',
+            width: '100%', maxWidth: 640, padding: '20px 22px 40px',
+          }}>
+            <div style={{ width: 36, height: 4, borderRadius: 2, background: 'var(--line-2)', margin: '0 auto 18px' }} />
+            <div style={{ fontFamily: 'var(--serif)', fontSize: 20, fontWeight: 700, color: 'var(--espresso)', marginBottom: 6 }}>
+              Zum Teilen <span style={{ fontStyle: 'italic' }}>beitreten</span>
+            </div>
+            <div style={{ fontFamily: 'var(--serif)', fontSize: 13, color: 'var(--mute)', marginBottom: 16 }}>
+              Für den Kurzlink brauchst du ein Konto (Name reicht).
+            </div>
+            <JoinCommunity onDone={() => setShowJoin(false)} />
+          </div>
+        </div>
+      ), document.body)}
 
       {/* Textbeitrag-Overlay vor dem Veröffentlichen */}
       {showCaptionOverlay && (

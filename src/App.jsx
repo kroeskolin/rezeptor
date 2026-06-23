@@ -18,7 +18,7 @@ import SplashScreen from './components/SplashScreen'
 import { decompressFromEncodedURIComponent } from 'lz-string'
 import { addRecipe } from './db/recipes'
 import { useAuth } from './contexts/AuthContext'
-import { getActivities } from './db/community'
+import { getActivities, getSharedRecipe } from './db/community'
 
 loadTheme()
 
@@ -83,6 +83,7 @@ function App() {
   useEffect(() => {
     const hash = window.location.hash
     if (hash.startsWith('#import=')) {
+      // Alter Langlink (Rezept komprimiert in der URL) – weiter unterstützt
       try {
         const compressed = hash.slice('#import='.length)
         const json = decompressFromEncodedURIComponent(compressed)
@@ -94,8 +95,21 @@ function App() {
       } catch (e) {
         console.error('Import-Link konnte nicht gelesen werden:', e)
       }
-      // Hash entfernen, damit Reload nicht erneut importiert
       window.history.replaceState({}, '', window.location.pathname)
+    } else if (hash.startsWith('#s=')) {
+      // Neuer Kurzlink – Rezept per ID aus Firestore laden
+      const id = hash.slice('#s='.length)
+      window.history.replaceState({}, '', window.location.pathname)
+      getSharedRecipe(id)
+        .then((recipe) => {
+          if (recipe && recipe.title) {
+            setImportRecipe(recipe)
+            setIsOnMainPage(false)
+          } else {
+            alert('Dieses geteilte Rezept wurde nicht gefunden.')
+          }
+        })
+        .catch((e) => console.error('Kurzlink konnte nicht geladen werden:', e))
     }
   }, [])
 
@@ -146,6 +160,10 @@ function App() {
             background: 'var(--card)', border: '1.5px solid var(--line-2)',
             borderRadius: 16, padding: 18,
           }}>
+            {importRecipe.image && (
+              <img src={importRecipe.image} alt=""
+                style={{ width: '100%', height: 160, objectFit: 'cover', borderRadius: 12, marginBottom: 14, display: 'block' }} />
+            )}
             <div style={{ fontFamily: 'var(--serif)', fontWeight: 700, fontSize: 19, color: 'var(--espresso)' }}>
               {importRecipe.title}
             </div>
@@ -172,7 +190,7 @@ function App() {
                   steps: importRecipe.steps || '',
                   tags: importRecipe.tags || [],
                   source: importRecipe.source || 'Geteilt via Rezeptor',
-                  image: null,
+                  image: importRecipe.image || null,
                 })
                 setImportRecipe(null)
                 await handleSave()
