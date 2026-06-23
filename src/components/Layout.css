@@ -24,12 +24,7 @@ html, body, #root {
 /* ── Rezeptor-Header ── */
 .app-header {
   flex-shrink: 0;
-  background: linear-gradient(
-    to bottom,
-    #3A5230 0%,
-    var(--green) 68%,
-    rgba(76, 106, 62, 0) 130%
-  );
+  background: var(--header-grad);
   display: flex;
   align-items: flex-end;
   justify-content: space-between;

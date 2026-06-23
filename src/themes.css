@@ -39,6 +39,7 @@ html.theme-nocturne {
   --tint-4-ink: #5B4A7A;
 
   --green-grad: linear-gradient(158deg, #6B7FA0 0%, #4A5E7A 100%);
+  --header-grad: linear-gradient(to bottom, #3E4D63 0%, #5B6E8C 68%, rgba(91, 110, 140, 0) 130%);
 }
 
 /* ── Theme 2: Herbst (Mauve + Weinrot + Dunkelviolett) ── */
@@ -73,6 +74,7 @@ html.theme-herbst {
   --tint-4-ink: #5A3048;
 
   --green-grad: linear-gradient(158deg, #7D3A55 0%, #5A2840 100%);
+  --header-grad: linear-gradient(to bottom, #4A2030 0%, #6E3347 68%, rgba(110, 51, 71, 0) 130%);
 }
 
 /* ── Theme 3: Nacht (Dunkel + Eisblau + Petrol) ── */
@@ -107,6 +109,7 @@ html.theme-nacht {
   --tint-4-ink: #8AB4C0;
 
   --green-grad: linear-gradient(158deg, #3D7A8A 0%, #2C5F6A 100%);
+  --header-grad: linear-gradient(to bottom, #16383F 0%, #245A66 68%, rgba(37, 43, 43, 0) 130%);
 }
 
 /* ── Theme 4: Sommer (Türkis + Hellblau + Dunkelgrün) ── */
@@ -141,6 +144,7 @@ html.theme-sommer {
   --tint-4-ink: #2C5F58;
 
   --green-grad: linear-gradient(158deg, #3BBFB0 0%, #2C8A82 100%);
+  --header-grad: linear-gradient(to bottom, #1C4640 0%, #2C5F58 68%, rgba(44, 95, 88, 0) 130%);
 }
 
 /* ── Theme 5: Harvest (Gold + Altrosa + Dunkelbraun) ── */
@@ -175,4 +179,5 @@ html.theme-harvest {
   --tint-4-ink: #4A1A14;
 
   --green-grad: linear-gradient(158deg, #D4736A 0%, #4A1A14 100%);
+  --header-grad: linear-gradient(to bottom, #5A2C14 0%, #8A4A20 68%, rgba(138, 74, 32, 0) 130%);
 }
