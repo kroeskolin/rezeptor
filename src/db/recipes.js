@@ -227,19 +227,22 @@ export async function updateTag(tag) {
 export async function backupAllToCloud() {
     const user = auth.currentUser
     if (!user) return
-    const key = `rezeptor-backup-done-${user.uid}`
+    const key = `rezeptor-backup-done-v2-${user.uid}`
     if (localStorage.getItem(key)) return
+    let hadError = false
     try {
         const recipes = await getAllRecipes()
         for (const r of recipes) {
-            try { await pushRecipeToCloud(r) } catch (e) { console.error('Backup-Push (Rezept):', e) }
+            try { await pushRecipeToCloud(r) } catch (e) { hadError = true; console.error('Backup-Push (Rezept):', e) }
         }
         const tags = await getAllTags()
         for (const t of tags) {
-            try { await pushTagToCloud(t) } catch (e) { console.error('Backup-Push (Tag):', e) }
+            try { await pushTagToCloud(t) } catch (e) { hadError = true; console.error('Backup-Push (Tag):', e) }
         }
-        localStorage.setItem(key, '1')
     } catch (e) {
+        hadError = true
         console.error('Cloud-Backup fehlgeschlagen:', e)
     }
+    // Nur bei vollständigem Erfolg als „erledigt" markieren – sonst beim nächsten Mal erneut versuchen
+    if (!hadError) localStorage.setItem(key, '1')
 }
