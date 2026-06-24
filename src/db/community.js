@@ -298,20 +298,28 @@ export async function getActivities(user) {
                 });
             });
         } else {
-            // Fremdes Rezept → nur relevant, wenn ICH dort kommentiert habe
+            // Fremdes Rezept → neuer Beitrag als Aktivität (macht auf die Community aufmerksam)
+            activities.push({
+                id: `newpost_${rid}`, type: 'newpost',
+                recipeId: rid, recipeTitle: rec.title || '',
+                actorName: rec.authorName || 'Jemand', actorId: rec.authorId,
+                createdAtMs: ms(rec.createdAt),
+            });
+            // … und weitere Kommentare, falls ICH dort kommentiert habe
             const comSnap = await getDocs(collection(db, 'recipes', rid, 'comments'));
             const iCommented = comSnap.docs.some((c) => c.data().authorId === me);
-            if (!iCommented) continue;
-            comSnap.forEach((c) => {
-                const d = c.data();
-                if (d.authorId === me) return; // eigener Kommentar
-                activities.push({
-                    id: `cocomment_${rid}_${c.id}`, type: 'cocomment',
-                    recipeId: rid, recipeTitle: rec.title || '',
-                    actorName: d.authorName || 'Jemand', actorId: d.authorId,
-                    text: d.text || '', createdAtMs: ms(d.createdAt),
+            if (iCommented) {
+                comSnap.forEach((c) => {
+                    const d = c.data();
+                    if (d.authorId === me) return; // eigener Kommentar
+                    activities.push({
+                        id: `cocomment_${rid}_${c.id}`, type: 'cocomment',
+                        recipeId: rid, recipeTitle: rec.title || '',
+                        actorName: d.authorName || 'Jemand', actorId: d.authorId,
+                        text: d.text || '', createdAtMs: ms(d.createdAt),
+                    });
                 });
-            });
+            }
         }
     }
 

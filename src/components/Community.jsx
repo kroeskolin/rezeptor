@@ -50,6 +50,7 @@ export default function Community({ onLocalSave, activities = [], unreadCount = 
   const activityText = (a) => {
     if (a.type === 'like') return `${a.actorName} gefällt dein Rezept „${a.recipeTitle}"!`
     if (a.type === 'comment') return `${a.actorName} hat dein Rezept „${a.recipeTitle}" kommentiert!`
+    if (a.type === 'newpost') return `${a.actorName} hat ein neues Rezept geteilt: „${a.recipeTitle}"`
     return `${a.actorName} hat ebenfalls das Rezept „${a.recipeTitle}" kommentiert!`
   }
 
@@ -226,7 +227,12 @@ export default function Community({ onLocalSave, activities = [], unreadCount = 
                       <span style={{ flexShrink: 0, display: 'flex', color: a.type === 'like' ? 'var(--rose-ink)' : 'var(--green)' }}>
                         {a.type === 'like'
                           ? <span style={{ fontSize: 18, lineHeight: 1 }}>♥</span>
-                          : <SpeechBubble size={17} color="var(--green)" />}
+                          : a.type === 'newpost'
+                            ? <svg width="17" height="17" viewBox="0 0 24 24" fill="none" style={{ display: 'block' }}>
+                                <circle cx="12" cy="12" r="9" stroke="var(--green)" strokeWidth="1.8" />
+                                <path d="M12 8v8M8 12h8" stroke="var(--green)" strokeWidth="1.8" strokeLinecap="round" />
+                              </svg>
+                            : <SpeechBubble size={17} color="var(--green)" />}
                       </span>
                       <span style={{ flex: 1, minWidth: 0, fontFamily: 'var(--serif)', fontSize: 14, color: 'var(--espresso)', lineHeight: 1.4 }}>
                         {activityText(a)}
