@@ -1,7 +1,30 @@
 const DB_NAME = 'rezeptor'
-const DB_VERSION = 2
+const DB_VERSION = 3
 const STORE_NAME = 'recipes'
 const TAGS_STORE = 'tags'
+
+// Stabile, geräteunabhängige ID (für die spätere Cloud-Sync).
+// Der lokale Integer-Schlüssel (`id`) bleibt unverändert; `cloudId` ist die
+// dauerhafte Identität eines Rezepts/Tags über Geräte hinweg.
+export function newCloudId() {
+    if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID()
+    return 'c-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10)
+}
+
+// Allen vorhandenen Einträgen eines Stores eine cloudId verpassen (einmalige Migration).
+function backfillCloudId(store) {
+    const req = store.openCursor()
+    req.onsuccess = (e) => {
+        const cursor = e.target.result
+        if (!cursor) return
+        const val = cursor.value
+        if (val && !val.cloudId) {
+            val.cloudId = newCloudId()
+            cursor.update(val)
+        }
+        cursor.continue()
+    }
+}
 
 function openDB() {
     return new Promise((resolve, reject) => {
@@ -9,6 +32,7 @@ function openDB() {
 
         request.onupgradeneeded = (event) => {
             const db = event.target.result
+            const tx = event.target.transaction // versionchange-Transaktion
             if (!db.objectStoreNames.contains(STORE_NAME)) {
                 const store = db.createObjectStore(STORE_NAME, { keyPath: 'id', autoIncrement: true })
                 store.createIndex('title', 'title', { unique: false })
@@ -17,6 +41,11 @@ function openDB() {
             }
             if (!db.objectStoreNames.contains(TAGS_STORE)) {
                 db.createObjectStore(TAGS_STORE, { keyPath: 'id', autoIncrement: true })
+            }
+            // v3: bestehende Rezepte/Tags mit stabiler cloudId nachrüsten
+            if (event.oldVersion < 3) {
+                backfillCloudId(tx.objectStore(STORE_NAME))
+                backfillCloudId(tx.objectStore(TAGS_STORE))
             }
         }
 
@@ -43,6 +72,7 @@ export async function addRecipe(recipe) {
         const store = tx.objectStore(STORE_NAME)
         const newRecipe = {
             ...recipe,
+            cloudId: recipe.cloudId || newCloudId(),
             favorite: false,
             createdAt: new Date().toISOString()
         }
@@ -100,10 +130,11 @@ export async function importRecipes(jsonString) {
         const tx = db.transaction(STORE_NAME, 'readwrite')
         const store = tx.objectStore(STORE_NAME)
         recipes.forEach(recipe => {
-            if (recipe.id !== undefined) {
-                store.put(recipe)
+            const withCloudId = { ...recipe, cloudId: recipe.cloudId || newCloudId() }
+            if (withCloudId.id !== undefined) {
+                store.put(withCloudId)
             } else {
-                const { id, ...recipeWithoutId } = recipe
+                const { id, ...recipeWithoutId } = withCloudId
                 store.add(recipeWithoutId)
             }
         })
@@ -128,7 +159,7 @@ export async function addTag(tag) {
     return new Promise((resolve, reject) => {
         const tx = db.transaction(TAGS_STORE, 'readwrite')
         const store = tx.objectStore(TAGS_STORE)
-        const request = store.add(tag)
+        const request = store.add({ ...tag, cloudId: tag.cloudId || newCloudId() })
         request.onsuccess = () => resolve(request.result)
         request.onerror = () => reject(request.error)
     })
