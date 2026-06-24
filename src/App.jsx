@@ -6,7 +6,7 @@ import AddRecipe from './components/AddRecipe'
 import EditRecipe from './components/EditRecipe'
 import CookMode from './components/CookMode'
 import Community from './components/Community'
-import { getAllRecipes, toggleFavorite } from './db/recipes'
+import { getAllRecipes, toggleFavorite, backupAllToCloud } from './db/recipes'
 import Settings from './components/Settings'
 import TodayTab from './components/TodayTab'
 import LuckyWheel from './components/LuckyWheel'
@@ -49,6 +49,8 @@ function App() {
   // Aktivitäten laden, sobald ein Nutzer eingeloggt ist (und beim Wiederanzeigen der App)
   useEffect(() => {
     if (!user) { setActivities([]); setLastSeen(0); return }
+    // Einmaliges Cloud-Backup der lokalen Rezepte (Phase 2a; idempotent pro Gerät)
+    backupAllToCloud().catch(err => console.error('Cloud-Backup:', err))
     setLastSeen(Number(localStorage.getItem(`rezeptor_activitySeen_${user.uid}`) || 0))
     const load = () => getActivities(user).then(setActivities).catch(err => console.error('Aktivitäten laden fehlgeschlagen:', err))
     load()

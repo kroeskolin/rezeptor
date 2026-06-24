@@ -1,3 +1,9 @@
+import { auth } from './firebase'
+import {
+    pushRecipeToCloud, deleteRecipeFromCloud,
+    pushTagToCloud, deleteTagFromCloud,
+} from './cloudSync'
+
 const DB_NAME = 'rezeptor'
 const DB_VERSION = 3
 const STORE_NAME = 'recipes'
@@ -77,7 +83,10 @@ export async function addRecipe(recipe) {
             createdAt: new Date().toISOString()
         }
         const request = store.add(newRecipe)
-        request.onsuccess = () => resolve(request.result)
+        request.onsuccess = () => {
+            if (auth.currentUser) pushRecipeToCloud(newRecipe).catch(() => { })
+            resolve(request.result)
+        }
         request.onerror = () => reject(request.error)
     })
 }
@@ -88,7 +97,10 @@ export async function updateRecipe(recipe) {
         const tx = db.transaction(STORE_NAME, 'readwrite')
         const store = tx.objectStore(STORE_NAME)
         const request = store.put(recipe)
-        request.onsuccess = () => resolve(request.result)
+        request.onsuccess = () => {
+            if (auth.currentUser) pushRecipeToCloud(recipe).catch(() => { })
+            resolve(request.result)
+        }
         request.onerror = () => reject(request.error)
     })
 }
@@ -102,9 +114,17 @@ export async function deleteRecipe(id) {
     return new Promise((resolve, reject) => {
         const tx = db.transaction(STORE_NAME, 'readwrite')
         const store = tx.objectStore(STORE_NAME)
-        const request = store.delete(id)
-        request.onsuccess = () => resolve()
-        request.onerror = () => reject(request.error)
+        const getReq = store.get(id)
+        getReq.onsuccess = () => {
+            const cloudId = getReq.result?.cloudId
+            const delReq = store.delete(id)
+            delReq.onsuccess = () => {
+                if (auth.currentUser && cloudId) deleteRecipeFromCloud(cloudId).catch(() => { })
+                resolve()
+            }
+            delReq.onerror = () => reject(delReq.error)
+        }
+        getReq.onerror = () => reject(getReq.error)
     })
 }
 
@@ -159,8 +179,12 @@ export async function addTag(tag) {
     return new Promise((resolve, reject) => {
         const tx = db.transaction(TAGS_STORE, 'readwrite')
         const store = tx.objectStore(TAGS_STORE)
-        const request = store.add({ ...tag, cloudId: tag.cloudId || newCloudId() })
-        request.onsuccess = () => resolve(request.result)
+        const newTag = { ...tag, cloudId: tag.cloudId || newCloudId() }
+        const request = store.add(newTag)
+        request.onsuccess = () => {
+            if (auth.currentUser) pushTagToCloud(newTag).catch(() => { })
+            resolve(request.result)
+        }
         request.onerror = () => reject(request.error)
     })
 }
@@ -170,9 +194,17 @@ export async function deleteTag(id) {
     return new Promise((resolve, reject) => {
         const tx = db.transaction(TAGS_STORE, 'readwrite')
         const store = tx.objectStore(TAGS_STORE)
-        const request = store.delete(id)
-        request.onsuccess = () => resolve()
-        request.onerror = () => reject(request.error)
+        const getReq = store.get(id)
+        getReq.onsuccess = () => {
+            const cloudId = getReq.result?.cloudId
+            const delReq = store.delete(id)
+            delReq.onsuccess = () => {
+                if (auth.currentUser && cloudId) deleteTagFromCloud(cloudId).catch(() => { })
+                resolve()
+            }
+            delReq.onerror = () => reject(delReq.error)
+        }
+        getReq.onerror = () => reject(getReq.error)
     })
 }
 
@@ -182,7 +214,32 @@ export async function updateTag(tag) {
         const tx = db.transaction(TAGS_STORE, 'readwrite')
         const store = tx.objectStore(TAGS_STORE)
         const request = store.put(tag)
-        request.onsuccess = () => resolve(request.result)
+        request.onsuccess = () => {
+            if (auth.currentUser) pushTagToCloud(tag).catch(() => { })
+            resolve(request.result)
+        }
         request.onerror = () => reject(request.error)
     })
+}
+
+// Einmal pro Gerät: alle lokalen Rezepte/Tags in die Cloud sichern.
+// Idempotent über ein localStorage-Flag (verhindert wiederholtes Hochspielen).
+export async function backupAllToCloud() {
+    const user = auth.currentUser
+    if (!user) return
+    const key = `rezeptor-backup-done-${user.uid}`
+    if (localStorage.getItem(key)) return
+    try {
+        const recipes = await getAllRecipes()
+        for (const r of recipes) {
+            try { await pushRecipeToCloud(r) } catch (e) { console.error('Backup-Push (Rezept):', e) }
+        }
+        const tags = await getAllTags()
+        for (const t of tags) {
+            try { await pushTagToCloud(t) } catch (e) { console.error('Backup-Push (Tag):', e) }
+        }
+        localStorage.setItem(key, '1')
+    } catch (e) {
+        console.error('Cloud-Backup fehlgeschlagen:', e)
+    }
 }
