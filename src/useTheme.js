@@ -4,33 +4,23 @@
 export const THEMES = [
   {
     id: 'default',
-    name: 'Waldgrün',
+    name: 'Karolins Leibspeise',
     colors: ['#C8D9BF', '#473528', '#EDD4CF', '#F9FBF8'],
   },
   {
-    id: 'nocturne',
-    name: 'Nocturne',
-    colors: ['#C4BBDB', '#1E1E1E', '#EDB8B8', '#FEFAF2'],
+    id: 'salbei',
+    name: 'Salbei-Risotto',
+    colors: ['#809589', '#3E4F57', '#E4CACA', '#FBF4F0'],
   },
   {
-    id: 'herbst',
-    name: 'Herbst',
-    colors: ['#D4B8C7', '#3D1F35', '#E8D0DA', '#F5F0F2'],
+    id: 'himbeer',
+    name: 'Himbeer-Grießbrei',
+    colors: ['#CA9695', '#46333A', '#F1D5CE', '#FDF8F2'],
   },
   {
-    id: 'nacht',
-    name: 'Nacht',
-    colors: ['#4A8A96', '#E3EAF0', '#3A4A50', '#252B2B'],
-  },
-  {
-    id: 'sommer',
-    name: 'Sommer',
-    colors: ['#7DD4D4', '#1A3A36', '#B8EAE4', '#F2FAF8'],
-  },
-  {
-    id: 'harvest',
-    name: 'Harvest',
-    colors: ['#F5D080', '#4A1A14', '#F0C8B8', '#FDF8F0'],
+    id: 'gorgonzola',
+    name: 'Gorgonzola-Gnocchi',
+    colors: ['#496C86', '#233A49', '#BCD2D7', '#FCF8F3'],
   },
 ];
 
@@ -47,6 +37,8 @@ export function applyTheme(themeId) {
 
 export function loadTheme() {
   const saved = localStorage.getItem('rezeptor-theme') || 'default';
-  applyTheme(saved);
-  return saved;
+  // Falls ein gelöschtes/unbekanntes Theme gespeichert ist → Default
+  const valid = THEMES.some(t => t.id === saved) ? saved : 'default';
+  applyTheme(valid);
+  return valid;
 }
