@@ -78,6 +78,8 @@ export default function RecipeDetail({ recipe, onBack, onEdit, onStartCook, onTo
     const items = tempDiv.querySelectorAll('li, p');
     const result = [];
     items.forEach(el => {
+      // <p> innerhalb eines <li> überspringen — sonst zählt der Schritt doppelt
+      if (el.tagName === 'P' && el.closest('li')) return;
       const text = el.textContent.trim();
       if (text) result.push(text);
     });

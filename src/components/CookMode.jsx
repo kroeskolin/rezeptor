@@ -154,7 +154,12 @@ export default function CookMode({ recipe, onClose }) {
     tempDiv.innerHTML = recipe.steps;
     const items = tempDiv.querySelectorAll('li, p');
     const result = [];
-    items.forEach(el => { const t = el.textContent.trim(); if (t) result.push(t); });
+    items.forEach(el => {
+      // <p> innerhalb eines <li> überspringen — sonst zählt der Schritt doppelt
+      if (el.tagName === 'P' && el.closest('li')) return;
+      const t = el.textContent.trim();
+      if (t) result.push(t);
+    });
     return result.length > 0 ? result : [recipe.steps.replace(/<[^>]*>/g, ' ').trim()].filter(Boolean);
   };
 
