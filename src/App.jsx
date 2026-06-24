@@ -6,7 +6,7 @@ import AddRecipe from './components/AddRecipe'
 import EditRecipe from './components/EditRecipe'
 import CookMode from './components/CookMode'
 import Community from './components/Community'
-import { getAllRecipes, toggleFavorite, backupAllToCloud } from './db/recipes'
+import { getAllRecipes, toggleFavorite, backupAllToCloud, startRecipeSync, startTagSync } from './db/recipes'
 import Settings from './components/Settings'
 import TodayTab from './components/TodayTab'
 import LuckyWheel from './components/LuckyWheel'
@@ -45,6 +45,14 @@ function App() {
   useEffect(() => {
     getAllRecipes().then(setRecipes)
   }, [])
+
+  // Live-Sync: Cloud-Rezepte/Tags in die lokale DB übernehmen, sobald eingeloggt
+  useEffect(() => {
+    if (!user) return
+    const unsubR = startRecipeSync(() => getAllRecipes().then(setRecipes))
+    const unsubT = startTagSync(() => { }) // Tags lädt die Einstellungsseite beim Öffnen neu
+    return () => { unsubR(); unsubT() }
+  }, [user])
 
   // Aktivitäten laden, sobald ein Nutzer eingeloggt ist (und beim Wiederanzeigen der App)
   useEffect(() => {

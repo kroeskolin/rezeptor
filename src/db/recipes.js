@@ -1,4 +1,5 @@
-import { auth } from './firebase'
+import { auth, db } from './firebase'
+import { collection, query, onSnapshot } from 'firebase/firestore'
 import {
     pushRecipeToCloud, deleteRecipeFromCloud,
     pushTagToCloud, deleteTagFromCloud,
@@ -245,4 +246,61 @@ export async function backupAllToCloud() {
     }
     // Nur bei vollständigem Erfolg als „erledigt" markieren – sonst beim nächsten Mal erneut versuchen
     if (!hadError) localStorage.setItem(key, '1')
+}
+
+// Eingehende Cloud-Änderungen in die lokale DB übernehmen — OHNE Re-Push.
+// Additiv: neue Cloud-Einträge werden lokal angelegt, vorhandene (per cloudId)
+// aktualisiert, echte Cloud-Löschungen lokal nachvollzogen.
+function reconcileFromCloud(storeName, snap, onChange) {
+    openDB().then(idb => {
+        const tx = idb.transaction(storeName, 'readwrite')
+        const store = tx.objectStore(storeName)
+        const allReq = store.getAll()
+        allReq.onsuccess = () => {
+            const byCloudId = new Map(allReq.result.filter(r => r.cloudId).map(r => [r.cloudId, r]))
+            snap.docChanges().forEach(change => {
+                const cloudId = change.doc.id
+                const local = byCloudId.get(cloudId)
+                if (change.type === 'removed') {
+                    if (local) store.delete(local.id)
+                    return
+                }
+                // Firestore-Timestamp nicht lokal speichern (nicht klonbar)
+                const { updatedAt, ...data } = change.doc.data()
+                if (local) {
+                    const merged = { ...local, ...data, cloudId, id: local.id }
+                    // Lokales Base64-Foto behalten (offline-fähig), nicht durch URL ersetzen
+                    if (local.image && String(local.image).startsWith('data:') &&
+                        data.image && !String(data.image).startsWith('data:')) {
+                        merged.image = local.image
+                    }
+                    store.put(merged)
+                } else {
+                    store.add({ ...data, cloudId })
+                }
+            })
+        }
+        tx.oncomplete = () => { if (onChange) onChange() }
+        tx.onerror = () => console.error(`Sync-TX (${storeName}):`, tx.error)
+    }).catch(e => console.error(`Sync (${storeName}):`, e))
+}
+
+// Live-Sync der Rezepte aus der Cloud in die lokale DB. Gibt unsubscribe zurück.
+export function startRecipeSync(onChange) {
+    const user = auth.currentUser
+    if (!user) return () => { }
+    const q = query(collection(db, 'users', user.uid, 'recipes'))
+    return onSnapshot(q,
+        (snap) => reconcileFromCloud(STORE_NAME, snap, onChange),
+        (err) => console.error('Recipe-Sync:', err))
+}
+
+// Live-Sync der Tags.
+export function startTagSync(onChange) {
+    const user = auth.currentUser
+    if (!user) return () => { }
+    const q = query(collection(db, 'users', user.uid, 'tags'))
+    return onSnapshot(q,
+        (snap) => reconcileFromCloud(TAGS_STORE, snap, onChange),
+        (err) => console.error('Tag-Sync:', err))
 }
