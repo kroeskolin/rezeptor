@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { useAuth } from '../contexts/AuthContext'
-import { getFeed, getRecipeById } from '../db/community'
+import { listenFeed, getRecipeById } from '../db/community'
 import CommunityRecipeDetail from './CommunityRecipeDetail'
 import JoinCommunity from './JoinCommunity'
 
@@ -25,10 +25,9 @@ export default function Community({ onLocalSave, activities = [], unreadCount = 
   const [showJoin, setShowJoin] = useState(false)
 
   useEffect(() => {
-    getFeed()
-      .then(setFeed)
-      .catch(err => console.error('Feed laden fehlgeschlagen:', err))
-      .finally(() => setLoading(false))
+    // Feed live: Änderungen (neue Rezepte, Like-/Kommentarzähler) erscheinen sofort
+    const unsub = listenFeed((f) => { setFeed(f); setLoading(false) })
+    return unsub
   }, [])
 
   // Aktivitätsliste öffnen: Schwelle für „neu"-Hervorhebung merken, dann als gesehen markieren

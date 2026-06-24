@@ -2,7 +2,7 @@ import { coverTint, totalTime } from './DesignTokens'
 import { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { useAuth } from '../contexts/AuthContext'
-import { toggleLike, hasLiked, getComments, addComment, deleteComment, deleteRecipe } from '../db/community'
+import { toggleLike, hasLiked, listenComments, listenRecipe, addComment, deleteComment, deleteRecipe } from '../db/community'
 import { addRecipe } from '../db/recipes'
 
 export default function CommunityRecipeDetail({ recipe, onBack, onDeleted, onLocalSave }) {
@@ -22,6 +22,12 @@ export default function CommunityRecipeDetail({ recipe, onBack, onDeleted, onLoc
         }
     }, [user, recipe.id])
 
+    // Like-Zähler live aus dem Rezept-Dokument (auch Likes anderer erscheinen sofort)
+    useEffect(() => {
+        const unsub = listenRecipe(recipe.id, (r) => setLikeCount(r.likeCount || 0))
+        return unsub
+    }, [recipe.id])
+
     const handleLike = async () => {
         if (!user) {
             alert('Zum Liken bitte einloggen (im Community-Tab oben).')
@@ -29,16 +35,13 @@ export default function CommunityRecipeDetail({ recipe, onBack, onDeleted, onLoc
         }
         if (likeBusy) return // Doppelklick-Schutz
         setLikeBusy(true)
-        // Optimistisch sofort umschalten
+        // Herz optimistisch umschalten; den Zähler liefert der Live-Listener
         const nextLiked = !liked
         setLiked(nextLiked)
-        setLikeCount(c => c + (nextLiked ? 1 : -1))
         try {
             await toggleLike(recipe.id, user)
         } catch (err) {
-            // Bei Fehler zurückdrehen
-            setLiked(!nextLiked)
-            setLikeCount(c => c + (nextLiked ? -1 : 1))
+            setLiked(!nextLiked) // bei Fehler zurückdrehen
             alert('Like fehlgeschlagen: ' + err.message)
         } finally {
             setLikeBusy(false)
@@ -49,9 +52,10 @@ export default function CommunityRecipeDetail({ recipe, onBack, onDeleted, onLoc
     const [commentText, setCommentText] = useState('')
     const [commentBusy, setCommentBusy] = useState(false)
 
-    // Kommentare beim Öffnen laden
+    // Kommentare live abonnieren (eigene und fremde erscheinen sofort)
     useEffect(() => {
-        getComments(recipe.id).then(setComments).catch(() => { })
+        const unsub = listenComments(recipe.id, setComments)
+        return unsub
     }, [recipe.id])
 
     const handleAddComment = async () => {
@@ -66,9 +70,7 @@ export default function CommunityRecipeDetail({ recipe, onBack, onDeleted, onLoc
         try {
             await addComment(recipe.id, clean, user)
             setCommentText('')
-            // Neu laden, damit der frische Kommentar mit Server-Zeit erscheint
-            const fresh = await getComments(recipe.id)
-            setComments(fresh)
+            // Liste aktualisiert sich automatisch über den Live-Listener
         } catch (err) {
             alert('Kommentar fehlgeschlagen: ' + err.message)
         } finally {

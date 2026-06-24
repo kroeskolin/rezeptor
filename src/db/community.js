@@ -12,6 +12,7 @@ import {
     increment,
     updateDoc,
     deleteDoc,
+    onSnapshot,
 } from 'firebase/firestore';
 
 import { ref as storageRef, uploadString, getDownloadURL, deleteObject } from 'firebase/storage';
@@ -168,6 +169,37 @@ export async function deleteRecipe(recipeId, user) {
 export async function getRecipeById(recipeId) {
     const snap = await getDoc(doc(db, 'recipes', recipeId));
     return snap.exists() ? { id: snap.id, ...snap.data() } : null;
+}
+
+// ── Live-Listener (onSnapshot). Geben jeweils eine unsubscribe-Funktion zurück. ──
+
+// Feed live: neue Rezepte + geänderte Like-/Kommentarzähler erscheinen sofort.
+export function listenFeed(callback) {
+    const q = query(collection(db, 'recipes'), orderBy('createdAt', 'desc'));
+    return onSnapshot(
+        q,
+        (snap) => callback(snap.docs.map((d) => ({ id: d.id, ...d.data() }))),
+        (err) => console.error('Feed-Listener fehlgeschlagen:', err)
+    );
+}
+
+// Kommentare eines Rezepts live (neueste zuerst).
+export function listenComments(recipeId, callback) {
+    const q = query(collection(db, 'recipes', recipeId, 'comments'), orderBy('createdAt', 'desc'));
+    return onSnapshot(
+        q,
+        (snap) => callback(snap.docs.map((d) => ({ id: d.id, ...d.data() }))),
+        (err) => console.error('Kommentar-Listener fehlgeschlagen:', err)
+    );
+}
+
+// Ein einzelnes Rezept-Dokument live (für Like-/Kommentarzähler in der Detailansicht).
+export function listenRecipe(recipeId, callback) {
+    return onSnapshot(
+        doc(db, 'recipes', recipeId),
+        (snap) => { if (snap.exists()) callback({ id: snap.id, ...snap.data() }); },
+        (err) => console.error('Rezept-Listener fehlgeschlagen:', err)
+    );
 }
 
 // Rezept zum Teilen ablegen (eigene `shared`-Sammlung).
