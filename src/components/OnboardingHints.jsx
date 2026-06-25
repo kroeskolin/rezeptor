@@ -84,12 +84,16 @@ export default function OnboardingHints({ user, onLogin }) {
   if (showLogin) {
     return (
       <Banner
-        leading={<Icon name="globe" size={18} color="var(--green)" />}
-        action="Anmelden"
-        onAction={onLogin}
+        leading={<Icon name="user" size={18} color="var(--green)" />}
         onClose={() => { localStorage.setItem('rezeptor-hint-login', '1'); setLoginDismissed(true) }}
       >
-        Melde dich an, um deine Rezepte zu sichern und auf allen Geräten zu haben.
+        <button onClick={onLogin} style={{
+          background: 'none', border: 'none', padding: 0, cursor: 'pointer',
+          fontFamily: 'var(--serif)', fontSize: 13, fontWeight: 700, color: 'var(--green)',
+          textDecoration: 'underline',
+        }}>
+          Melde dich an
+        </button>, um deine Rezepte zu sichern und auf allen Geräten zu haben.
       </Banner>
     )
   }
