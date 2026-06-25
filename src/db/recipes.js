@@ -248,6 +248,32 @@ export async function backupAllToCloud() {
     if (!hadError) localStorage.setItem(key, '1')
 }
 
+// Tag-Palette aus den in Rezepten verwendeten Tags ableiten/ergänzen.
+// Namensbasierte cloudId → über Geräte hinweg dieselbe ID, keine Duplikate.
+function tagSlug(s) {
+    return (s || '').toLowerCase().trim().replace(/[^a-z0-9äöüß]+/g, '-').replace(/^-|-$/g, '')
+}
+export async function ensurePaletteFromRecipes() {
+    const recipes = await getAllRecipes()
+    const existing = await getAllTags()
+    const existingNames = new Set(existing.map(t => (t.name || '').toLowerCase().trim()))
+
+    const byName = new Map()
+    for (const r of recipes) {
+        for (const t of (r.tags || [])) {
+            const name = (t?.name || (typeof t === 'string' ? t : '')).trim()
+            if (!name) continue
+            const key = name.toLowerCase()
+            if (!byName.has(key)) byName.set(key, { name, color: t?.color || null })
+        }
+    }
+    for (const [key, tag] of byName) {
+        if (existingNames.has(key)) continue
+        const cloudId = 'tag-' + (tagSlug(tag.name) || key)
+        try { await addTag({ ...tag, cloudId }) } catch (e) { console.error('Palette-Ableitung:', e) }
+    }
+}
+
 // Eingehende Cloud-Änderungen in die lokale DB übernehmen — OHNE Re-Push.
 // Additiv: neue Cloud-Einträge werden lokal angelegt, vorhandene (per cloudId)
 // aktualisiert, echte Cloud-Löschungen lokal nachvollzogen.
