@@ -46,6 +46,20 @@ function applySafeAreaInsets() {
 
 applySafeAreaInsets()
 
+// ── Auto-Reload bei neuer App-Version ──
+// Sobald ein neuer Service Worker die Kontrolle übernimmt, lädt die App sich
+// einmal selbst neu. Nur bei einem ECHTEN Update (es gab beim Laden schon einen
+// aktiven Controller) und nicht, während gerade ein Rezept bearbeitet wird.
+if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+  let refreshing = false
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (refreshing) return
+    if (window.__rezeptorEditing) { window.__rezeptorPendingReload = true; return }
+    refreshing = true
+    window.location.reload()
+  })
+}
+
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <AuthProvider>

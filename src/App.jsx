@@ -46,6 +46,16 @@ function App() {
     getAllRecipes().then(setRecipes)
   }, [])
 
+  // Editier-Flag für den Auto-Reload: nicht reloaden, während ein Rezept bearbeitet wird
+  useEffect(() => {
+    const editing = showAddRecipe || showEditRecipe
+    window.__rezeptorEditing = editing
+    if (!editing && window.__rezeptorPendingReload) {
+      window.__rezeptorPendingReload = false
+      window.location.reload()
+    }
+  }, [showAddRecipe, showEditRecipe])
+
   // Live-Sync: Cloud-Rezepte/Tags/Theme in die lokale DB übernehmen, sobald eingeloggt
   useEffect(() => {
     if (!user) return
