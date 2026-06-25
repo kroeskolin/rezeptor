@@ -24,7 +24,10 @@ export const THEMES = [
   },
 ];
 
-export function applyTheme(themeId) {
+import { auth, db } from './db/firebase';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
+
+export function applyTheme(themeId, opts = {}) {
   // Alle Theme-Klassen entfernen
   const html = document.documentElement;
   THEMES.forEach(t => html.classList.remove(`theme-${t.id}`));
@@ -33,12 +36,30 @@ export function applyTheme(themeId) {
     html.classList.add(`theme-${themeId}`);
   }
   localStorage.setItem('rezeptor-theme', themeId);
+  // Bei eingeloggtem Nutzer ans Konto heften
+  if (!opts.skipCloud && auth.currentUser) {
+    setDoc(doc(db, 'users', auth.currentUser.uid), { theme: themeId }, { merge: true })
+      .catch(err => console.error('Theme speichern (Cloud) fehlgeschlagen:', err));
+  }
 }
 
 export function loadTheme() {
   const saved = localStorage.getItem('rezeptor-theme') || 'default';
   // Falls ein gelöschtes/unbekanntes Theme gespeichert ist → Default
   const valid = THEMES.some(t => t.id === saved) ? saved : 'default';
-  applyTheme(valid);
+  applyTheme(valid, { skipCloud: true });
   return valid;
+}
+
+// Beim Login das am Konto gespeicherte Theme übernehmen.
+export async function syncThemeFromCloud() {
+  const user = auth.currentUser;
+  if (!user) return;
+  try {
+    const snap = await getDoc(doc(db, 'users', user.uid));
+    const t = snap.exists() ? snap.data().theme : null;
+    if (t && THEMES.some(x => x.id === t)) applyTheme(t, { skipCloud: true });
+  } catch (err) {
+    console.error('Theme aus Cloud laden fehlgeschlagen:', err);
+  }
 }

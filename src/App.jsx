@@ -13,7 +13,7 @@ import LuckyWheel from './components/LuckyWheel'
 import RecipeTinder from './components/RecipeTinder'
 import IngredientSuggest from './components/IngredientSuggest'
 import SearchDrawer from './components/SearchDrawer'
-import { loadTheme } from './useTheme'
+import { loadTheme, syncThemeFromCloud } from './useTheme'
 import SplashScreen from './components/SplashScreen'
 import { decompressFromEncodedURIComponent } from 'lz-string'
 import { addRecipe } from './db/recipes'
@@ -46,11 +46,12 @@ function App() {
     getAllRecipes().then(setRecipes)
   }, [])
 
-  // Live-Sync: Cloud-Rezepte/Tags in die lokale DB übernehmen, sobald eingeloggt
+  // Live-Sync: Cloud-Rezepte/Tags/Theme in die lokale DB übernehmen, sobald eingeloggt
   useEffect(() => {
     if (!user) return
+    syncThemeFromCloud() // am Konto gespeichertes Farbschema übernehmen
     const unsubR = startRecipeSync(() => getAllRecipes().then(setRecipes))
-    const unsubT = startTagSync(() => { }) // Tags lädt die Einstellungsseite beim Öffnen neu
+    const unsubT = startTagSync(() => window.dispatchEvent(new Event('rezeptor:tags-updated')))
     return () => { unsubR(); unsubT() }
   }, [user])
 

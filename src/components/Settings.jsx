@@ -147,6 +147,13 @@ export default function Settings({ onImport, onShowTagManager, onHideTagManager 
     setActiveTheme(saved)
   }, [])
 
+  // Tag-Liste live nachladen, wenn der Cloud-Sync neue Tags bringt
+  useEffect(() => {
+    const onTagsUpdated = () => reload()
+    window.addEventListener('rezeptor:tags-updated', onTagsUpdated)
+    return () => window.removeEventListener('rezeptor:tags-updated', onTagsUpdated)
+  }, [])
+
   const openTagManager = () => {
     setShowTagManager(true)
     setEditMode(false)
