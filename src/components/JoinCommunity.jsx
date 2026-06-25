@@ -47,9 +47,9 @@ export default function JoinCommunity({ onDone }) {
         Mit deinem Google-Konto kannst du dich auf verschiedenen Geräten bei Rezeptor einloggen und den Account „mitnehmen".
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '14px 0' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '18px 0' }}>
         <div style={{ flex: 1, height: 1, background: 'var(--line-2)' }} />
-        <span style={{ fontFamily: 'var(--serif)', fontSize: 12, color: 'var(--mute)' }}>oder</span>
+        <span style={{ fontFamily: 'var(--serif)', fontSize: 12, fontWeight: 700, color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>oder</span>
         <div style={{ flex: 1, height: 1, background: 'var(--line-2)' }} />
       </div>
 
