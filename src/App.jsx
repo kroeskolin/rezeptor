@@ -16,6 +16,7 @@ import SearchDrawer from './components/SearchDrawer'
 import { loadTheme, syncThemeFromCloud } from './useTheme'
 import SplashScreen from './components/SplashScreen'
 import Welcome from './components/Welcome'
+import OnboardingHints from './components/OnboardingHints'
 import { decompressFromEncodedURIComponent } from 'lz-string'
 import { addRecipe } from './db/recipes'
 import { useAuth } from './contexts/AuthContext'
@@ -337,6 +338,12 @@ function App() {
         favActive={favOnly}
         onSearchClick={() => { setShowSearch(true); goToSubPage() }}
       >
+        {activeTab === 'home' && isOnMainPage && (
+          <div style={{ padding: '0 22px' }}>
+            <div style={{ height: 8 }} />
+            <OnboardingHints user={user} onLogin={() => setActiveTab('settings')} />
+          </div>
+        )}
         {renderContent()}
         {showSplash && <SplashScreen onDone={() => setShowSplash(false)} />}
       </Layout>
