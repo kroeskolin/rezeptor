@@ -82,7 +82,8 @@ export default function Layout({ activeTab, onTabChange, onFabClick, children, h
               <button className="fab-btn" onClick={onFabClick} aria-label="Rezept hinzufügen">
                 <Icon name="plus" size={28} color="#F9FBF8" strokeWidth={2.4} />
               </button>
-              <span className="fab-label">Hinzufügen</span>
+              {/* Unsichtbarer Platzhalter: hält die Höhe, damit das Plus auf einer Linie mit den anderen Tabs bleibt */}
+              <span className="fab-label" aria-hidden="true" style={{ visibility: 'hidden' }}>&nbsp;</span>
             </div>
 
             {rightTabs.map(tab => (
