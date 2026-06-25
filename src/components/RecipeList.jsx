@@ -128,8 +128,14 @@ export default function RecipeList({ recipes, onSelectRecipe, onToggleFavorite, 
       {recipes?.length === 0 ? (
         <div className="recipe-list-empty">
           <div style={{ fontSize: 40, marginBottom: 12 }}>🍳</div>
-          <div>Noch keine Rezepte.</div>
-          <div style={{ marginTop: 6, fontSize: 14 }}>Füge dein erstes Rezept hinzu!</div>
+          <div>Noch keine Rezepte</div>
+          <div style={{ marginTop: 8, fontSize: 14, color: 'var(--cocoa)', lineHeight: 1.5 }}>
+            Tippe unten auf <span style={{ fontWeight: 700, color: 'var(--green)' }}>＋ Hinzufügen</span>,<br />
+            um dein erstes Rezept anzulegen.
+          </div>
+          <div style={{ marginTop: 10, fontSize: 13, color: 'var(--mute)', fontStyle: 'italic' }}>
+            Geht manuell, per Link (z. B. von einer Rezept-Website) oder per Foto.
+          </div>
         </div>
       ) : (
         <>

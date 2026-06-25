@@ -15,6 +15,7 @@ import IngredientSuggest from './components/IngredientSuggest'
 import SearchDrawer from './components/SearchDrawer'
 import { loadTheme, syncThemeFromCloud } from './useTheme'
 import SplashScreen from './components/SplashScreen'
+import Welcome from './components/Welcome'
 import { decompressFromEncodedURIComponent } from 'lz-string'
 import { addRecipe } from './db/recipes'
 import { useAuth } from './contexts/AuthContext'
@@ -39,6 +40,12 @@ function App() {
   const { user } = useAuth()
   const [activities, setActivities] = useState([])
   const [lastSeen, setLastSeen] = useState(0)
+  const [welcomeDone, setWelcomeDone] = useState(() => !!localStorage.getItem('rezeptor-onboarded'))
+
+  const dismissWelcome = () => {
+    localStorage.setItem('rezeptor-onboarded', '1')
+    setWelcomeDone(true)
+  }
 
   const seenKey = user ? `rezeptor_activitySeen_${user.uid}` : null
 
@@ -336,6 +343,11 @@ function App() {
 
       {showCookMode && selectedRecipe && (
         <CookMode recipe={selectedRecipe} onClose={() => setShowCookMode(false)} />
+      )}
+
+      {/* Einmaliger Willkommens-/Login-Screen beim ersten Start (nicht eingeloggt) */}
+      {!welcomeDone && user === null && !showSplash && (
+        <Welcome onClose={dismissWelcome} />
       )}
     </>
   )

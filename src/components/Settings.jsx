@@ -267,10 +267,27 @@ export default function Settings({ onImport, onShowTagManager, onHideTagManager 
 
           {tags.length === 0 && (
             <div style={{ padding: '0 20px' }}>
+              <p style={{ fontFamily: 'var(--serif)', fontSize: 13.5, color: 'var(--cocoa)', margin: '0 0 8px' }}>
+                Diese Tags sind im Starterpaket enthalten:
+              </p>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 14 }}>
+                {STARTER_TAGS.map(t => (
+                  <span key={t.name} style={{
+                    border: `1.5px solid ${t.color}`, color: t.color,
+                    borderRadius: 20, padding: '3px 11px', fontSize: 13,
+                    fontFamily: 'var(--serif)', fontWeight: 600,
+                  }}>
+                    {t.name}
+                  </span>
+                ))}
+              </div>
               <button className="tag-starter-btn" onClick={handleLoadStarter}
                 disabled={loadingStarter} style={{ width: '100%' }}>
                 {loadingStarter ? 'Wird geladen …' : '✨ Starterpaket laden'}
               </button>
+              <p style={{ fontFamily: 'var(--serif)', fontSize: 12.5, color: 'var(--mute)', fontStyle: 'italic', margin: '10px 0 0' }}>
+                Alternativ kannst du dir unten eigene Tags anlegen.
+              </p>
             </div>
           )}
 

@@ -129,10 +129,24 @@ function TagPicker({ selectedTags, onChange }) {
 
       {tags.length === 0 && (
         <div className="tag-starter">
-          <p className="tag-starter-hint">Noch keine Tags vorhanden.</p>
+          <p className="tag-starter-hint">Diese Tags sind im Starterpaket enthalten:</p>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, margin: '4px 0 12px' }}>
+            {STARTER_TAGS.map(t => (
+              <span key={t.name} style={{
+                border: `1.5px solid ${t.color}`, color: t.color,
+                borderRadius: 20, padding: '3px 11px', fontSize: 13,
+                fontFamily: 'var(--serif)', fontWeight: 600,
+              }}>
+                {t.name}
+              </span>
+            ))}
+          </div>
           <button className="tag-starter-btn" onClick={handleLoadStarter} disabled={loadingStarter}>
             {loadingStarter ? 'Wird geladen …' : '✨ Starterpaket laden'}
           </button>
+          <p className="tag-starter-hint" style={{ marginTop: 10 }}>
+            Alternativ kannst du dir über „+ Tag" oder in den Einstellungen eigene Tags anlegen.
+          </p>
         </div>
       )}
 
