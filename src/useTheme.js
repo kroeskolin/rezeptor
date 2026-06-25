@@ -58,7 +58,13 @@ export async function syncThemeFromCloud() {
   try {
     const snap = await getDoc(doc(db, 'users', user.uid));
     const t = snap.exists() ? snap.data().theme : null;
-    if (t && THEMES.some(x => x.id === t)) applyTheme(t, { skipCloud: true });
+    if (t && THEMES.some(x => x.id === t)) {
+      applyTheme(t, { skipCloud: true });
+    } else {
+      // Noch kein Theme am Konto → aktuelles lokales Theme dort sichern
+      const local = localStorage.getItem('rezeptor-theme') || 'default';
+      setDoc(doc(db, 'users', user.uid), { theme: local }, { merge: true }).catch(() => { });
+    }
   } catch (err) {
     console.error('Theme aus Cloud laden fehlgeschlagen:', err);
   }
