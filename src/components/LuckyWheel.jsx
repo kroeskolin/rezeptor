@@ -8,6 +8,22 @@ export default function LuckyWheel({ recipes, onBack, onSelectRecipe }) {
   const [result, setResult] = useState(null);
   const [selectedTag, setSelectedTag] = useState(null);
 
+  if ((recipes || []).length === 0) {
+    return (
+      <div style={{ padding: '60px 22px 0' }}>
+        <button onClick={onBack} aria-label="Zurück" style={{
+          background: 'var(--card)', border: '1px solid var(--line-2)', borderRadius: '50%',
+          width: 38, height: 38, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          <Icon name="chev-left" size={16} color="var(--espresso)" />
+        </button>
+        <div style={{ textAlign: 'center', marginTop: 90, fontFamily: 'var(--serif)', fontSize: 18, color: 'var(--cocoa)', lineHeight: 1.5, padding: '0 10px' }}>
+          Füge Rezepte hinzu, um das Glücksrad zu drehen! 🎲
+        </div>
+      </div>
+    );
+  }
+
   const available = (recipes || []).filter(r => {
     if (!selectedTag) return true;
     return r.tags?.some(t => (t.name || t) === selectedTag);

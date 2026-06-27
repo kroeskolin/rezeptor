@@ -42,7 +42,6 @@ export default function AddRecipe({ onSave, onClose }) {
   const [multiRecipes, setMultiRecipes] = useState(null)
   const [selectedRecipes, setSelectedRecipes] = useState(new Set())
   const photoInputRef = useRef(null)
-  const jsonInputRef = useRef(null)
 
   const handleSave = async () => {
     if (!form.title.trim()) { alert('Bitte gib einen Titel ein.'); return }
@@ -189,44 +188,6 @@ export default function AddRecipe({ onSave, onClose }) {
       alert('Rezept konnte nicht aus dem Foto gelesen werden.')
     } finally {
       setIsLoading(false); setLoadingMsg('')
-    }
-  }
-
-  const handleJsonLoad = async (e) => {
-    const file = e.target.files[0]
-    if (!file) return
-    setIsLoading(true); setLoadingMsg('JSON wird gelesen …')
-    try {
-      const text = await file.text()
-      const data = JSON.parse(text)
-      const recipes = Array.isArray(data) ? data : [data]
-
-      if (recipes.length === 0 || !recipes[0].title) {
-        throw new Error('Keine Rezepte in der Datei gefunden.')
-      }
-
-      if (recipes.length === 1) {
-        const r = recipes[0]
-        setForm({
-          title: r.title || '', subtitle: r.subtitle || '',
-          servings: r.servings || '', prepTime: r.prepTime || '',
-          cookTime: r.cookTime || '', ingredients: r.ingredients || [],
-          steps: r.steps || '', tags: r.tags || [],
-          image: r.image || null,
-          source: r.source || '',
-        })
-        setMode('manual')
-      } else {
-        setMultiRecipes(recipes)
-        setSelectedRecipes(new Set(recipes.map((_, i) => i)))
-        setMode('multi-select')
-      }
-    } catch (error) {
-      console.error(error)
-      alert('JSON-Datei konnte nicht gelesen werden.')
-    } finally {
-      setIsLoading(false); setLoadingMsg('')
-      e.target.value = '' // erlaubt erneutes Auswählen derselben Datei
     }
   }
 
@@ -425,8 +386,7 @@ export default function AddRecipe({ onSave, onClose }) {
     const methods = [
       { icon: 'camera', title: 'Foto', hint: 'Ein oder mehrere Fotos auswählen', tone: 'sage', onClick: () => photoInputRef.current?.click() },
       { icon: 'mic', title: 'Diktieren', hint: 'Einfach einsprechen', tone: 'rose', onClick: () => setMode('voice') },
-      { icon: 'pen', title: 'Manuell', hint: 'Von Hand eintippen', tone: 'paper-2', onClick: () => setMode('manual') },
-      { icon: 'import', title: 'JSON-Datei', hint: 'Aus Rezeptor exportiertes Rezept', tone: 'tint', onClick: () => jsonInputRef.current?.click() },]
+      { icon: 'pen', title: 'Manuell', hint: 'Von Hand eintippen', tone: 'paper-2', onClick: () => setMode('manual') },]
     const tileBg = { sage: 'var(--sage)', rose: 'var(--rose)', 'paper-2': 'var(--paper-2)', tint: 'var(--tint-3-bg)' }
     return (
       <div className="add-recipe">
@@ -468,8 +428,6 @@ export default function AddRecipe({ onSave, onClose }) {
         </div>
         <input ref={photoInputRef} type="file" accept="image/*" multiple
           style={{ display: 'none' }} onChange={handlePhotoLoad} />
-        <input ref={jsonInputRef} type="file" accept=".json,application/json"
-          style={{ display: 'none' }} onChange={handleJsonLoad} />
       </div>
 
     )

@@ -20,6 +20,22 @@ export default function RecipeTinder({ recipes, onSelectRecipe, onBack }) {
   const startPos = useRef({ x: 0, y: 0 })
   const cardRef = useRef(null)
 
+  if ((recipes || []).length === 0) {
+    return (
+      <div style={{ padding: '60px 22px 0' }}>
+        <button onClick={onBack} aria-label="Zurück" style={{
+          background: 'var(--card)', border: '1px solid var(--line-2)', borderRadius: '50%',
+          width: 38, height: 38, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          <Icon name="chev-left" size={16} color="var(--espresso)" />
+        </button>
+        <div style={{ textAlign: 'center', marginTop: 90, fontFamily: 'var(--serif)', fontSize: 18, color: 'var(--cocoa)', lineHeight: 1.5, padding: '0 10px' }}>
+          Füge Rezepte hinzu, um dein Match zu finden! 💘
+        </div>
+      </div>
+    )
+  }
+
   const current = deck[0] || null
   const finished = deck.length === 0 && !leaving
 
