@@ -356,6 +356,21 @@ function App() {
       {!welcomeDone && user === null && !showSplash && (
         <Welcome onClose={dismissWelcome} />
       )}
+
+      {/* Leere-Startseite: Hinweis + Pfeil fix knapp über dem Plus (nicht bei Splash/Welcome) */}
+      {activeTab === 'home' && isOnMainPage && recipes.length === 0 && !showSplash && !(!welcomeDone && user === null) && (
+        <div style={{
+          position: 'fixed', left: 0, right: 0, bottom: 150, zIndex: 40,
+          display: 'flex', flexDirection: 'column', alignItems: 'center', pointerEvents: 'none',
+        }}>
+          <div style={{ fontFamily: 'var(--serif)', fontSize: 18, color: 'var(--cocoa)', textAlign: 'center', lineHeight: 1.45, maxWidth: 260, padding: '0 20px' }}>
+            Tippe hier, um dein erstes Rezept anzulegen.
+          </div>
+          <svg className="empty-arrow" width="30" height="46" viewBox="0 0 30 46" fill="none" aria-hidden="true" style={{ marginTop: 12 }}>
+            <path d="M15 4v34M15 38l-8-8M15 38l8-8" stroke="var(--green)" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </div>
+      )}
     </>
   )
 }

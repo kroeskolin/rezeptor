@@ -1,4 +1,3 @@
-import { createPortal } from 'react-dom';
 import './RecipeList.css';
 import { Icon, Monogram, LoveDot, coverTint, totalTime } from './DesignTokens';
 
@@ -126,23 +125,7 @@ export default function RecipeList({ recipes, onSelectRecipe, onToggleFavorite, 
         )}
       </div>
 
-      {recipes?.length === 0 ? (
-        createPortal(
-          <div style={{
-            position: 'fixed', left: 0, right: 0, bottom: 150, zIndex: 40,
-            display: 'flex', flexDirection: 'column', alignItems: 'center',
-            pointerEvents: 'none',
-          }}>
-            <div style={{ fontFamily: 'var(--serif)', fontSize: 18, color: 'var(--cocoa)', textAlign: 'center', lineHeight: 1.45, maxWidth: 260, padding: '0 20px' }}>
-              Tippe hier, um dein erstes Rezept anzulegen.
-            </div>
-            <svg className="empty-arrow" width="30" height="46" viewBox="0 0 30 46" fill="none" aria-hidden="true" style={{ marginTop: 12 }}>
-              <path d="M15 4v34M15 38l-8-8M15 38l8-8" stroke="var(--green)" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </div>,
-          document.body
-        )
-      ) : (
+      {recipes?.length === 0 ? null : (
         <>
           {featured && (
             <div className="recipe-list-section">
