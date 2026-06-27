@@ -56,6 +56,7 @@ if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
     if (refreshing) return
     if (window.__rezeptorEditing) { window.__rezeptorPendingReload = true; return }
     refreshing = true
+    sessionStorage.setItem('rezeptor-just-updated', '1')
     window.location.reload()
   })
 }

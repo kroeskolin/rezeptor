@@ -33,6 +33,20 @@
   /* Gradient */
   --green-grad: linear-gradient(158deg, #5C7A45 0%, #3C5232 100%);
   --header-grad: linear-gradient(to bottom, #3A5230 0%, #4C6A3E 68%, rgba(76, 106, 62, 0) 130%);
+}
+
+/* Update-Banner („Gruß aus der Küche") */
+.update-toast {
+  transform: translateX(-50%);
+  animation: updateToastIn 0.3s ease-out;
+}
+@keyframes updateToastIn {
+  from { opacity: 0; transform: translate(-50%, -10px); }
+  to   { opacity: 1; transform: translate(-50%, 0); }
+}
+
+:root {
+  /* (Fortsetzung der Tokens) */
 
   /* Type */
   --serif:   'Source Serif 4', Georgia, serif;

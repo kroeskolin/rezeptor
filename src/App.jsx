@@ -42,6 +42,7 @@ function App() {
   const [activities, setActivities] = useState([])
   const [lastSeen, setLastSeen] = useState(0)
   const [welcomeDone, setWelcomeDone] = useState(() => !!localStorage.getItem('rezeptor-onboarded'))
+  const [justUpdated, setJustUpdated] = useState(false)
 
   const dismissWelcome = () => {
     localStorage.setItem('rezeptor-onboarded', '1')
@@ -54,12 +55,23 @@ function App() {
     getAllRecipes().then(setRecipes)
   }, [])
 
+  // „Gruß aus der Küche"-Banner nach einem Auto-Update (3 Sek.)
+  useEffect(() => {
+    if (sessionStorage.getItem('rezeptor-just-updated')) {
+      sessionStorage.removeItem('rezeptor-just-updated')
+      setJustUpdated(true)
+      const t = setTimeout(() => setJustUpdated(false), 3000)
+      return () => clearTimeout(t)
+    }
+  }, [])
+
   // Editier-Flag für den Auto-Reload: nicht reloaden, während ein Rezept bearbeitet wird
   useEffect(() => {
     const editing = showAddRecipe || showEditRecipe
     window.__rezeptorEditing = editing
     if (!editing && window.__rezeptorPendingReload) {
       window.__rezeptorPendingReload = false
+      sessionStorage.setItem('rezeptor-just-updated', '1')
       window.location.reload()
     }
   }, [showAddRecipe, showEditRecipe])
@@ -355,6 +367,23 @@ function App() {
       {/* Einmaliger Willkommens-/Login-Screen beim ersten Start (nicht eingeloggt) */}
       {!welcomeDone && user === null && !showSplash && (
         <Welcome onClose={dismissWelcome} />
+      )}
+
+      {/* „Gruß aus der Küche"-Banner nach einem Update */}
+      {justUpdated && (
+        <div className="update-toast" style={{
+          position: 'fixed', top: 'calc(env(safe-area-inset-top, 0px) + 14px)', left: '50%',
+          zIndex: 2500, background: 'var(--card)', border: '1px solid var(--line-2)',
+          borderRadius: 14, padding: '12px 20px', textAlign: 'center', maxWidth: '88%',
+          boxShadow: '0 10px 28px -10px rgba(0,0,0,0.3)',
+        }}>
+          <div style={{ fontFamily: 'var(--serif)', fontSize: 11, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--green)' }}>
+            Gruß aus der Küche
+          </div>
+          <div style={{ fontFamily: 'var(--serif)', fontSize: 15, color: 'var(--espresso)', marginTop: 3 }}>
+            Rezeptor hat ein Update erhalten ✅
+          </div>
+        </div>
       )}
 
       {/* Leere-Startseite: Hinweis + Pfeil fix knapp über dem Plus (nicht bei Splash/Welcome) */}
