@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="114" fill="#2C3E28"/>
+  <rect width="512" height="512" fill="#2C3E28"/>
   <!-- R Stamm -->
   <path d="M156 400 L156 120" stroke="#C8D9BF" stroke-width="14" stroke-linecap="round" fill="none"/>
   <!-- R Bogen -->
