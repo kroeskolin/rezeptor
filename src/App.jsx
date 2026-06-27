@@ -55,15 +55,21 @@ function App() {
     getAllRecipes().then(setRecipes)
   }, [])
 
-  // „Gruß aus der Küche"-Banner nach einem Auto-Update (3 Sek.)
+  // „Gruß aus der Küche"-Banner nach einem Auto-Update merken …
   useEffect(() => {
     if (sessionStorage.getItem('rezeptor-just-updated')) {
       sessionStorage.removeItem('rezeptor-just-updated')
       setJustUpdated(true)
+    }
+  }, [])
+
+  // … und erst NACH dem Splash für 3 Sekunden zeigen
+  useEffect(() => {
+    if (justUpdated && !showSplash) {
       const t = setTimeout(() => setJustUpdated(false), 3000)
       return () => clearTimeout(t)
     }
-  }, [])
+  }, [justUpdated, showSplash])
 
   // Editier-Flag für den Auto-Reload: nicht reloaden, während ein Rezept bearbeitet wird
   useEffect(() => {
@@ -357,8 +363,10 @@ function App() {
           </div>
         )}
         {renderContent()}
-        {showSplash && <SplashScreen onDone={() => setShowSplash(false)} />}
       </Layout>
+
+      {/* Splash auf oberster Ebene (außerhalb des Scroll-Containers → deckt den ganzen Bildschirm) */}
+      {showSplash && <SplashScreen onDone={() => setShowSplash(false)} />}
 
       {showCookMode && selectedRecipe && (
         <CookMode recipe={selectedRecipe} onClose={() => setShowCookMode(false)} />
@@ -369,8 +377,8 @@ function App() {
         <Welcome onClose={dismissWelcome} />
       )}
 
-      {/* „Gruß aus der Küche"-Banner nach einem Update */}
-      {justUpdated && (
+      {/* „Gruß aus der Küche"-Banner nach einem Update (erst nach dem Splash) */}
+      {justUpdated && !showSplash && (
         <div className="update-toast" style={{
           position: 'fixed', top: 'calc(env(safe-area-inset-top, 0px) + 14px)', left: '50%',
           zIndex: 2500, background: 'var(--card)', border: '1px solid var(--line-2)',
