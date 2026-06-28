@@ -6,6 +6,10 @@ import { useAuth } from '../contexts/AuthContext'
 import JoinCommunity from './JoinCommunity'
 import './Settings.css'
 
+// Web3Forms Access-Key — kostenlos auf web3forms.com mit brr.kroeske@gmail.com anlegen.
+// Solange der Platzhalter steht, weist das Formular freundlich darauf hin.
+const WEB3FORMS_ACCESS_KEY = 'DEIN_WEB3FORMS_ACCESS_KEY'
+
 const COLORS = [
   '#FFCDD2', '#EF9A9A', '#E57373', '#F44336', '#D32F2F',
   '#F8BBD9', '#F06292', '#C2185B',
@@ -137,6 +141,11 @@ export default function Settings({ onImport, onShowTagManager, onHideTagManager 
   const [showSheet, setShowSheet] = useState(false)
   const [activeTheme, setActiveTheme] = useState('default')
   const [loadingStarter, setLoadingStarter] = useState(false)
+  const [showContact, setShowContact] = useState(false)
+  const [contactMsg, setContactMsg] = useState('')
+  const [contactEmail, setContactEmail] = useState('')
+  const [contactBusy, setContactBusy] = useState(false)
+  const [contactSent, setContactSent] = useState(false)
   const fileInputRef = useRef(null)
 
   const reload = () => getAllTags().then(setTags)
@@ -315,6 +324,115 @@ export default function Settings({ onImport, onShowTagManager, onHideTagManager 
     )
   }
 
+  const handleSendContact = async () => {
+    const msg = contactMsg.trim()
+    const mail = contactEmail.trim()
+    if (!msg) return
+    if (WEB3FORMS_ACCESS_KEY === 'DEIN_WEB3FORMS_ACCESS_KEY') {
+      alert('Das Kontaktformular ist noch nicht eingerichtet (Access-Key fehlt).')
+      return
+    }
+    setContactBusy(true)
+    try {
+      const payload = {
+        access_key: WEB3FORMS_ACCESS_KEY,
+        subject: 'Nutzer-Feedback Rezeptor',
+        from_name: 'Rezeptor-Feedback',
+        message: msg + '\n\n' + (mail ? `Antwortadresse des Nutzers: ${mail}` : 'Keine Antwortadresse angegeben.'),
+      }
+      // Wenn der Nutzer eine Mail angibt, als Reply-To setzen (direkt antwortbar).
+      if (mail) payload.email = mail
+      const res = await fetch('https://api.web3forms.com/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify(payload),
+      })
+      const data = await res.json()
+      if (!data.success) throw new Error(data.message || 'Unbekannter Fehler')
+      setContactSent(true)
+      setContactMsg('')
+      setContactEmail('')
+    } catch (e) {
+      alert('Senden fehlgeschlagen: ' + e.message)
+    } finally {
+      setContactBusy(false)
+    }
+  }
+
+  // ── Kontakt ──
+  if (showContact) {
+    return (
+      <div className="settings">
+        <div className="settings-header" style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+          <button className="settings-back-btn" onClick={() => { setShowContact(false); setContactSent(false) }}>
+            <Icon name="chev-left" size={18} color="var(--cocoa)" />
+          </button>
+          <h1 className="display" style={{ fontSize: 30, color: 'var(--espresso)' }}>
+            Kon<span style={{ fontStyle: 'italic', fontWeight: 600 }}>takt</span>
+          </h1>
+        </div>
+
+        {contactSent ? (
+          <div className="settings-group">
+            <div className="settings-group-card" style={{ padding: '24px 18px', textAlign: 'center' }}>
+              <div style={{ marginBottom: 10 }}>
+                <Icon name="check" size={34} color="var(--green)" strokeWidth={2.2} />
+              </div>
+              <div style={{ fontFamily: 'var(--serif)', fontSize: 17, fontWeight: 700, color: 'var(--espresso)', marginBottom: 4 }}>
+                Danke für deine Nachricht!
+              </div>
+              <div style={{ fontFamily: 'var(--serif)', fontSize: 13.5, color: 'var(--cocoa)' }}>
+                Sie ist angekommen. Wenn du eine Antwortadresse angegeben hast, melde ich mich.
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="settings-group">
+            <div className="settings-group-card" style={{ padding: '18px' }}>
+              <div style={{ fontFamily: 'var(--serif)', fontSize: 14.5, color: 'var(--cocoa)', lineHeight: 1.5, marginBottom: 16 }}>
+                Fragen? Fehlt dir eine Funktion oder funktioniert etwas nicht? Schreib mir!
+              </div>
+              <textarea
+                value={contactMsg}
+                onChange={e => setContactMsg(e.target.value)}
+                placeholder="Deine Nachricht …"
+                rows={6}
+                style={{
+                  width: '100%', boxSizing: 'border-box', borderRadius: 14, border: '1px solid var(--line-2)',
+                  padding: '12px 14px', fontFamily: 'var(--serif)', fontSize: 14.5, color: 'var(--ink)',
+                  background: 'var(--paper)', resize: 'vertical',
+                }}
+              />
+              <input
+                type="email"
+                value={contactEmail}
+                onChange={e => setContactEmail(e.target.value)}
+                placeholder="Deine E-Mail (optional, für eine Antwort)"
+                style={{
+                  width: '100%', boxSizing: 'border-box', borderRadius: 14, border: '1px solid var(--line-2)',
+                  padding: '12px 14px', fontFamily: 'var(--serif)', fontSize: 14.5, color: 'var(--ink)',
+                  background: 'var(--paper)', marginTop: 10,
+                }}
+              />
+              <button
+                onClick={handleSendContact}
+                disabled={!contactMsg.trim() || contactBusy}
+                style={{
+                  marginTop: 14, width: '100%', padding: '13px', borderRadius: 14, border: 'none',
+                  background: 'var(--green)', color: '#F9FBF8', fontFamily: 'var(--serif)', fontSize: 15, fontWeight: 600,
+                  cursor: 'pointer', opacity: (!contactMsg.trim() || contactBusy) ? 0.5 : 1,
+                }}
+              >
+                {contactBusy ? 'Wird gesendet …' : 'Absenden'}
+              </button>
+            </div>
+          </div>
+        )}
+        <div style={{ height: 20 }} />
+      </div>
+    )
+  }
+
   // ── Theme-Picker ──
   if (showThemePicker) {
     return (
@@ -448,6 +566,10 @@ export default function Settings({ onImport, onShowTagManager, onHideTagManager 
       <SettingsGroup title="Erscheinungsbild">
         <SettingRow icon="sun" label="Farbschema wählen"
           value={currentThemeName} onClick={() => setShowThemePicker(true)} />
+      </SettingsGroup>
+
+      <SettingsGroup title="Hilfe">
+        <SettingRow icon="help" label="Kontakt" onClick={() => setShowContact(true)} />
       </SettingsGroup>
 
       <div className="settings-footer">
