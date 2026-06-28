@@ -21,12 +21,25 @@ function applySafeAreaInsets() {
   ].join(';')
   document.body.appendChild(probe)
 
+  const probeB = document.createElement('div')
+  probeB.style.cssText = [
+    'position: fixed',
+    'bottom: 0',
+    'left: 0',
+    'visibility: hidden',
+    'pointer-events: none',
+    'height: env(safe-area-inset-bottom, 0px)',
+  ].join(';')
+  document.body.appendChild(probeB)
+
   const measure = () => {
     const top = probe.getBoundingClientRect().height
     // Nur setzen, wenn ein sinnvoller Wert vorliegt; sonst den bisherigen behalten
     if (top > 0) {
       document.documentElement.style.setProperty('--sat', `${top}px`)
     }
+    const bottom = probeB.getBoundingClientRect().height
+    document.documentElement.style.setProperty('--sab', `${bottom}px`)
   }
 
   // Mehrfach messen, um den iOS-Timing-Bug abzufangen:

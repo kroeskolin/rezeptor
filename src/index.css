@@ -79,11 +79,14 @@
 html, body {
   margin: 0;
   padding: 0;
-  background: var(--paper);
+  height: 100%;                    /* statischer, stabiler Containing-Block — KEIN fixed, KEIN dvh */
+  background: var(--statusbar-bg); /* Canvas in Markenfarbe: ein evtl. Spalt ist grün, nie weiß */
   font-family: var(--serif);
   color: var(--ink);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+  overflow: hidden;               /* kein Dokument-Bounce; gescrollt wird nur .app-content */
+  overscroll-behavior: none;
 }
 
 #root {
