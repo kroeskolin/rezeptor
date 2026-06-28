@@ -167,9 +167,10 @@ async function handleReelInfo(code, corsHeaders) {
     return json({ caption: "", username: "", thumbnail: null, error: "bad-code" }, 400);
   }
 
-  const UA =
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 " +
-    "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36";
+  // WICHTIG: schlichtes "Mozilla/5.0". Ein zu spezifischer Browser-UA (Chrome…)
+  // wird von Instagram für Datacenter-IPs mit LEERER Antwort geblockt. Die
+  // bestehende /fetch-Route nutzt denselben schlichten UA und liefert zuverlässig.
+  const UA = "Mozilla/5.0";
 
   // /reel/ zuerst, dann /p/ (Foto-Posts) — der Shortcode allein verrät den Typ nicht.
   const urls = [
@@ -180,9 +181,7 @@ async function handleReelInfo(code, corsHeaders) {
   let html = "";
   for (const u of urls) {
     try {
-      const r = await fetch(u, {
-        headers: { "User-Agent": UA, "Accept-Language": "de,en;q=0.8" },
-      });
+      const r = await fetch(u, { headers: { "User-Agent": UA } });
       if (!r.ok) continue;
       const bodyText = await r.text();
       if (bodyText.includes('class="Caption"') || bodyText.includes("og:description")) {
