@@ -8,7 +8,7 @@ import './Settings.css'
 
 // Web3Forms Access-Key — kostenlos auf web3forms.com mit brr.kroeske@gmail.com anlegen.
 // Solange der Platzhalter steht, weist das Formular freundlich darauf hin.
-const WEB3FORMS_ACCESS_KEY = 'DEIN_WEB3FORMS_ACCESS_KEY'
+const WEB3FORMS_ACCESS_KEY = '60c457eb-ec72-4f78-bf02-ec1f54755a33'
 
 const COLORS = [
   '#FFCDD2', '#EF9A9A', '#E57373', '#F44336', '#D32F2F',
