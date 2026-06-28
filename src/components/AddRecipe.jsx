@@ -477,10 +477,10 @@ export default function AddRecipe({ onSave, onClose, initialUrl }) {
             }}>
               <div style={{ width: 36, height: 4, borderRadius: 2, background: 'var(--line-2)', margin: '0 auto 18px' }} />
               <div style={{ fontFamily: 'var(--serif)', fontSize: 20, fontWeight: 700, color: 'var(--espresso)', marginBottom: 14 }}>
-                Welche Links <span style={{ fontStyle: 'italic' }}>funktionieren</span>?
+                Welche Links funktionieren?
               </div>
               {[
-                ['Webseiten & Foodblogs', 'Klappt fast immer — Zutaten und Schritte stehen direkt im Seitentext.'],
+                ['Webseiten & Foodblogs', 'Sollte eigentlich immer klappen. Wenn nicht, nutze gerne das Kontaktformular in den Einstellungen und sag Bescheid.'],
                 ['YouTube', 'Klappt, wenn das Rezept in der Videobeschreibung oder einem der Top-Kommentare steht. Wird es nur im Video gesprochen, lässt es sich nicht auslesen.'],
                 ['Instagram-Reels', 'Klappt, wenn das Rezept in der Bildunterschrift (Caption) steht. Nicht möglich, wenn dort nur „Rezept auf meiner Website" verlinkt ist, das Rezept ausschließlich im Video gezeigt wird oder das Profil privat ist.'],
               ].map(([t, d]) => (
@@ -489,14 +489,11 @@ export default function AddRecipe({ onSave, onClose, initialUrl }) {
                   <div style={{ fontFamily: 'var(--serif)', fontSize: 13.5, color: 'var(--cocoa)', lineHeight: 1.5 }}>{d}</div>
                 </div>
               ))}
-              <div style={{ fontFamily: 'var(--serif)', fontSize: 12.5, color: 'var(--mute)', fontStyle: 'italic', marginTop: 4 }}>
-                Kurz gesagt: Steht das Rezept irgendwo als Text, klappt's. Steckt es nur im gesprochenen oder gezeigten Video, leider nicht.
-              </div>
               <button onClick={() => setShowLinkInfo(false)} style={{
                 marginTop: 20, width: '100%', padding: '13px', borderRadius: 14, border: 'none',
                 background: 'var(--green)', color: '#F9FBF8', fontFamily: 'var(--serif)', fontSize: 15, fontWeight: 600, cursor: 'pointer',
               }}>
-                Verstanden
+                Alles klar!
               </button>
             </div>
           </div>
