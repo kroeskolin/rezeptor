@@ -3,6 +3,9 @@ import {
   GoogleAuthProvider,
   signInWithPopup,
   signInWithRedirect,
+  signInWithCredential,
+  linkWithPopup,
+  linkWithRedirect,
   getRedirectResult,
   signInAnonymously,
   updateProfile,
@@ -14,13 +17,38 @@ import { auth, db } from '../db/firebase';
 
 const AuthContext = createContext(null);
 
+// Popup vom Browser/COOP blockiert → auf Redirect-Login ausweichen.
+// (In iOS-Standalone-PWAs sind Popups oft nicht möglich → Redirect ist dort der Normalfall.)
+const POPUP_PROBLEMS = [
+  'auth/popup-blocked',
+  'auth/popup-closed-by-user',
+  'auth/cancelled-popup-request',
+  'auth/internal-error',
+  'auth/operation-not-supported-in-this-environment',
+];
+
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(undefined); // undefined = noch am Laden
   const [, bumpRefresh] = useState(0); // erzwingt Re-Render nach Profiländerung
 
-  // Falls der Login per Redirect lief: Ergebnis nach Rückkehr abholen (Fehler sichtbar machen)
+  // Falls der Login per Redirect lief: Ergebnis nach Rückkehr abholen.
+  // Sonderfall bei der Verknüpfung (linkWithRedirect): Gibt es das Google-Konto schon
+  // (anderes Gerät), schlägt das Verknüpfen fehl → dann mit dem bestehenden Konto anmelden.
   useEffect(() => {
-    getRedirectResult(auth).catch((err) => console.error('Redirect-Login fehlgeschlagen:', err));
+    getRedirectResult(auth).catch(async (err) => {
+      if (err?.code === 'auth/credential-already-in-use' || err?.code === 'auth/email-already-in-use') {
+        const cred = GoogleAuthProvider.credentialFromError(err);
+        if (cred) {
+          try {
+            await signInWithCredential(auth, cred);
+            return;
+          } catch (e2) {
+            console.error('Anmeldung mit bestehendem Konto fehlgeschlagen:', e2);
+          }
+        }
+      }
+      console.error('Redirect-Login fehlgeschlagen:', err);
+    });
   }, []);
 
   useEffect(() => {
@@ -44,17 +72,33 @@ export function AuthProvider({ children }) {
 
   const signInWithGoogle = async () => {
     const provider = new GoogleAuthProvider();
+    const current = auth.currentUser;
+
+    // Anonymes Konto → zu Google „hochstufen" (verknüpfen): gleicher UID, alle
+    // Rezepte/Tags/Aktivitäten bleiben am selben Konto, nichts wird verwaist.
+    if (current && current.isAnonymous) {
+      try {
+        return await linkWithPopup(current, provider);
+      } catch (e) {
+        // Google-Konto existiert schon (z.B. anderes Gerät): Verknüpfen unmöglich
+        // → mit dem bestehenden Konto anmelden. Lokale Rezepte bleiben lokal und
+        //   werden danach automatisch ins bestehende Konto gesichert.
+        if (e?.code === 'auth/credential-already-in-use' || e?.code === 'auth/email-already-in-use') {
+          const cred = GoogleAuthProvider.credentialFromError(e);
+          if (cred) return await signInWithCredential(auth, cred);
+        }
+        if (POPUP_PROBLEMS.includes(e?.code)) {
+          return linkWithRedirect(current, provider);
+        }
+        throw e;
+      }
+    }
+
+    // Kein anonymes Konto → normaler Login
     try {
       return await signInWithPopup(auth, provider);
     } catch (e) {
-      // Popup von Browser/COOP blockiert → auf Redirect-Login ausweichen
-      const popupProblem = [
-        'auth/popup-blocked',
-        'auth/popup-closed-by-user',
-        'auth/cancelled-popup-request',
-        'auth/internal-error',
-      ].includes(e?.code);
-      if (popupProblem) {
+      if (POPUP_PROBLEMS.includes(e?.code)) {
         return signInWithRedirect(auth, provider);
       }
       throw e;
