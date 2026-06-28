@@ -23,7 +23,7 @@ html.theme-salbei {
   --line:#E7DBD4; --line-2:#D9C9C1;
 
   /* Marke: Header + FAB identisch, solide */
-  --header-grad:#809589; --green-grad:#809589;
+  --header-grad:#809589; --green-grad:#809589; --statusbar-bg:#809589;
 
   /* Fußleiste minimal abgesetzt (etwas tiefer als --paper) */
   --nav-bg:rgba(245,236,231,0.92);
@@ -48,7 +48,7 @@ html.theme-himbeer {
 
   --line:#EFE0D7; --line-2:#E4CFC5;
 
-  --header-grad:#CA9695; --green-grad:#CA9695;
+  --header-grad:#CA9695; --green-grad:#CA9695; --statusbar-bg:#CA9695;
 
   --nav-bg:rgba(247,239,231,0.92);
 
@@ -74,7 +74,7 @@ html.theme-gorgonzola {
 
   --line:#EFE6DE; --line-2:#E3D9CD;
 
-  --header-grad:#496C86; --green-grad:#496C86;
+  --header-grad:#496C86; --green-grad:#496C86; --statusbar-bg:#496C86;
 
   --nav-bg:rgba(247,241,235,0.92);
 

@@ -33,6 +33,7 @@
   /* Gradient */
   --green-grad: linear-gradient(158deg, #5C7A45 0%, #3C5232 100%);
   --header-grad: linear-gradient(to bottom, #3A5230 0px, #4C6A3E 44px, #4C6A3E calc(100% - 34px), rgba(76, 106, 62, 0) calc(100% + 18px));
+  --statusbar-bg: #3A5230;
 }
 
 /* Update-Banner („Gruß aus der Küche") */

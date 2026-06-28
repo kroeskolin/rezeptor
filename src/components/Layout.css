@@ -18,6 +18,19 @@ html, body, #root {
   overflow: hidden;
 }
 
+/* Füllt den oberen Safe-Area-Bereich (Statusleiste) durchgehend in Markenfarbe,
+   damit auf Unterseiten/Übergängen kein heller Streifen durchscheint. */
+.statusbar-fill {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--sat, env(safe-area-inset-top, 0px));
+  background: var(--statusbar-bg);
+  z-index: 500;
+  pointer-events: none;
+}
+
 
 /* ── Rezeptor-Header ── */
 .app-header {
