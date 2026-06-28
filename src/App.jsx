@@ -380,9 +380,9 @@ function App() {
       {/* „Gruß aus der Küche"-Banner nach einem Update (erst nach dem Splash) */}
       {justUpdated && !showSplash && (
         <div className="update-toast" style={{
-          position: 'fixed', top: 'calc(env(safe-area-inset-top, 0px) + 14px)', left: '50%',
+          position: 'fixed', top: 'calc(var(--sat, env(safe-area-inset-top, 0px)) + 66px)', left: '50%',
           zIndex: 2500, background: 'var(--card)', border: '1px solid var(--line-2)',
-          borderRadius: 14, padding: '12px 20px', textAlign: 'center', maxWidth: '88%',
+          borderRadius: 14, padding: '10px 22px', textAlign: 'center', maxWidth: '94%',
           boxShadow: '0 10px 28px -10px rgba(0,0,0,0.3)',
         }}>
           <div style={{ fontFamily: 'var(--serif)', fontSize: 11, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--green)' }}>
