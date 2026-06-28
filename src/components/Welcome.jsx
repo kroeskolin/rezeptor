@@ -8,7 +8,7 @@ export default function Welcome({ onClose }) {
     <div
       onClick={onClose}
       style={{
-        position: 'fixed', inset: 0, zIndex: 2000, background: 'rgba(0,0,0,0.45)',
+        position: 'absolute', inset: 0, zIndex: 2000, background: 'rgba(0,0,0,0.45)',
         display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16,
       }}
     >

@@ -23,9 +23,9 @@ export default function Layout({ activeTab, onTabChange, onFabClick, children, h
   return (
     <div className="app-shell">
 
-      {/* Durchgehende Statusleisten-Füllung (oberer Safe-Area) auf ALLEN Screens,
-          damit dort nie Paper/falsche Farben durchscheinen */}
-      <div className="statusbar-fill" />
+      {/* Statusleisten-Füllung nur auf Unterseiten (ohne Header) — dort würde sonst
+          Paper durchscheinen. Auf Hauptseiten deckt der grüne Header den Bereich ab. */}
+      {hideNav && <div className="statusbar-fill" />}
 
       {/* Grüner Header — nur auf Tab-Hauptseiten */}
       {!hideNav && (

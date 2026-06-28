@@ -1,7 +1,7 @@
 /* SplashScreen.css */
 
 .splash {
-  position: fixed;
+  position: absolute;
   inset: 0;
   background: #2C3E28;
   display: flex;
