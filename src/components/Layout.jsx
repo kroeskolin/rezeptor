@@ -23,10 +23,6 @@ export default function Layout({ activeTab, onTabChange, onFabClick, children, h
   return (
     <div className="app-shell">
 
-      {/* Statusleisten-Füllung nur auf Unterseiten (ohne Header) — dort würde sonst
-          Paper durchscheinen. Auf Hauptseiten deckt der grüne Header den Bereich ab. */}
-      {hideNav && <div className="statusbar-fill" />}
-
       {/* Grüner Header — nur auf Tab-Hauptseiten */}
       {!hideNav && (
         <div className="app-header">

@@ -32,7 +32,7 @@
 
   /* Gradient */
   --green-grad: linear-gradient(158deg, #5C7A45 0%, #3C5232 100%);
-  --header-grad: linear-gradient(to bottom, #3A5230 0px, #4C6A3E 44px, #4C6A3E calc(100% - 34px), rgba(76, 106, 62, 0) calc(100% + 18px));
+  --header-grad: linear-gradient(to bottom, #3A5230 0%, #4C6A3E 68%, rgba(76, 106, 62, 0) 130%);
   --statusbar-bg: #3A5230;
 }
 
@@ -79,14 +79,11 @@
 html, body {
   margin: 0;
   padding: 0;
-  height: 100%;                    /* statischer, stabiler Containing-Block — KEIN fixed, KEIN dvh */
-  background: var(--statusbar-bg); /* Canvas in Markenfarbe: ein evtl. Spalt ist grün, nie weiß */
+  background: var(--paper);
   font-family: var(--serif);
   color: var(--ink);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
-  overflow: hidden;               /* kein Dokument-Bounce; gescrollt wird nur .app-content */
-  overscroll-behavior: none;
 }
 
 #root {

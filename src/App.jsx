@@ -17,7 +17,6 @@ import { loadTheme, syncThemeFromCloud } from './useTheme'
 import SplashScreen from './components/SplashScreen'
 import Welcome from './components/Welcome'
 import OnboardingHints from './components/OnboardingHints'
-import SafeAreaDebug from './components/SafeAreaDebug'
 import { decompressFromEncodedURIComponent } from 'lz-string'
 import { addRecipe } from './db/recipes'
 import { useAuth } from './contexts/AuthContext'
@@ -340,7 +339,6 @@ function App() {
 
   return (
     <>
-      <SafeAreaDebug />
       <Layout
         activeTab={activeTab}
         communityBadge={unreadCount}
