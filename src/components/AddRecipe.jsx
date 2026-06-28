@@ -1,6 +1,6 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { addRecipe } from '../db/recipes'
-import { extractRecipeFromUrl, extractRecipesFromImages, extractRecipeFromText, extractRecipeFromYoutube, extractYouTubeId } from '../db/ai'
+import { extractRecipeFromUrl, extractRecipesFromImages, extractRecipeFromText, extractRecipeFromYoutube, extractYouTubeId, extractInstagramId, extractRecipeFromInstagram } from '../db/ai'
 import VoiceInput from './VoiceInput'
 import IngredientsInput from './IngredientsInput'
 import RichTextEditor from './RichTextEditor'
@@ -32,16 +32,26 @@ async function compressImage(file) {
   })
 }
 
-export default function AddRecipe({ onSave, onClose }) {
+export default function AddRecipe({ onSave, onClose, initialUrl }) {
   const [mode, setMode] = useState('hub')
   const [url, setUrl] = useState('')
   const [form, setForm] = useState(emptyRecipe)
   const [isLoading, setIsLoading] = useState(false)
   const [loadingMsg, setLoadingMsg] = useState('')
   const [youtubeNoRecipe, setYoutubeNoRecipe] = useState(null)
+  const [pasteText, setPasteText] = useState('')
   const [multiRecipes, setMultiRecipes] = useState(null)
   const [selectedRecipes, setSelectedRecipes] = useState(new Set())
   const photoInputRef = useRef(null)
+
+  // Per Teilen-Funktion (z.B. Reel aus Instagram) geöffnet → Link sofort laden
+  useEffect(() => {
+    if (initialUrl && initialUrl.startsWith('http')) {
+      setUrl(initialUrl)
+      handleUrlLoad(initialUrl)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialUrl])
 
   const handleSave = async () => {
     if (!form.title.trim()) { alert('Bitte gib einen Titel ein.'); return }
@@ -75,14 +85,41 @@ export default function AddRecipe({ onSave, onClose }) {
     }
   }
 
-  const handleUrlLoad = async () => {
-    if (!url.trim()) return
+  const handleUrlLoad = async (urlArg) => {
+    const link = (typeof urlArg === 'string' ? urlArg : url).trim()
+    if (!link) return
+
+    // Instagram-Reels separat behandeln
+    if (extractInstagramId(link)) {
+      setIsLoading(true); setLoadingMsg('Instagram-Caption wird analysiert … ✨')
+      try {
+        const result = await extractRecipeFromInstagram(link)
+        if (result.noRecipeFound) {
+          setYoutubeNoRecipe(result)
+          setUrl('')
+        } else {
+          setForm({
+            title: result.title || '', subtitle: result.subtitle || '',
+            servings: result.servings || '', prepTime: result.prepTime || '',
+            cookTime: result.cookTime || '', ingredients: result.ingredients || [],
+            steps: result.steps || '', tags: [], image: result.imageBase64,
+            source: result.sourceUrl,
+          })
+          setUrl(''); setMode('manual')
+        }
+      } catch (error) {
+        alert('Instagram-Rezept konnte nicht geladen werden: ' + error.message)
+      } finally {
+        setIsLoading(false); setLoadingMsg('')
+      }
+      return
+    }
 
     // YouTube-URLs separat behandeln
-    if (extractYouTubeId(url)) {
+    if (extractYouTubeId(link)) {
       setIsLoading(true); setLoadingMsg('YouTube-Beschreibung wird analysiert … ✨')
       try {
-        const result = await extractRecipeFromYoutube(url)
+        const result = await extractRecipeFromYoutube(link)
         if (result.noRecipeFound) {
           setYoutubeNoRecipe(result)
           setUrl('')
@@ -107,7 +144,7 @@ export default function AddRecipe({ onSave, onClose }) {
     // Normale URL
     setIsLoading(true); setLoadingMsg('Rezept wird geladen …')
     try {
-      const proxyUrl = `https://rezeptor-proxy.brr-kroeske.workers.dev/fetch?url=${encodeURIComponent(url)}`
+      const proxyUrl = `https://rezeptor-proxy.brr-kroeske.workers.dev/fetch?url=${encodeURIComponent(link)}`
       const response = await fetch(proxyUrl)
       const html = await response.text()
 
@@ -126,7 +163,7 @@ export default function AddRecipe({ onSave, onClose }) {
       if (imageUrl) {
         try {
           if (imageUrl.startsWith('/')) {
-            const urlObj = new URL(url)
+            const urlObj = new URL(link)
             imageUrl = `${urlObj.protocol}//${urlObj.host}${imageUrl}`
           }
           const imgProxy = `https://rezeptor-proxy.brr-kroeske.workers.dev/?url=${encodeURIComponent(imageUrl)}`
@@ -142,13 +179,13 @@ export default function AddRecipe({ onSave, onClose }) {
         }
       }
 
-      const recipe = await extractRecipeFromUrl(url)
+      const recipe = await extractRecipeFromUrl(link)
       setForm({
         title: recipe.title || '', subtitle: recipe.subtitle || '',
         servings: recipe.servings || '', prepTime: recipe.prepTime || '',
         cookTime: recipe.cookTime || '', ingredients: recipe.ingredients || [],
         steps: recipe.steps || '', tags: [], image: imageBase64,
-        source: url,
+        source: link,
       })
       setUrl(''); setMode('manual')
     } catch (error) {
@@ -300,7 +337,7 @@ export default function AddRecipe({ onSave, onClose }) {
     return (
       <div className="add-recipe">
         <div className="add-recipe-header">
-          <button className="add-close-btn" onClick={() => setYoutubeNoRecipe(null)}>
+          <button className="add-close-btn" onClick={() => { setYoutubeNoRecipe(null); setPasteText('') }}>
             <Icon name="x" size={16} color="var(--cocoa)" />
           </button>
         </div>
@@ -309,7 +346,7 @@ export default function AddRecipe({ onSave, onClose }) {
             Kein Rezept <span style={{ fontStyle: 'italic', fontWeight: 600 }}>gefunden</span>
           </h1>
           <p style={{ fontFamily: 'var(--serif)', fontSize: 14, color: 'var(--mute)', fontStyle: 'italic', marginTop: 8 }}>
-            Die Videobeschreibung enthält keine erkennbaren Zutaten oder Zubereitungsschritte.
+            Es wurden keine erkennbaren Zutaten oder Zubereitungsschritte gefunden.
           </p>
         </div>
         {youtubeNoRecipe.imageBase64 && (
@@ -375,6 +412,46 @@ export default function AddRecipe({ onSave, onClose }) {
             </div>
             <Icon name="chev" size={18} color="var(--line-2)" />
           </button>
+
+          <div style={{ borderTop: '1px solid var(--line)', paddingTop: 14, marginTop: 2 }}>
+            <textarea
+              value={pasteText}
+              onChange={e => setPasteText(e.target.value)}
+              placeholder="… oder Caption / Rezepttext hier einfügen"
+              rows={4}
+              style={{ width: '100%', boxSizing: 'border-box', borderRadius: 14, border: '1px solid var(--line-2)', padding: '12px 14px', fontFamily: 'var(--serif)', fontSize: 14, color: 'var(--ink)', background: 'var(--paper)', resize: 'vertical' }}
+            />
+            <button className="add-method-card" disabled={!pasteText.trim()} style={{ marginTop: 10, opacity: pasteText.trim() ? 1 : 0.5 }}
+              onClick={async () => {
+                setIsLoading(true); setLoadingMsg('Rezept wird aus Text erstellt … ✨')
+                try {
+                  const result = await extractRecipeFromText(pasteText)
+                  setForm({
+                    title: result.title || youtubeNoRecipe.title || '',
+                    subtitle: result.subtitle || '',
+                    servings: result.servings || '', prepTime: result.prepTime || '',
+                    cookTime: result.cookTime || '', ingredients: result.ingredients || [],
+                    steps: result.steps || '', tags: [],
+                    image: youtubeNoRecipe.imageBase64,
+                    source: youtubeNoRecipe.sourceUrl,
+                  })
+                  setYoutubeNoRecipe(null); setPasteText(''); setMode('manual')
+                } catch {
+                  alert('Aus dem Text konnte kein Rezept erkannt werden.')
+                } finally {
+                  setIsLoading(false); setLoadingMsg('')
+                }
+              }}>
+              <div className="add-method-icon" style={{ background: 'var(--tint-3-bg)' }}>
+                <Icon name="sparkles" size={22} color="var(--espresso)" />
+              </div>
+              <div style={{ flex: 1 }}>
+                <div className="add-method-title">Aus Text erstellen</div>
+                <div className="add-method-hint">Caption oder Rezept einfügen</div>
+              </div>
+              <Icon name="chev" size={18} color="var(--line-2)" />
+            </button>
+          </div>
         </div>
         <div style={{ height: 32 }} />
       </div>
@@ -409,7 +486,7 @@ export default function AddRecipe({ onSave, onClose }) {
               <Icon name="chev" size={20} color="#F9FBF8" strokeWidth={2} />
             </button>
           </div>
-          <div className="add-link-caption">Rezept-Webseite oder YouTube-Link</div>
+          <div className="add-link-caption">Webseite, YouTube oder Instagram-Reel</div>
         </div>
         <div className="add-divider">oder</div>
         <div className="add-methods">

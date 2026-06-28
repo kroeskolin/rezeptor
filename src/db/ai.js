@@ -350,3 +350,91 @@ Regeln:
     }
 }
 
+// ── Instagram-Reel-Import ──
+// Shortcode aus allen Formaten (reel/reels/p/tv), Tracking-Parameter werden ignoriert.
+export function extractInstagramId(url) {
+    const match = url.match(/instagram\.com\/(?:reel|reels|p|tv)\/([A-Za-z0-9_-]+)/)
+    return match?.[1] || null
+}
+
+export async function extractRecipeFromInstagram(url) {
+    const code = extractInstagramId(url)
+    if (!code) throw new Error('Keine gültige Instagram-URL.')
+
+    // Caption über den Worker holen (öffentliche embed/captioned-Seite; kein Login/Key)
+    const infoResponse = await fetch(`${WORKER_URL}/reelinfo?code=${code}`)
+    const info = await infoResponse.json()
+
+    const caption = info.caption || ''
+    const username = info.username || ''
+
+    // Thumbnail (wie bei YouTube über den /?url=-Proxy zu Base64)
+    let imageBase64 = null
+    if (info.thumbnail) {
+        try {
+            const imgResponse = await fetch(`${WORKER_URL}/?url=${encodeURIComponent(info.thumbnail)}`)
+            const blob = await imgResponse.blob()
+            imageBase64 = await new Promise(resolve => {
+                const reader = new FileReader()
+                reader.onloadend = () => resolve(reader.result)
+                reader.readAsDataURL(blob)
+            })
+        } catch (e) {
+            console.log('Thumbnail konnte nicht geladen werden:', e)
+        }
+    }
+
+    const hasRecipeHints = (text) =>
+        /\d+\s*(g|kg|ml|l|EL|TL|tbsp|tsp|Stück|Zehe|Prise|Bund|cup|oz|lb)\b/i.test(text)
+        || /zutaten|ingredients|rezept|recipe/i.test(text)
+
+    // Keine (oder geblockte) Caption bzw. keine Rezept-Hinweise → „kein Rezept"-Dialog,
+    // dort kann die Caption auch manuell eingefügt werden.
+    if (!caption || !hasRecipeHints(caption)) {
+        return {
+            noRecipeFound: true,
+            title: username,
+            description: caption,
+            imageBase64,
+            sourceUrl: url,
+        }
+    }
+
+    const prompt = `
+Du bist ein Kochbuch-Assistent. Extrahiere aus dieser Instagram-Reel-Caption ein strukturiertes Rezept.
+Account: ${username}
+
+Caption:
+${caption.slice(0, 8000)}
+
+Antworte NUR mit einem JSON-Objekt, ohne Markdown-Backticks, ohne Erklärungen.
+{
+  "title": "Rezeptname",
+  "subtitle": "Kurze Beschreibung oder leer",
+  "servings": 4,
+  "prepTime": 10,
+  "cookTime": 20,
+  "ingredients": [{ "name": "Zutat", "amount": "200", "unit": "g" }],
+  "steps": "<p>Schritt 1</p><p>Schritt 2</p>",
+  "confidence": "high"
+}
+
+Regeln:
+- confidence ist "high" wenn Zutaten UND Zubereitung klar erkennbar sind, sonst "low"
+- steps ist HTML mit <p> Tags
+- prepTime und cookTime sind Zahlen in Minuten
+- Antworte ausschließlich mit dem JSON
+`
+    const result = await generateContent(prompt)
+    const clean = result.replace(/```json|```/g, '').trim()
+    const recipe = JSON.parse(clean)
+
+    return {
+        ...recipe,
+        noRecipeFound: recipe.confidence === 'low' && (!recipe.ingredients?.length),
+        description: caption,
+        imageBase64,
+        sourceUrl: url,
+    }
+}
+

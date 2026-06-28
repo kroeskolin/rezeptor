@@ -29,6 +29,7 @@ function App() {
   const [selectedRecipe, setSelectedRecipe] = useState(null)
   const [recipes, setRecipes] = useState([])
   const [showAddRecipe, setShowAddRecipe] = useState(false)
+  const [sharedUrl, setSharedUrl] = useState('')
   const [showEditRecipe, setShowEditRecipe] = useState(false)
   const [showCookMode, setShowCookMode] = useState(false)
   const [showSearch, setShowSearch] = useState(false)
@@ -118,14 +119,15 @@ function App() {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
-    const sharedUrl = params.get('url')
-    const sharedText = params.get('text')
-    if (sharedUrl || sharedText) {
-      const url = sharedUrl || sharedText
+    const paramUrl = params.get('url')
+    const paramText = params.get('text')
+    if (paramUrl || paramText) {
+      const url = paramUrl || paramText
       if (url.startsWith('http')) {
+        setSharedUrl(url)
         setShowAddRecipe(true)
         setIsOnMainPage(false)
-        window.history.replaceState({}, '', '/')
+        window.history.replaceState({}, '', window.location.pathname)
       }
     }
   }, [])
@@ -170,6 +172,7 @@ function App() {
     const updated = await getAllRecipes()
     setRecipes(updated)
     setShowAddRecipe(false)
+    setSharedUrl('')
     goToMainPage()
   }
 
@@ -267,7 +270,7 @@ function App() {
     }
 
     if (showAddRecipe) {
-      return <AddRecipe onSave={handleSave} onClose={() => { setShowAddRecipe(false); goToMainPage() }} />
+      return <AddRecipe initialUrl={sharedUrl} onSave={handleSave} onClose={() => { setShowAddRecipe(false); setSharedUrl(''); goToMainPage() }} />
     }
     if (showEditRecipe && selectedRecipe) {
       return <EditRecipe
@@ -350,7 +353,7 @@ function App() {
           setFavOnly(false)
           goToMainPage()
         }}
-        onFabClick={() => { setShowAddRecipe(true); goToSubPage() }}
+        onFabClick={() => { setSharedUrl(''); setShowAddRecipe(true); goToSubPage() }}
         hideNav={!isOnMainPage || showSplash}
         onFavClick={() => setFavOnly(v => !v)}
         favActive={favOnly}

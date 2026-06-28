@@ -48,7 +48,7 @@ export default defineConfig({
           }
         ],
         share_target: {
-          action: '/share-target',
+          action: '/rezeptor/',
           method: 'GET',
           params: {
             title: 'title',
