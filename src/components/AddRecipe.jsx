@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { addRecipe } from '../db/recipes'
 import { extractRecipeFromUrl, extractRecipesFromImages, extractRecipeFromText, extractRecipeFromYoutube, extractYouTubeId, extractInstagramId, extractRecipeFromInstagram } from '../db/ai'
 import VoiceInput from './VoiceInput'
@@ -40,6 +41,7 @@ export default function AddRecipe({ onSave, onClose, initialUrl }) {
   const [loadingMsg, setLoadingMsg] = useState('')
   const [youtubeNoRecipe, setYoutubeNoRecipe] = useState(null)
   const [pasteText, setPasteText] = useState('')
+  const [showLinkInfo, setShowLinkInfo] = useState(false)
   const [multiRecipes, setMultiRecipes] = useState(null)
   const [selectedRecipes, setSelectedRecipes] = useState(new Set())
   const photoInputRef = useRef(null)
@@ -348,6 +350,15 @@ export default function AddRecipe({ onSave, onClose, initialUrl }) {
           <p style={{ fontFamily: 'var(--serif)', fontSize: 14, color: 'var(--mute)', fontStyle: 'italic', marginTop: 8 }}>
             Es wurden keine erkennbaren Zutaten oder Zubereitungsschritte gefunden.
           </p>
+          <button
+            onClick={() => setShowLinkInfo(true)}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 10, background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}
+          >
+            <Icon name="info" size={16} color="var(--green)" />
+            <span style={{ fontFamily: 'var(--serif)', fontSize: 13.5, color: 'var(--green)', textDecoration: 'underline', textUnderlineOffset: 2 }}>
+              Warum manche Links funktionieren und manche nicht
+            </span>
+          </button>
         </div>
         {youtubeNoRecipe.imageBase64 && (
           <div style={{ padding: '0 22px 16px' }}>
@@ -454,6 +465,42 @@ export default function AddRecipe({ onSave, onClose, initialUrl }) {
           </div>
         </div>
         <div style={{ height: 32 }} />
+
+        {showLinkInfo && createPortal((
+          <div style={{
+            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)',
+            zIndex: 3000, display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
+          }} onClick={() => setShowLinkInfo(false)}>
+            <div onClick={e => e.stopPropagation()} style={{
+              background: 'var(--paper)', borderRadius: '20px 20px 0 0',
+              width: '100%', maxWidth: 640, padding: '20px 22px 40px', maxHeight: '82vh', overflowY: 'auto',
+            }}>
+              <div style={{ width: 36, height: 4, borderRadius: 2, background: 'var(--line-2)', margin: '0 auto 18px' }} />
+              <div style={{ fontFamily: 'var(--serif)', fontSize: 20, fontWeight: 700, color: 'var(--espresso)', marginBottom: 14 }}>
+                Welche Links <span style={{ fontStyle: 'italic' }}>funktionieren</span>?
+              </div>
+              {[
+                ['Webseiten & Foodblogs', 'Klappt fast immer — Zutaten und Schritte stehen direkt im Seitentext.'],
+                ['YouTube', 'Klappt, wenn das Rezept in der Videobeschreibung oder einem der Top-Kommentare steht. Wird es nur im Video gesprochen, lässt es sich nicht auslesen.'],
+                ['Instagram-Reels', 'Klappt, wenn das Rezept in der Bildunterschrift (Caption) steht. Nicht möglich, wenn dort nur „Rezept auf meiner Website" verlinkt ist, das Rezept ausschließlich im Video gezeigt wird oder das Profil privat ist.'],
+              ].map(([t, d]) => (
+                <div key={t} style={{ marginBottom: 14 }}>
+                  <div style={{ fontFamily: 'var(--serif)', fontSize: 15, fontWeight: 700, color: 'var(--espresso)', marginBottom: 2 }}>{t}</div>
+                  <div style={{ fontFamily: 'var(--serif)', fontSize: 13.5, color: 'var(--cocoa)', lineHeight: 1.5 }}>{d}</div>
+                </div>
+              ))}
+              <div style={{ fontFamily: 'var(--serif)', fontSize: 12.5, color: 'var(--mute)', fontStyle: 'italic', marginTop: 4 }}>
+                Kurz gesagt: Steht das Rezept irgendwo als Text, klappt's. Steckt es nur im gesprochenen oder gezeigten Video, leider nicht.
+              </div>
+              <button onClick={() => setShowLinkInfo(false)} style={{
+                marginTop: 20, width: '100%', padding: '13px', borderRadius: 14, border: 'none',
+                background: 'var(--green)', color: '#F9FBF8', fontFamily: 'var(--serif)', fontSize: 15, fontWeight: 600, cursor: 'pointer',
+              }}>
+                Verstanden
+              </button>
+            </div>
+          </div>
+        ), document.body)}
       </div>
     )
   }

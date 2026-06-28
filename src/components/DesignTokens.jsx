@@ -133,6 +133,9 @@ export function Icon({ name, size = 24, color = 'var(--espresso)', strokeWidth =
     case 'help': return (
       <svg {...p}><circle cx="12" cy="12" r="8.5" /><path d="M9.6 9.4a2.5 2.5 0 0 1 4.8.9c0 1.7-2.4 2.2-2.4 3.8" /><circle cx="12" cy="17" r="0.4" fill={color} stroke={color} /></svg>
     );
+    case 'info': return (
+      <svg {...p}><circle cx="12" cy="12" r="8.5" /><circle cx="12" cy="8.2" r="0.5" fill={color} stroke={color} /><path d="M12 11.3V16.6" /></svg>
+    );
     case 'link': return (
       <svg {...p}><path d="M9.5 14.5l5-5" /><path d="M8 11.5l-2 2a3.2 3.2 0 0 0 4.5 4.5l2-2" /><path d="M16 12.5l2-2a3.2 3.2 0 0 0-4.5-4.5l-2 2" /></svg>
     );
