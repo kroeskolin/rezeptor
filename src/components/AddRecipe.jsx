@@ -347,16 +347,13 @@ export default function AddRecipe({ onSave, onClose, initialUrl }) {
           <h1 className="display" style={{ fontSize: 30, color: 'var(--espresso)', lineHeight: 1.1 }}>
             Kein Rezept <span style={{ fontStyle: 'italic', fontWeight: 600 }}>gefunden</span>
           </h1>
-          <p style={{ fontFamily: 'var(--serif)', fontSize: 14, color: 'var(--mute)', fontStyle: 'italic', marginTop: 8 }}>
-            Es wurden keine erkennbaren Zutaten oder Zubereitungsschritte gefunden.
-          </p>
           <button
             onClick={() => setShowLinkInfo(true)}
-            style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 10, background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 12, background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}
           >
             <Icon name="info" size={16} color="var(--green)" />
-            <span style={{ fontFamily: 'var(--serif)', fontSize: 13.5, color: 'var(--green)', textDecoration: 'underline', textUnderlineOffset: 2 }}>
-              Warum manche Links funktionieren und manche nicht
+            <span style={{ fontFamily: 'var(--serif)', fontSize: 14, fontStyle: 'italic', color: 'var(--green)', textDecoration: 'underline', textUnderlineOffset: 2 }}>
+              Warum nicht?
             </span>
           </button>
         </div>
@@ -370,41 +367,6 @@ export default function AddRecipe({ onSave, onClose, initialUrl }) {
           </div>
         )}
         <div style={{ padding: '0 22px', display: 'flex', flexDirection: 'column', gap: 12 }}>
-          <button className="add-method-card" onClick={async () => {
-            if (!youtubeNoRecipe.description) {
-              alert('Keine Beschreibung vorhanden.')
-              return
-            }
-            setIsLoading(true); setLoadingMsg('Gemini versucht sein Glück … ✨')
-            try {
-              const result = await extractRecipeFromText(
-                `Videotitel: ${youtubeNoRecipe.title}\n\n${youtubeNoRecipe.description}`
-              )
-              setForm({
-                title: result.title || youtubeNoRecipe.title || '',
-                subtitle: result.subtitle || '',
-                servings: result.servings || '', prepTime: result.prepTime || '',
-                cookTime: result.cookTime || '', ingredients: result.ingredients || [],
-                steps: result.steps || '', tags: [],
-                image: youtubeNoRecipe.imageBase64,
-                source: youtubeNoRecipe.sourceUrl,
-              })
-              setYoutubeNoRecipe(null); setMode('manual')
-            } catch {
-              alert('Auch Gemini konnte kein Rezept erkennen.')
-            } finally {
-              setIsLoading(false); setLoadingMsg('')
-            }
-          }}>
-            <div className="add-method-icon" style={{ background: 'var(--sage)' }}>
-              <Icon name="sparkles" size={22} color="var(--espresso)" />
-            </div>
-            <div style={{ flex: 1 }}>
-              <div className="add-method-title">Trotzdem versuchen</div>
-              <div className="add-method-hint">Gemini interpretiert die Beschreibung</div>
-            </div>
-            <Icon name="chev" size={18} color="var(--line-2)" />
-          </button>
           <button className="add-method-card" onClick={() => {
             setForm({
               ...emptyRecipe,
@@ -419,7 +381,7 @@ export default function AddRecipe({ onSave, onClose, initialUrl }) {
             </div>
             <div style={{ flex: 1 }}>
               <div className="add-method-title">Manuell eingeben</div>
-              <div className="add-method-hint">Titel und Thumbnail werden übernommen</div>
+              <div className="add-method-hint">Titel und Vorschaubild werden übernommen</div>
             </div>
             <Icon name="chev" size={18} color="var(--line-2)" />
           </button>
@@ -428,11 +390,16 @@ export default function AddRecipe({ onSave, onClose, initialUrl }) {
             <textarea
               value={pasteText}
               onChange={e => setPasteText(e.target.value)}
-              placeholder="… oder Caption / Rezepttext hier einfügen"
+              placeholder="… oder Caption bzw. Rezepttext hier einfügen"
               rows={4}
               style={{ width: '100%', boxSizing: 'border-box', borderRadius: 14, border: '1px solid var(--line-2)', padding: '12px 14px', fontFamily: 'var(--serif)', fontSize: 14, color: 'var(--ink)', background: 'var(--paper)', resize: 'vertical' }}
             />
-            <button className="add-method-card" disabled={!pasteText.trim()} style={{ marginTop: 10, opacity: pasteText.trim() ? 1 : 0.5 }}
+            <button disabled={!pasteText.trim()}
+              style={{
+                marginTop: 12, background: 'none', border: '1.5px solid var(--green)', color: 'var(--green)',
+                borderRadius: 12, padding: '9px 18px', fontFamily: 'var(--serif)', fontSize: 14, fontWeight: 600,
+                cursor: 'pointer', opacity: pasteText.trim() ? 1 : 0.45,
+              }}
               onClick={async () => {
                 setIsLoading(true); setLoadingMsg('Rezept wird aus Text erstellt … ✨')
                 try {
@@ -453,14 +420,7 @@ export default function AddRecipe({ onSave, onClose, initialUrl }) {
                   setIsLoading(false); setLoadingMsg('')
                 }
               }}>
-              <div className="add-method-icon" style={{ background: 'var(--tint-3-bg)' }}>
-                <Icon name="sparkles" size={22} color="var(--espresso)" />
-              </div>
-              <div style={{ flex: 1 }}>
-                <div className="add-method-title">Aus Text erstellen</div>
-                <div className="add-method-hint">Caption oder Rezept einfügen</div>
-              </div>
-              <Icon name="chev" size={18} color="var(--line-2)" />
+              Aus Text erstellen
             </button>
           </div>
         </div>
