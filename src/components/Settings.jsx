@@ -536,46 +536,85 @@ export default function Settings({ onImport, onShowTagManager, onHideTagManager 
       </div>
 
       {user !== undefined && (
-        <SettingsGroup title="Community-Konto">
-          {user ? (
-            <div style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
-              {user.photoURL ? (
-                <img src={user.photoURL} alt="" style={{ width: 40, height: 40, borderRadius: '50%', flexShrink: 0 }} />
-              ) : (
-                <div style={{
-                  width: 40, height: 40, borderRadius: '50%', flexShrink: 0,
-                  background: 'var(--green)', color: 'var(--paper)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontFamily: 'var(--serif)', fontWeight: 700, fontSize: 17,
-                }}>
-                  {(user.displayName || '?').trim().charAt(0).toUpperCase()}
-                </div>
-              )}
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontFamily: 'var(--serif)', fontWeight: 700, fontSize: 15, color: 'var(--espresso)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {user.displayName || 'Angemeldet'}
-                </div>
-                {user.email && (
-                  <div style={{ fontFamily: 'var(--serif)', fontSize: 12.5, color: 'var(--mute)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {user.email}
+        <div className="settings-group">
+          <div className="settings-group-label">Konto und Benachrichtigungen</div>
+
+          {/* Konto-Karte */}
+          <div className="settings-group-card">
+            {user ? (
+              <div style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
+                {user.photoURL ? (
+                  <img src={user.photoURL} alt="" style={{ width: 40, height: 40, borderRadius: '50%', flexShrink: 0 }} />
+                ) : (
+                  <div style={{
+                    width: 40, height: 40, borderRadius: '50%', flexShrink: 0,
+                    background: 'var(--green)', color: 'var(--paper)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontFamily: 'var(--serif)', fontWeight: 700, fontSize: 17,
+                  }}>
+                    {(user.displayName || '?').trim().charAt(0).toUpperCase()}
                   </div>
                 )}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontFamily: 'var(--serif)', fontWeight: 700, fontSize: 15, color: 'var(--espresso)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {user.displayName || 'Angemeldet'}
+                  </div>
+                  {user.email && (
+                    <div style={{ fontFamily: 'var(--serif)', fontSize: 12.5, color: 'var(--mute)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {user.email}
+                    </div>
+                  )}
+                </div>
+                <button onClick={() => logout()}
+                  style={{
+                    background: 'var(--card)', color: 'var(--cocoa)', border: '1px solid var(--line-2)',
+                    borderRadius: 10, padding: '8px 14px', fontSize: 13,
+                    fontFamily: 'var(--serif)', cursor: 'pointer', flexShrink: 0,
+                  }}>
+                  Abmelden
+                </button>
               </div>
-              <button onClick={() => logout()}
-                style={{
-                  background: 'var(--card)', color: 'var(--cocoa)', border: '1px solid var(--line-2)',
-                  borderRadius: 10, padding: '8px 14px', fontSize: 13,
-                  fontFamily: 'var(--serif)', cursor: 'pointer', flexShrink: 0,
-                }}>
-                Abmelden
-              </button>
-            </div>
-          ) : (
-            <div style={{ padding: '12px 16px' }}>
-              <JoinCommunity />
+            ) : (
+              <div style={{ padding: '12px 16px' }}>
+                <JoinCommunity />
+              </div>
+            )}
+          </div>
+
+          {/* Benachrichtigungs-Karte (nur eingeloggt) */}
+          {user && (
+            <div className="settings-group-card" style={{ marginTop: 12 }}>
+              {!pushAvailable ? (
+                <div style={{ padding: '12px 16px', fontFamily: 'var(--serif)', fontSize: 13.5, color: 'var(--mute)' }}>
+                  Dein Gerät unterstützt keine Push-Nachrichten.
+                </div>
+              ) : (
+                <>
+                  <SettingRow icon="bell" label={pushBusy ? 'Einen Moment …' : 'Push-Nachrichten'} toggle
+                    on={pushOn} onToggle={handleTogglePush} />
+                  {pushOn && (
+                    <div style={{ background: 'var(--paper-2)' }}>
+                      {[
+                        ['newRecipes', 'Neue Rezepte'],
+                        ['comments', 'Kommentare'],
+                        ['likes', 'Likes'],
+                      ].map(([key, label], i, arr) => (
+                        <div key={key} style={{
+                          display: 'flex', alignItems: 'center',
+                          padding: '11px 16px 11px 40px',
+                          borderBottom: i < arr.length - 1 ? '1px solid var(--line)' : 'none',
+                        }}>
+                          <span style={{ flex: 1, fontFamily: 'var(--serif)', fontSize: 14, color: 'var(--cocoa)' }}>{label}</span>
+                          <Toggle on={pushPrefs[key]} onToggle={() => handleTogglePref(key)} />
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </>
+              )}
             </div>
           )}
-        </SettingsGroup>
+        </div>
       )}
 
       <SettingsGroup title="Kategorien & Tags">
@@ -605,31 +644,6 @@ export default function Settings({ onImport, onShowTagManager, onHideTagManager 
         <SettingRow icon="sun" label="Farbschema wählen"
           value={currentThemeName} onClick={() => setShowThemePicker(true)} />
       </SettingsGroup>
-
-      {user && (
-        <SettingsGroup title="Benachrichtigungen">
-          {!pushAvailable ? (
-            <div style={{ padding: '12px 16px', fontFamily: 'var(--serif)', fontSize: 13.5, color: 'var(--mute)' }}>
-              Dein Gerät unterstützt keine Push-Nachrichten.
-            </div>
-          ) : (
-            <>
-              <SettingRow icon="bell" label={pushBusy ? 'Einen Moment …' : 'Push-Nachrichten'} toggle
-                on={pushOn} onToggle={handleTogglePush} />
-              {pushOn && (
-                <>
-                  <SettingRow icon="plate" label="Neue Rezepte" toggle
-                    on={pushPrefs.newRecipes} onToggle={() => handleTogglePref('newRecipes')} />
-                  <SettingRow icon="pencil" label="Kommentare" toggle
-                    on={pushPrefs.comments} onToggle={() => handleTogglePref('comments')} />
-                  <SettingRow icon="heart" label="Likes" toggle
-                    on={pushPrefs.likes} onToggle={() => handleTogglePref('likes')} />
-                </>
-              )}
-            </>
-          )}
-        </SettingsGroup>
-      )}
 
       <SettingsGroup title="Hilfe">
         <SettingRow icon="help" label="Kontakt" onClick={() => setShowContact(true)} />
