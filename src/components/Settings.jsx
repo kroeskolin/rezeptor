@@ -537,7 +537,7 @@ export default function Settings({ onImport, onShowTagManager, onHideTagManager 
 
       {user !== undefined && (
         <div className="settings-group">
-          <div className="settings-group-label">Konto und Benachrichtigungen</div>
+          <div className="settings-group-label">Konto & Benachrichtigungen</div>
 
           {/* Konto-Karte */}
           <div className="settings-group-card">
