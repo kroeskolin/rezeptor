@@ -3,6 +3,7 @@ import { getAllTags, addTag, updateTag, deleteTag, exportRecipes, importRecipes 
 import { Icon } from './DesignTokens'
 import { THEMES, applyTheme } from '../useTheme'
 import { useAuth } from '../contexts/AuthContext'
+import { pushSupported, isPushEnabled, enablePush, disablePush, getPushPrefs, savePushPrefs, DEFAULT_PUSH_PREFS } from '../db/push'
 import JoinCommunity from './JoinCommunity'
 import './Settings.css'
 
@@ -141,6 +142,10 @@ export default function Settings({ onImport, onShowTagManager, onHideTagManager 
   const [showSheet, setShowSheet] = useState(false)
   const [activeTheme, setActiveTheme] = useState('default')
   const [loadingStarter, setLoadingStarter] = useState(false)
+  const [pushOn, setPushOn] = useState(false)
+  const [pushAvailable, setPushAvailable] = useState(true)
+  const [pushBusy, setPushBusy] = useState(false)
+  const [pushPrefs, setPushPrefs] = useState(DEFAULT_PUSH_PREFS)
   const [showContact, setShowContact] = useState(false)
   const [contactMsg, setContactMsg] = useState('')
   const [contactEmail, setContactEmail] = useState('')
@@ -162,6 +167,39 @@ export default function Settings({ onImport, onShowTagManager, onHideTagManager 
     window.addEventListener('rezeptor:tags-updated', onTagsUpdated)
     return () => window.removeEventListener('rezeptor:tags-updated', onTagsUpdated)
   }, [])
+
+  // Push-Status initial laden
+  useEffect(() => {
+    setPushAvailable(pushSupported())
+    if (!pushSupported()) return
+    isPushEnabled().then(setPushOn)
+    if (user) getPushPrefs().then(setPushPrefs)
+  }, [user])
+
+  const handleTogglePush = async () => {
+    if (pushBusy) return
+    setPushBusy(true)
+    try {
+      if (pushOn) {
+        await disablePush()
+        setPushOn(false)
+      } else {
+        await enablePush()
+        setPushOn(true)
+        setPushPrefs(await getPushPrefs())
+      }
+    } catch (e) {
+      alert(e.message || 'Push konnte nicht geändert werden.')
+    } finally {
+      setPushBusy(false)
+    }
+  }
+
+  const handleTogglePref = (key) => {
+    const next = { ...pushPrefs, [key]: !pushPrefs[key] }
+    setPushPrefs(next)
+    savePushPrefs(next)
+  }
 
   const openTagManager = () => {
     setShowTagManager(true)
@@ -567,6 +605,31 @@ export default function Settings({ onImport, onShowTagManager, onHideTagManager 
         <SettingRow icon="sun" label="Farbschema wählen"
           value={currentThemeName} onClick={() => setShowThemePicker(true)} />
       </SettingsGroup>
+
+      {user && (
+        <SettingsGroup title="Benachrichtigungen">
+          {!pushAvailable ? (
+            <div style={{ padding: '12px 16px', fontFamily: 'var(--serif)', fontSize: 13.5, color: 'var(--mute)' }}>
+              Dein Gerät unterstützt keine Push-Nachrichten.
+            </div>
+          ) : (
+            <>
+              <SettingRow icon="bell" label={pushBusy ? 'Einen Moment …' : 'Push-Nachrichten'} toggle
+                on={pushOn} onToggle={handleTogglePush} />
+              {pushOn && (
+                <>
+                  <SettingRow icon="plate" label="Neue Rezepte" toggle
+                    on={pushPrefs.newRecipes} onToggle={() => handleTogglePref('newRecipes')} />
+                  <SettingRow icon="pencil" label="Kommentare" toggle
+                    on={pushPrefs.comments} onToggle={() => handleTogglePref('comments')} />
+                  <SettingRow icon="heart" label="Likes" toggle
+                    on={pushPrefs.likes} onToggle={() => handleTogglePref('likes')} />
+                </>
+              )}
+            </>
+          )}
+        </SettingsGroup>
+      )}
 
       <SettingsGroup title="Hilfe">
         <SettingRow icon="help" label="Kontakt" onClick={() => setShowContact(true)} />

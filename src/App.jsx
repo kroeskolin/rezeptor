@@ -110,11 +110,19 @@ function App() {
 
   const unreadCount = activities.filter(a => a.createdAtMs > lastSeen).length
 
+  // Homescreen-Badge am App-Icon mit dem Ungelesen-Zähler synchron halten
+  useEffect(() => {
+    if (!('setAppBadge' in navigator)) return
+    if (unreadCount > 0) navigator.setAppBadge(unreadCount).catch(() => {})
+    else navigator.clearAppBadge().catch(() => {})
+  }, [unreadCount])
+
   const markActivitiesSeen = () => {
     if (!seenKey) return
     const now = Date.now()
     localStorage.setItem(seenKey, String(now))
     setLastSeen(now)
+    if ('clearAppBadge' in navigator) navigator.clearAppBadge().catch(() => {})
   }
 
   useEffect(() => {

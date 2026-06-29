@@ -14,6 +14,7 @@ import {
 } from 'firebase/auth';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '../db/firebase';
+import { disablePush } from '../db/push';
 
 const AuthContext = createContext(null);
 
@@ -124,7 +125,11 @@ export function AuthProvider({ children }) {
     bumpRefresh((n) => n + 1);
   };
 
-  const logout = () => signOut(auth);
+  const logout = async () => {
+    // Push-Abo dieses Geräts entfernen, solange der Nutzer noch eingeloggt ist
+    await disablePush().catch(() => {});
+    return signOut(auth);
+  };
 
   return (
     <AuthContext.Provider value={{ user, signInWithGoogle, signInWithName, logout }}>

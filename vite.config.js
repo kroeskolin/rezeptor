@@ -17,6 +17,8 @@ export default defineConfig({
         skipWaiting: true,
         // Alte Caches aus früheren Versionen aufräumen
         cleanupOutdatedCaches: true,
+        // Eigene push-/notificationclick-Handler in den generierten SW laden
+        importScripts: ['push-sw.js'],
       },
       manifest: {
         name: 'Rezeptor',
