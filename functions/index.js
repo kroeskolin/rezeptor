@@ -14,7 +14,7 @@ const db = getFirestore()
 // WICHTIG: REGION muss zur Region deiner Firestore-Datenbank passen!
 // Firebase Console → Firestore Database → oben steht die Region (z.B. eur3,
 // europe-west1, europe-west3, nam5). Bei Deploy-Fehler "location" hier anpassen.
-const REGION = 'europe-west1'
+const REGION = 'europe-west3'
 
 const VAPID_PUBLIC = defineSecret('VAPID_PUBLIC_KEY')
 const VAPID_PRIVATE = defineSecret('VAPID_PRIVATE_KEY')
