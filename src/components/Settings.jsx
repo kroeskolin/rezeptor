@@ -5,6 +5,7 @@ import { THEMES, applyTheme } from '../useTheme'
 import { useAuth } from '../contexts/AuthContext'
 import { pushSupported, isPushEnabled, enablePush, disablePush, getPushPrefs, savePushPrefs, DEFAULT_PUSH_PREFS } from '../db/push'
 import JoinCommunity from './JoinCommunity'
+import EmailBackup from './EmailBackup'
 import './Settings.css'
 
 // Web3Forms Access-Key — kostenlos auf web3forms.com mit brr.kroeske@gmail.com anlegen.
@@ -147,6 +148,7 @@ export default function Settings({ onImport, onShowTagManager, onHideTagManager 
   const [pushBusy, setPushBusy] = useState(false)
   const [pushPrefs, setPushPrefs] = useState(DEFAULT_PUSH_PREFS)
   const [showContact, setShowContact] = useState(false)
+  const [showBackup, setShowBackup] = useState(false)
   const [contactMsg, setContactMsg] = useState('')
   const [contactEmail, setContactEmail] = useState('')
   const [contactBusy, setContactBusy] = useState(false)
@@ -471,6 +473,47 @@ export default function Settings({ onImport, onShowTagManager, onHideTagManager 
     )
   }
 
+  // ── Backup ──
+  if (showBackup) {
+    const secured = !!(user && user.email)
+    return (
+      <div className="settings">
+        <div className="settings-header" style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+          <button className="settings-back-btn" onClick={() => setShowBackup(false)}>
+            <Icon name="chev-left" size={18} color="var(--cocoa)" />
+          </button>
+          <h1 className="display" style={{ fontSize: 30, color: 'var(--espresso)' }}>
+            Back<span style={{ fontStyle: 'italic', fontWeight: 600 }}>up</span>
+          </h1>
+        </div>
+
+        <div className="settings-group">
+          <div className="settings-group-card" style={{ padding: '18px' }}>
+            {secured ? (
+              <>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                  <Icon name="check" size={22} color="var(--green)" strokeWidth={2.2} />
+                  <span style={{ fontFamily: 'var(--serif)', fontSize: 16, fontWeight: 700, color: 'var(--espresso)' }}>Deine Rezepte sind gesichert</span>
+                </div>
+                <div style={{ fontFamily: 'var(--serif)', fontSize: 13.5, color: 'var(--cocoa)', lineHeight: 1.5 }}>
+                  Gesichert über <b>{user.email}</b>. Auf einem neuen Gerät einfach die App öffnen und anmelden — deine Rezepte sind wieder da.
+                </div>
+              </>
+            ) : (
+              <>
+                <div style={{ fontFamily: 'var(--serif)', fontSize: 14.5, color: 'var(--cocoa)', lineHeight: 1.5, marginBottom: 16 }}>
+                  Sichere deine Rezepte mit E-Mail &amp; Passwort. Dann kannst du sie auf jedem Gerät wiederherstellen — auch wenn du dieses Handy verlierst. (Kein Google nötig.)
+                </div>
+                <EmailBackup onDone={() => setShowBackup(false)} />
+              </>
+            )}
+          </div>
+        </div>
+        <div style={{ height: 20 }} />
+      </div>
+    )
+  }
+
   // ── Theme-Picker ──
   if (showThemePicker) {
     return (
@@ -624,6 +667,8 @@ export default function Settings({ onImport, onShowTagManager, onHideTagManager 
       </SettingsGroup>
 
       <SettingsGroup title="Daten">
+        <SettingRow icon="shield" label="Backup & Wiederherstellung"
+          value={user?.email ? 'Gesichert' : 'Einrichten'} onClick={() => setShowBackup(true)} />
         <SettingRow icon="download" label="Rezepte exportieren" onClick={handleExport} />
         <SettingRow icon="import" label="Rezepte importieren"
           onClick={() => fileInputRef.current?.click()} />

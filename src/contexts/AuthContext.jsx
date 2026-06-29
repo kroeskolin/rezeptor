@@ -11,6 +11,11 @@ import {
   updateProfile,
   signOut,
   onAuthStateChanged,
+  EmailAuthProvider,
+  linkWithCredential,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  sendPasswordResetEmail,
 } from 'firebase/auth';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '../db/firebase';
@@ -125,6 +130,45 @@ export function AuthProvider({ children }) {
     bumpRefresh((n) => n + 1);
   };
 
+  // ── Backup-Konto per E-Mail + Passwort (wiederherstellbar, ohne Google) ──
+  // Reines In-App-Formular: kein Popup/Redirect → in der iOS-PWA stabil.
+
+  // Backup einrichten/sichern. Ist der aktuelle Nutzer anonym, wird das Konto
+  // per linkWithCredential „hochgestuft" (gleicher UID → alle Rezepte bleiben).
+  const signUpWithEmail = async (email, password) => {
+    const mail = (email || '').trim();
+    const current = auth.currentUser;
+    if (current && current.isAnonymous) {
+      try {
+        const cred = EmailAuthProvider.credential(mail, password);
+        return await linkWithCredential(current, cred);
+      } catch (err) {
+        // E-Mail existiert schon (anderes Gerät) → damit anmelden, lokale Rezepte
+        // werden danach automatisch ins bestehende Konto gesichert.
+        if (err?.code === 'auth/email-already-in-use' || err?.code === 'auth/credential-already-in-use') {
+          return await signInWithEmailAndPassword(auth, mail, password);
+        }
+        throw err;
+      }
+    }
+    // Kein (anonymer) Nutzer → frisches Konto anlegen
+    try {
+      return await createUserWithEmailAndPassword(auth, mail, password);
+    } catch (err) {
+      if (err?.code === 'auth/email-already-in-use') {
+        return await signInWithEmailAndPassword(auth, mail, password);
+      }
+      throw err;
+    }
+  };
+
+  // Auf neuem Gerät wiederherstellen / anmelden
+  const signInWithEmail = (email, password) =>
+    signInWithEmailAndPassword(auth, (email || '').trim(), password);
+
+  const resetPassword = (email) =>
+    sendPasswordResetEmail(auth, (email || '').trim());
+
   const logout = async () => {
     // Push-Abo dieses Geräts entfernen, solange der Nutzer noch eingeloggt ist
     await disablePush().catch(() => {});
@@ -132,7 +176,7 @@ export function AuthProvider({ children }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, signInWithGoogle, signInWithName, logout }}>
+    <AuthContext.Provider value={{ user, signInWithGoogle, signInWithName, signUpWithEmail, signInWithEmail, resetPassword, logout }}>
       {children}
     </AuthContext.Provider>
   );

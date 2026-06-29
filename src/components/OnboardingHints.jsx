@@ -63,12 +63,14 @@ function Banner({ leading, children, action, onAction, onClose }) {
 
 // Zeigt höchstens EINEN Hinweis: zuerst der iOS-„Zum Home-Bildschirm"-Tipp,
 // sonst (ausgeloggt) der Sicherungs-Hinweis.
-export default function OnboardingHints({ user, onLogin }) {
+export default function OnboardingHints({ user, recipeCount = 0, onLogin }) {
   const [installDismissed, setInstallDismissed] = useState(() => !!localStorage.getItem('rezeptor-hint-install'))
-  const [loginDismissed, setLoginDismissed] = useState(() => !!localStorage.getItem('rezeptor-hint-login'))
+  const [backupDismissed, setBackupDismissed] = useState(() => !!localStorage.getItem('rezeptor-hint-backup'))
 
   const showInstall = isIOS() && !isStandalone() && !installDismissed
-  const showLogin = user === null && !loginDismissed && !showInstall
+  // Sicherungs-Hinweis erst, wenn es etwas zu verlieren gibt (ab 3 Rezepten) und
+  // das Konto noch NICHT wiederherstellbar ist (keine E-Mail = anonym oder ohne Konto).
+  const showBackup = !user?.email && recipeCount >= 3 && !backupDismissed && !showInstall
 
   if (showInstall) {
     return (
@@ -81,19 +83,20 @@ export default function OnboardingHints({ user, onLogin }) {
     )
   }
 
-  if (showLogin) {
+  if (showBackup) {
     return (
       <Banner
-        leading={<Icon name="user" size={18} color="var(--green)" />}
-        onClose={() => { localStorage.setItem('rezeptor-hint-login', '1'); setLoginDismissed(true) }}
+        leading={<Icon name="shield" size={18} color="var(--green)" />}
+        onClose={() => { localStorage.setItem('rezeptor-hint-backup', '1'); setBackupDismissed(true) }}
       >
+        Sichere deine Rezepte, damit du sie nie verlierst —{' '}
         <button onClick={onLogin} style={{
           background: 'none', border: 'none', padding: 0, cursor: 'pointer',
           fontFamily: 'var(--serif)', fontSize: 13, fontWeight: 700, color: 'var(--green)',
           textDecoration: 'underline',
         }}>
-          Melde dich an
-        </button>, um deine Rezepte zu sichern und auf allen Geräten zu haben.
+          Backup einrichten
+        </button>
       </Banner>
     )
   }

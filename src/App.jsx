@@ -370,7 +370,7 @@ function App() {
         {activeTab === 'home' && isOnMainPage && (
           <div style={{ padding: '0 22px' }}>
             <div style={{ height: 8 }} />
-            <OnboardingHints user={user} onLogin={() => setActiveTab('settings')} />
+            <OnboardingHints user={user} recipeCount={recipes.length} onLogin={() => setActiveTab('settings')} />
           </div>
         )}
         {renderContent()}
