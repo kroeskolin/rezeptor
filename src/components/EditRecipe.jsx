@@ -59,14 +59,16 @@ function EditRecipe({ recipe, onSave, onClose, onDelete }) {
 
                 <div className="form-section">
                     <label className="form-label">Titel</label>
-                    <input className="form-input" type="text" placeholder="z.B. Spaghetti Carbonara"
-                        value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} />
+                    <textarea className="form-input" rows={2} placeholder="z.B. Spaghetti Carbonara"
+                        style={{ resize: 'vertical', minHeight: 46, lineHeight: 1.35 }}
+                        value={form.title} onChange={e => setForm({ ...form, title: e.target.value.replace(/\n/g, '') })} />
                 </div>
 
                 <div className="form-section">
                     <label className="form-label">Untertitel <span className="form-label-opt">optional</span></label>
-                    <input className="form-input" type="text" placeholder="z.B. nach Tante Erika"
-                        value={form.subtitle} onChange={e => setForm({ ...form, subtitle: e.target.value })} />
+                    <textarea className="form-input" rows={2} placeholder="z.B. nach Tante Erika"
+                        style={{ resize: 'vertical', minHeight: 46, lineHeight: 1.35 }}
+                        value={form.subtitle} onChange={e => setForm({ ...form, subtitle: e.target.value.replace(/\n/g, '') })} />
                 </div>
 
                 <div className="form-section">

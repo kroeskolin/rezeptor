@@ -106,11 +106,20 @@ function parseJsonLdRecipe(data) {
         }
     })
 
-    const instructions = data.recipeInstructions || []
-    const steps = instructions.map(step => {
-        const text = typeof step === 'string' ? step : step.text || ''
-        return `<p>${text}</p>`
-    }).join('')
+    // recipeInstructions kann sein: String, Array von Strings/HowToStep, ODER
+    // HowToSection(s) mit verschachtelten itemListElement-Schritten (z.B. Chefkoch).
+    const flattenInstructions = (instr) => {
+        if (!instr) return []
+        if (typeof instr === 'string') {
+            return instr.split(/\r?\n+/).map(s => s.trim()).filter(Boolean)
+        }
+        if (Array.isArray(instr)) return instr.flatMap(flattenInstructions)
+        if (instr.itemListElement) return flattenInstructions(instr.itemListElement) // HowToSection
+        const t = instr.text || instr.name || ''
+        return t ? [String(t).trim()] : []
+    }
+    const steps = flattenInstructions(data.recipeInstructions)
+        .map(t => `<p>${t}</p>`).join('')
 
     return {
         title: data.name || '',

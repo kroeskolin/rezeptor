@@ -188,6 +188,7 @@ function App() {
     const updated = await getAllRecipes()
     setRecipes(updated)
     setSelectedRecipe(null)
+    setShowEditRecipe(false)
     goToMainPage()
   }
 
@@ -199,6 +200,9 @@ function App() {
     setShowEditRecipe(false)
     goToSubPage() // terug naar detail
   }
+
+  // Ein Rezept aus einer Liste öffnen → IMMER Ansichtsmodus (nie versehentlich Edit).
+  const selectRecipe = (r) => { setShowEditRecipe(false); setSelectedRecipe(r); goToSubPage() }
 
   const handleToggleFavorite = async (recipe) => {
     await toggleFavorite(recipe)
@@ -292,7 +296,7 @@ function App() {
       return (
         <SearchDrawer
           recipes={recipes}
-          onSelectRecipe={(r) => { setSelectedRecipe(r); setShowSearch(false); goToSubPage() }}
+          onSelectRecipe={(r) => { setShowEditRecipe(false); setSelectedRecipe(r); setShowSearch(false); goToSubPage() }}
           onClose={() => { setShowSearch(false); goToMainPage() }}
         />
       )
@@ -313,17 +317,17 @@ function App() {
 
     switch (activeTab) {
       case 'home':
-        return <RecipeList recipes={recipes} onSelectRecipe={(r) => { setSelectedRecipe(r); goToSubPage() }}
+        return <RecipeList recipes={recipes} onSelectRecipe={selectRecipe}
           onToggleFavorite={handleToggleFavorite} favOnly={favOnly} />
       case 'today':
         if (todayMode === 'wheel') return <LuckyWheel recipes={recipes}
-          onSelectRecipe={(r) => { setSelectedRecipe(r); goToSubPage() }}
+          onSelectRecipe={selectRecipe}
           onBack={() => { setTodayMode(null); goToMainPage() }} />
         if (todayMode === 'tinder') return <RecipeTinder recipes={recipes}
-          onSelectRecipe={(r) => { setSelectedRecipe(r); goToSubPage() }}
+          onSelectRecipe={selectRecipe}
           onBack={() => { setTodayMode(null); goToMainPage() }} />
         if (todayMode === 'ingredients') return <IngredientSuggest recipes={recipes}
-          onSelectRecipe={(r) => { setSelectedRecipe(r); goToSubPage() }}
+          onSelectRecipe={selectRecipe}
           onBack={() => { setTodayMode(null); goToMainPage() }} />
         return <TodayTab onSelectMode={(mode) => { setTodayMode(mode); goToSubPage() }} />
       case 'community':
@@ -343,7 +347,7 @@ function App() {
           onHideTagManager={goToMainPage}
         />
       default:
-        return <RecipeList recipes={recipes} onSelectRecipe={(r) => { setSelectedRecipe(r); goToSubPage() }}
+        return <RecipeList recipes={recipes} onSelectRecipe={selectRecipe}
           onToggleFavorite={handleToggleFavorite} favOnly={favOnly} />
     }
   }
@@ -357,6 +361,8 @@ function App() {
           setActiveTab(tab)
           setTodayMode(null)
           setSelectedRecipe(null)
+          setShowEditRecipe(false)
+          setShowAddRecipe(false)
           setShowSearch(false)
           setFavOnly(false)
           goToMainPage()
