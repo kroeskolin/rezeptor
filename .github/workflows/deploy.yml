@@ -9,6 +9,12 @@ permissions:
   pages: write
   id-token: write
 
+# Deploys serialisieren: nie zwei Läufe gleichzeitig (verhindert Artefakt-/Pages-
+# Rennen bei mehreren schnellen Pushes). Laufende Deploys nicht abbrechen.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
 jobs:
   build:
     runs-on: ubuntu-latest
