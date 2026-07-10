@@ -81,7 +81,7 @@ Das JSON soll exakt dieses Format haben:
 Regeln:
 - prepTime und cookTime sind Zahlen in Minuten
 - servings ist eine Zahl
-- steps ist HTML mit <p> Tags
+- steps ist HTML mit <p> Tags; beginne die Schritte NICHT mit Nummerierungen wie "1." oder "Schritt 1:" (die App nummeriert selbst)
 - Wenn eine Mengenangabe fehlt oder unklar ist (z.B. "etwas", "nach Gefühl", "ein bisschen"), schätze eine sinnvolle typische Menge für die angegebene Personenzahl und markiere sie mit "ca." im amount Feld, z.B. "ca. 2"
 - Nur wenn wirklich keine sinnvolle Schätzung möglich ist, schreibe "nach Geschmack" als unit und lasse amount leer
 - Antworte ausschließlich mit dem JSON
@@ -269,7 +269,7 @@ sourceImageIndex ist die 0-basierte Nummer des Bildes (in der übergebenen Reihe
 
 Regeln:
 - Lies den GESAMTEN Text aller Bilder
-- steps ist HTML mit <p> Tags
+- steps ist HTML mit <p> Tags; beginne die Schritte NICHT mit Nummerierungen wie "1." oder "Schritt 1:" (die App nummeriert selbst)
 - prepTime und cookTime sind Zahlen in Minuten
 - Wenn eine Zutat sowohl eine Stückangabe als auch ein Gewicht in Klammern hat (z.B. "½ kleiner Radicchio (50g)"), nimm die Stückangabe als amount und unit, und lass das Gewicht in Klammern weg. Beispiel: amount: "½", unit: "Stück", name: "kleiner Radicchio"
 - Bruchzahlen wie ½, ¼, ⅓ immer als Unicode-Zeichen übernehmen, nicht als Dezimalzahl umrechnen
@@ -394,7 +394,7 @@ Antworte NUR mit einem JSON-Objekt, ohne Markdown-Backticks, ohne Erklärungen.
 
 Regeln:
 - confidence ist "high" wenn Zutaten UND Zubereitung klar erkennbar sind, sonst "low"
-- steps ist HTML mit <p> Tags
+- steps ist HTML mit <p> Tags; beginne die Schritte NICHT mit Nummerierungen wie "1." oder "Schritt 1:" (die App nummeriert selbst)
 - prepTime und cookTime sind Zahlen in Minuten
 - Antworte ausschließlich mit dem JSON
 ${importDirectives().text}
@@ -483,7 +483,7 @@ Antworte NUR mit einem JSON-Objekt, ohne Markdown-Backticks, ohne Erklärungen.
 
 Regeln:
 - confidence ist "high" wenn Zutaten UND Zubereitung klar erkennbar sind, sonst "low"
-- steps ist HTML mit <p> Tags
+- steps ist HTML mit <p> Tags; beginne die Schritte NICHT mit Nummerierungen wie "1." oder "Schritt 1:" (die App nummeriert selbst)
 - prepTime und cookTime sind Zahlen in Minuten
 - Antworte ausschließlich mit dem JSON
 ${importDirectives().text}

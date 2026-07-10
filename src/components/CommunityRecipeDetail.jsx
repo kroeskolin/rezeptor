@@ -164,7 +164,8 @@ export default function CommunityRecipeDetail({ recipe, onBack, onDeleted, onLoc
         items.forEach(el => {
             // <p> innerhalb eines <li> überspringen — sonst zählt der Schritt doppelt
             if (el.tagName === 'P' && el.closest('li')) return
-            const text = el.textContent.trim()
+            // Führende Nummerierung entfernen — die Liste nummeriert selbst
+            const text = el.textContent.trim().replace(/^(?:Schritt\s+)?\d{1,2}\s*[.):]\s+/i, '')
             if (text) result.push(text)
         })
         return result.length > 0 ? result : [recipe.steps.replace(/<[^>]*>/g, ' ').trim()].filter(Boolean)

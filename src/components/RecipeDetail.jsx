@@ -80,7 +80,8 @@ export default function RecipeDetail({ recipe, onBack, onEdit, onStartCook, onTo
     items.forEach(el => {
       // <p> innerhalb eines <li> überspringen — sonst zählt der Schritt doppelt
       if (el.tagName === 'P' && el.closest('li')) return;
-      const text = el.textContent.trim();
+      // Führende Nummerierung ("1. ", "2) ", "Schritt 3: ") entfernen — die App nummeriert selbst
+      const text = el.textContent.trim().replace(/^(?:Schritt\s+)?\d{1,2}\s*[.):]\s+/i, '');
       if (text) result.push(text);
     });
     return result.length > 0 ? result : [html.replace(/<[^>]*>/g, ' ').trim()].filter(Boolean);

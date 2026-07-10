@@ -157,7 +157,8 @@ export default function CookMode({ recipe, onClose }) {
     items.forEach(el => {
       // <p> innerhalb eines <li> überspringen — sonst zählt der Schritt doppelt
       if (el.tagName === 'P' && el.closest('li')) return;
-      const t = el.textContent.trim();
+      // Führende Nummerierung entfernen — der Kochmodus zählt selbst
+      const t = el.textContent.trim().replace(/^(?:Schritt\s+)?\d{1,2}\s*[.):]\s+/i, '');
       if (t) result.push(t);
     });
     return result.length > 0 ? result : [recipe.steps.replace(/<[^>]*>/g, ' ').trim()].filter(Boolean);
