@@ -1,4 +1,48 @@
+import { getImportPrefs } from './prefs'
+
 const WORKER_URL = 'https://rezeptor-proxy.brr-kroeske.workers.dev'
+
+// ── Import-Vorlieben (Sprache/Einheiten) als Prompt-Zusatz ──
+// Wird an alle Rezept-Extraktions-Prompts angehängt. Die KI meldet über die
+// Flags "translated"/"converted" zurück, was sie wirklich getan hat.
+const LANG_NAMES = { de: 'Deutsch', en: 'Englisch (English)', fr: 'Französisch (français)', it: 'Italienisch (italiano)', es: 'Spanisch (español)' }
+
+function importDirectives() {
+    const p = getImportPrefs()
+    const lines = []
+    if (p.translate) {
+        const lang = LANG_NAMES[p.language] || 'Deutsch'
+        lines.push(`- Wenn das Rezept NICHT auf ${lang} ist: übersetze ALLE Texte (title, subtitle, Zutaten-Namen und -Einheiten, steps) nach ${lang} und setze "translated": true. Ist es bereits auf ${lang}, lass es unverändert und setze "translated": false.`)
+    }
+    if (p.convert) {
+        lines.push(p.units === 'metric'
+            ? '- Konvertiere alle Mengenangaben ins metrische System (g, kg, ml, l, EL, TL). Runde sinnvoll (z.B. 1 cup Mehl ≈ 120 g, 1 cup Flüssigkeit ≈ 240 ml, 1 oz ≈ 28 g). Wenn du etwas konvertiert hast, setze "converted": true, sonst false.'
+            : '- Konvertiere alle Mengenangaben ins US-System (cups, tablespoons, teaspoons, oz, lb). Runde sinnvoll. Wenn du etwas konvertiert hast, setze "converted": true, sonst false.')
+    }
+    if (!lines.length) return { active: false, text: '' }
+    return {
+        active: true,
+        text: `\nZusätzlich:\n${lines.join('\n')}\n- Ergänze im JSON die Felder "translated" und "converted" (true/false).`,
+    }
+}
+
+// Bereits geparste Rezepte (z.B. aus JSON-LD) nachträglich übersetzen/konvertieren.
+async function normalizeImportedRecipe(recipe) {
+    const dir = importDirectives()
+    if (!dir.active) return recipe
+    try {
+        const prompt = `Du bist ein Kochbuch-Assistent. Hier ist ein Rezept als JSON. Gib es im GLEICHEN Format zurück (gleiche Felder, steps bleibt HTML mit <p>-Tags).${dir.text}
+- Ändere inhaltlich sonst NICHTS.
+- Antworte NUR mit dem JSON-Objekt, ohne Markdown-Backticks.
+
+${JSON.stringify(recipe)}`
+        const result = await generateContent(prompt)
+        const clean = result.replace(/```json|```/g, '').trim()
+        return { ...recipe, ...JSON.parse(clean) }
+    } catch {
+        return recipe // Normalisierung ist optional — Original behalten
+    }
+}
 
 async function generateContent(contents) {
     const response = await fetch(WORKER_URL, {
@@ -41,7 +85,7 @@ Regeln:
 - Wenn eine Mengenangabe fehlt oder unklar ist (z.B. "etwas", "nach Gefühl", "ein bisschen"), schätze eine sinnvolle typische Menge für die angegebene Personenzahl und markiere sie mit "ca." im amount Feld, z.B. "ca. 2"
 - Nur wenn wirklich keine sinnvolle Schätzung möglich ist, schreibe "nach Geschmack" als unit und lasse amount leer
 - Antworte ausschließlich mit dem JSON
-
+${importDirectives().text}
 Text:
 ${text}
 `
@@ -74,7 +118,8 @@ export async function extractRecipeFromUrl(url) {
                         (Array.isArray(d['@type']) && d['@type'].includes('Recipe'))
                     )
                     if (recipeData) {
-                        return parseJsonLdRecipe(recipeData)
+                        // Ggf. übersetzen/konvertieren (laut Einstellungen)
+                        return await normalizeImportedRecipe(parseJsonLdRecipe(recipeData))
                     }
                 } catch { }
             }
@@ -97,11 +142,14 @@ function parseJsonLdRecipe(data) {
         return (parseInt(match[1] || 0) * 60) + parseInt(match[2] || 0)
     }
 
+    // Bekannte Einheiten (dt. + engl.), auch OHNE Punkt — "cup"/"g"/"EL" etc.
+    // landen so im unit-Feld statt im Zutaten-Namen.
+    const INGREDIENT_RE = /^\s*([\d/.,\s¼½¾⅓⅔⅛]+)?\s*(?:(g|kg|mg|ml|cl|dl|l|EL|TL|Esslöffel|Teelöffel|Msp|Prisen?|Bund|Stück|Zehen?|Dosen?|Packung(?:en)?|Pck|Becher|Tassen?|Scheiben?|Blatt|Blätter|cups?|tbsp|tsp|oz|lb|pounds?|ounces?|cans?|cloves?|teaspoons?|tablespoons?)\b\.?\s+)?(.*)$/i
     const ingredients = (data.recipeIngredient || []).map(ing => {
-        const match = ing.match(/^([\d\/\.,\s¼½¾⅓⅔⅛]+)?\s*([a-zA-ZäöüÄÖÜg]+\.)?\s*(.+)$/)
+        const match = ing.match(INGREDIENT_RE)
         return {
             amount: match?.[1]?.trim() || '',
-            unit: match?.[2]?.trim().replace('.', '') || '',
+            unit: match?.[2]?.trim() || '',
             name: match?.[3]?.trim() || ing,
         }
     })
@@ -225,7 +273,8 @@ Regeln:
 - prepTime und cookTime sind Zahlen in Minuten
 - Wenn eine Zutat sowohl eine Stückangabe als auch ein Gewicht in Klammern hat (z.B. "½ kleiner Radicchio (50g)"), nimm die Stückangabe als amount und unit, und lass das Gewicht in Klammern weg. Beispiel: amount: "½", unit: "Stück", name: "kleiner Radicchio"
 - Bruchzahlen wie ½, ¼, ⅓ immer als Unicode-Zeichen übernehmen, nicht als Dezimalzahl umrechnen
-- Antworte ausschließlich mit dem JSON-Array`
+- Antworte ausschließlich mit dem JSON-Array
+${importDirectives().text}`
         },
         ...base64Images.map(img => ({
             inlineData: {
@@ -348,6 +397,7 @@ Regeln:
 - steps ist HTML mit <p> Tags
 - prepTime und cookTime sind Zahlen in Minuten
 - Antworte ausschließlich mit dem JSON
+${importDirectives().text}
 `
     const result = await generateContent(prompt)
     const clean = result.replace(/```json|```/g, '').trim()
@@ -436,6 +486,7 @@ Regeln:
 - steps ist HTML mit <p> Tags
 - prepTime und cookTime sind Zahlen in Minuten
 - Antworte ausschließlich mit dem JSON
+${importDirectives().text}
 `
     const result = await generateContent(prompt)
     const clean = result.replace(/```json|```/g, '').trim()

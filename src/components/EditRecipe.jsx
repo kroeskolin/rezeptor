@@ -4,6 +4,7 @@ import RichTextEditor from './RichTextEditor'
 import TagPicker from './TagPicker'
 import { updateRecipe, deleteRecipe } from '../db/recipes'
 import { Icon } from './DesignTokens'
+import ImageCropper from './ImageCropper'
 import './AddRecipe.css'
 
 function EditRecipe({ recipe, onSave, onClose, onDelete }) {
@@ -20,6 +21,7 @@ function EditRecipe({ recipe, onSave, onClose, onDelete }) {
         source: recipe.source || '', // NEU
     })
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+    const [showCropper, setShowCropper] = useState(false)
 
     const handleSave = async () => {
         if (!form.title.trim()) {
@@ -83,6 +85,19 @@ function EditRecipe({ recipe, onSave, onClose, onDelete }) {
                         }} />
                     {form.image && (
                         <img src={form.image} alt="Vorschau" style={{ marginTop: 10, borderRadius: 12, width: '100%', maxHeight: 200, objectFit: 'cover' }} />
+                    )}
+                    {form.image && (
+                        <button onClick={() => setShowCropper(true)} style={{
+                            marginTop: 10, background: 'none', border: '1.5px solid var(--green)', color: 'var(--green)',
+                            borderRadius: 12, padding: '9px 18px', fontFamily: 'var(--serif)', fontSize: 14, fontWeight: 600, cursor: 'pointer',
+                        }}>
+                            Bildausschnitt anpassen
+                        </button>
+                    )}
+                    {showCropper && form.image && (
+                        <ImageCropper src={form.image}
+                            onDone={(img) => { setForm({ ...form, image: img }); setShowCropper(false) }}
+                            onClose={() => setShowCropper(false)} />
                     )}
                 </div>
 

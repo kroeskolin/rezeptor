@@ -44,6 +44,7 @@ function App() {
   const [lastSeen, setLastSeen] = useState(0)
   const [welcomeDone, setWelcomeDone] = useState(() => !!localStorage.getItem('rezeptor-onboarded'))
   const [justUpdated, setJustUpdated] = useState(false)
+  const [importInfo, setImportInfo] = useState(null)
 
   const dismissWelcome = () => {
     localStorage.setItem('rezeptor-onboarded', '1')
@@ -71,6 +72,16 @@ function App() {
       return () => clearTimeout(t)
     }
   }, [justUpdated, showSplash])
+
+  // Import-Info („übersetzt/konvertiert") kurz einblenden, dann ausblenden
+  useEffect(() => {
+    const onInfo = (e) => {
+      setImportInfo(e.detail)
+      setTimeout(() => setImportInfo(null), 3200) // Animation dauert 3s
+    }
+    window.addEventListener('rezeptor:import-info', onInfo)
+    return () => window.removeEventListener('rezeptor:import-info', onInfo)
+  }, [])
 
   // Editier-Flag für den Auto-Reload: nicht reloaden, während ein Rezept bearbeitet wird
   useEffect(() => {
@@ -407,6 +418,24 @@ function App() {
           </div>
           <div style={{ fontFamily: 'var(--serif)', fontSize: 15, color: 'var(--espresso)', marginTop: 3 }}>
             Rezeptor hat ein Update erhalten ✅
+          </div>
+        </div>
+      )}
+
+      {/* Import-Info (übersetzt/konvertiert) — gleiche Optik wie der Update-Banner */}
+      {importInfo && (
+        <div className="update-toast" style={{
+          position: 'fixed', top: 'calc(var(--sat, env(safe-area-inset-top, 0px)) + 66px)', left: '50%',
+          zIndex: 2600, background: 'var(--card)', border: '1px solid var(--line-2)',
+          borderRadius: 14, padding: '10px 22px', textAlign: 'center',
+          maxWidth: '94%', width: 'max-content', whiteSpace: 'normal',
+          boxShadow: '0 10px 28px -10px rgba(0,0,0,0.3)',
+        }}>
+          <div style={{ fontFamily: 'var(--serif)', fontSize: 11, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--green)' }}>
+            Import
+          </div>
+          <div style={{ fontFamily: 'var(--serif)', fontSize: 15, color: 'var(--espresso)', marginTop: 3 }}>
+            {importInfo}
           </div>
         </div>
       )}

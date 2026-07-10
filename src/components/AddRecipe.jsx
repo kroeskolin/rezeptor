@@ -6,6 +6,7 @@ import VoiceInput from './VoiceInput'
 import IngredientsInput from './IngredientsInput'
 import RichTextEditor from './RichTextEditor'
 import TagPicker from './TagPicker'
+import ImageCropper from './ImageCropper'
 import { Icon, Monogram } from './DesignTokens'
 import './AddRecipe.css'
 
@@ -74,6 +75,19 @@ async function enhanceForOcr(dataUrl) {
   }
 }
 
+// Kurze Info nach dem Import anzeigen (übersetzt / konvertiert) — App.jsx hört zu.
+function announceImportInfo(...results) {
+  const translated = results.some(r => r?.translated)
+  const converted = results.some(r => r?.converted)
+  if (!translated && !converted) return
+  const msg = translated && converted
+    ? 'Das Rezept wurde übersetzt und die Mengeneinheiten wurden konvertiert.'
+    : translated
+      ? 'Das Rezept wurde übersetzt.'
+      : 'Die Mengeneinheiten wurden konvertiert.'
+  window.dispatchEvent(new CustomEvent('rezeptor:import-info', { detail: msg }))
+}
+
 export default function AddRecipe({ onSave, onClose, initialUrl }) {
   const [mode, setMode] = useState('hub')
   const [url, setUrl] = useState('')
@@ -86,6 +100,7 @@ export default function AddRecipe({ onSave, onClose, initialUrl }) {
   const [multiRecipes, setMultiRecipes] = useState(null)
   const [selectedRecipes, setSelectedRecipes] = useState(new Set())
   const [multiEditIdx, setMultiEditIdx] = useState(null) // Index des gerade bearbeiteten Multi-Rezepts
+  const [showCropper, setShowCropper] = useState(false)
   const photoInputRef = useRef(null)
 
   // Per Teilen-Funktion (z.B. Reel aus Instagram) geöffnet → Link sofort laden
@@ -150,6 +165,7 @@ export default function AddRecipe({ onSave, onClose, initialUrl }) {
             source: result.sourceUrl,
           })
           setUrl(''); setMode('manual')
+          announceImportInfo(result)
         }
       } catch (error) {
         alert('Instagram-Rezept konnte nicht geladen werden: ' + error.message)
@@ -176,6 +192,7 @@ export default function AddRecipe({ onSave, onClose, initialUrl }) {
             source: result.sourceUrl,
           })
           setUrl(''); setMode('manual')
+          announceImportInfo(result)
         }
       } catch (error) {
         alert('YouTube-Rezept konnte nicht geladen werden: ' + error.message)
@@ -232,6 +249,7 @@ export default function AddRecipe({ onSave, onClose, initialUrl }) {
         source: link,
       })
       setUrl(''); setMode('manual')
+      announceImportInfo(recipe)
     } catch (error) {
       alert('Fehler: ' + error.message)
     } finally {
@@ -272,6 +290,7 @@ export default function AddRecipe({ onSave, onClose, initialUrl }) {
         setSelectedRecipes(new Set(withImages.map((_, i) => i)))
         setMode('multi-select')
       }
+      announceImportInfo(...withImages)
     } catch (error) {
       console.error(error)
       alert('Rezept konnte nicht aus dem Foto gelesen werden.')
@@ -291,6 +310,7 @@ export default function AddRecipe({ onSave, onClose, initialUrl }) {
         steps: recipe.steps || '', tags: [], image: null,
       })
       setMode('manual')
+      announceImportInfo(recipe)
     } catch (error) {
       throw error // an VoiceInput weiterreichen, damit der Transcript erhalten bleibt
     } finally {
@@ -487,6 +507,7 @@ export default function AddRecipe({ onSave, onClose, initialUrl }) {
                     source: youtubeNoRecipe.sourceUrl,
                   })
                   setYoutubeNoRecipe(null); setPasteText(''); setMode('manual')
+                  announceImportInfo(result)
                 } catch {
                   alert('Aus dem Text konnte kein Rezept erkannt werden.')
                 } finally {
@@ -660,6 +681,19 @@ export default function AddRecipe({ onSave, onClose, initialUrl }) {
               reader.readAsDataURL(file)
             }} />
           {form.image && <img src={form.image} alt="Vorschau" style={{ marginTop: 10, borderRadius: 12, width: '100%', maxHeight: 200, objectFit: 'cover' }} />}
+          {form.image && (
+            <button onClick={() => setShowCropper(true)} style={{
+              marginTop: 10, background: 'none', border: '1.5px solid var(--green)', color: 'var(--green)',
+              borderRadius: 12, padding: '9px 18px', fontFamily: 'var(--serif)', fontSize: 14, fontWeight: 600, cursor: 'pointer',
+            }}>
+              Bildausschnitt anpassen
+            </button>
+          )}
+          {showCropper && form.image && (
+            <ImageCropper src={form.image}
+              onDone={(img) => { setForm({ ...form, image: img }); setShowCropper(false) }}
+              onClose={() => setShowCropper(false)} />
+          )}
         </div>
         <div className="form-row-3">
           <div className="form-section">

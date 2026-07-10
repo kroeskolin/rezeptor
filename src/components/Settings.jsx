@@ -6,6 +6,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { pushSupported, isPushEnabled, enablePush, disablePush, getPushPrefs, savePushPrefs, DEFAULT_PUSH_PREFS } from '../db/push'
 import JoinCommunity from './JoinCommunity'
 import EmailBackup from './EmailBackup'
+import { LANGUAGES, UNIT_SYSTEMS, getImportPrefs, saveImportPrefs, languageLabel } from '../db/prefs'
 import './Settings.css'
 
 // Web3Forms Access-Key — kostenlos auf web3forms.com mit brr.kroeske@gmail.com anlegen.
@@ -149,6 +150,8 @@ export default function Settings({ onImport, onShowTagManager, onHideTagManager 
   const [pushPrefs, setPushPrefs] = useState(DEFAULT_PUSH_PREFS)
   const [showContact, setShowContact] = useState(false)
   const [showBackup, setShowBackup] = useState(false)
+  const [showLangUnits, setShowLangUnits] = useState(false)
+  const [importPrefs, setImportPrefs] = useState(getImportPrefs)
   const [contactMsg, setContactMsg] = useState('')
   const [contactEmail, setContactEmail] = useState('')
   const [contactBusy, setContactBusy] = useState(false)
@@ -473,6 +476,82 @@ export default function Settings({ onImport, onShowTagManager, onHideTagManager 
     )
   }
 
+  const updateImportPrefs = (patch) => {
+    const next = { ...importPrefs, ...patch }
+    setImportPrefs(next)
+    saveImportPrefs(next)
+  }
+
+  // ── Sprache & Einheiten ──
+  if (showLangUnits) {
+    const radioBtn = (active) => ({
+      display: 'flex', alignItems: 'center', gap: 12, width: '100%', textAlign: 'left',
+      background: active ? 'var(--paper-2)' : 'none',
+      border: active ? '1.5px solid var(--sage-2)' : '1.5px solid transparent',
+      borderRadius: 14, padding: '10px 12px', cursor: 'pointer', transition: 'all 0.15s',
+    })
+    const radioDot = (active) => (
+      <div style={{
+        width: 20, height: 20, borderRadius: '50%', flexShrink: 0,
+        border: `2px solid ${active ? 'var(--green)' : 'var(--line-2)'}`,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+      }}>
+        {active && <div style={{ width: 10, height: 10, borderRadius: '50%', background: 'var(--green)' }} />}
+      </div>
+    )
+    return (
+      <div className="settings">
+        <div className="settings-header" style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+          <button className="settings-back-btn" onClick={() => setShowLangUnits(false)}>
+            <Icon name="chev-left" size={18} color="var(--cocoa)" />
+          </button>
+          <h1 className="display" style={{ fontSize: 27, color: 'var(--espresso)' }}>
+            Sprache & <span style={{ fontStyle: 'italic', fontWeight: 600 }}>Einheiten</span>
+          </h1>
+        </div>
+
+        <div className="settings-group">
+          <div className="settings-group-label">Bevorzugte Sprache</div>
+          <div className="settings-group-card" style={{ padding: 12 }}>
+            {LANGUAGES.map(l => (
+              <button key={l.id} onClick={() => updateImportPrefs({ language: l.id })} style={radioBtn(importPrefs.language === l.id)}>
+                {radioDot(importPrefs.language === l.id)}
+                <span style={{ fontFamily: 'var(--serif)', fontSize: 15, color: 'var(--espresso)', fontWeight: importPrefs.language === l.id ? 700 : 400 }}>{l.label}</span>
+              </button>
+            ))}
+            <div style={{ borderTop: '1px solid var(--line)', marginTop: 10, paddingTop: 4 }}>
+              <SettingRow icon="globe" label="Automatisch übersetzen" toggle
+                on={importPrefs.translate} onToggle={() => updateImportPrefs({ translate: !importPrefs.translate })} />
+            </div>
+            <div style={{ fontFamily: 'var(--serif)', fontSize: 12.5, color: 'var(--mute)', fontStyle: 'italic', padding: '0 12px 6px' }}>
+              Rezepte in anderen Sprachen werden beim Import automatisch übersetzt.
+            </div>
+          </div>
+        </div>
+
+        <div className="settings-group">
+          <div className="settings-group-label">Einheitensystem</div>
+          <div className="settings-group-card" style={{ padding: 12 }}>
+            {UNIT_SYSTEMS.map(u => (
+              <button key={u.id} onClick={() => updateImportPrefs({ units: u.id })} style={radioBtn(importPrefs.units === u.id)}>
+                {radioDot(importPrefs.units === u.id)}
+                <span style={{ fontFamily: 'var(--serif)', fontSize: 15, color: 'var(--espresso)', fontWeight: importPrefs.units === u.id ? 700 : 400 }}>{u.label}</span>
+              </button>
+            ))}
+            <div style={{ borderTop: '1px solid var(--line)', marginTop: 10, paddingTop: 4 }}>
+              <SettingRow icon="ruler" label="Automatisch konvertieren" toggle
+                on={importPrefs.convert} onToggle={() => updateImportPrefs({ convert: !importPrefs.convert })} />
+            </div>
+            <div style={{ fontFamily: 'var(--serif)', fontSize: 12.5, color: 'var(--mute)', fontStyle: 'italic', padding: '0 12px 6px' }}>
+              Abweichende Mengenangaben (z.B. cups) werden beim Import umgerechnet.
+            </div>
+          </div>
+        </div>
+        <div style={{ height: 20 }} />
+      </div>
+    )
+  }
+
   // ── Backup ──
   if (showBackup) {
     const secured = !!(user && user.email)
@@ -688,6 +767,12 @@ export default function Settings({ onImport, onShowTagManager, onHideTagManager 
       <SettingsGroup title="Erscheinungsbild">
         <SettingRow icon="sun" label="Farbschema wählen"
           value={currentThemeName} onClick={() => setShowThemePicker(true)} />
+      </SettingsGroup>
+
+      <SettingsGroup title="Import">
+        <SettingRow icon="globe" label="Sprache & Einheiten"
+          value={`${languageLabel(importPrefs.language)} · ${importPrefs.units === 'metric' ? 'metrisch' : 'US'}`}
+          onClick={() => setShowLangUnits(true)} />
       </SettingsGroup>
 
       <SettingsGroup title="Hilfe">
