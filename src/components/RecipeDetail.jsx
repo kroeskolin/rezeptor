@@ -291,12 +291,14 @@ export default function RecipeDetail({ recipe, onBack, onEdit, onStartCook, onTo
             </div>
           </div>
           <div className="recipe-detail-title-overlay">
-            <h1 className="recipe-detail-title-photo">{recipe.title}</h1>
-            {recipe.subtitle && (
-              <div style={{ fontStyle: 'italic', fontSize: 16, marginTop: 6, opacity: 0.94 }}>
-                {recipe.subtitle}
-              </div>
-            )}
+            <div className="recipe-detail-title-blur">
+              <h1 className="recipe-detail-title-photo">{recipe.title}</h1>
+              {recipe.subtitle && (
+                <div style={{ fontStyle: 'italic', fontSize: 16, marginTop: 6, opacity: 0.94 }}>
+                  {recipe.subtitle}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       ) : (

@@ -81,11 +81,21 @@
 /* Title overlay on photo */
 .recipe-detail-title-overlay {
   position: absolute;
-  left: 22px;
-  right: 22px;
-  bottom: 20px;
+  left: 16px;
+  right: 16px;
+  bottom: 16px;
   color: #fff;
   z-index: 2;
+}
+
+/* Milchglas NUR hinter der Schrift: Panel so groß wie der Text */
+.recipe-detail-title-blur {
+  display: inline-block;
+  padding: 10px 14px 11px;
+  border-radius: 16px;
+  background: rgba(0, 0, 0, 0.22);
+  backdrop-filter: blur(12px) saturate(120%);
+  -webkit-backdrop-filter: blur(12px) saturate(120%);
 }
 
 .recipe-detail-title-photo {

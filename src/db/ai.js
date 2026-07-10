@@ -212,9 +212,12 @@ Format:
     "prepTime": 10,
     "cookTime": 20,
     "ingredients": [{ "name": "Zutat", "amount": "200", "unit": "g" }],
-    "steps": "<p>Schritt 1</p><p>Schritt 2</p>"
+    "steps": "<p>Schritt 1</p><p>Schritt 2</p>",
+    "sourceImageIndex": 0
   }
 ]
+
+sourceImageIndex ist die 0-basierte Nummer des Bildes (in der übergebenen Reihenfolge), auf dem dieses Rezept (hauptsächlich) zu sehen ist.
 
 Regeln:
 - Lies den GESAMTEN Text aller Bilder

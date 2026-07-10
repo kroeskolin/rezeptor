@@ -33,6 +33,47 @@ async function compressImage(file) {
   })
 }
 
+// Kopie fürs Auslesen aufbereiten: zu dunkle Fotos aufhellen + Kontrast anheben,
+// damit die Schrift erkennbar wird. Das Original bleibt das Rezeptfoto.
+async function enhanceForOcr(dataUrl) {
+  try {
+    const img = new Image()
+    img.src = dataUrl
+    await new Promise((res, rej) => { img.onload = res; img.onerror = rej })
+    const canvas = document.createElement('canvas')
+    canvas.width = img.width
+    canvas.height = img.height
+    const ctx = canvas.getContext('2d')
+    ctx.drawImage(img, 0, 0)
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
+    const d = imageData.data
+
+    // Mittlere Helligkeit bestimmen (jedes 16. Pixel reicht)
+    let sum = 0, n = 0
+    for (let i = 0; i < d.length; i += 64) {
+      sum += 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2]
+      n++
+    }
+    const mean = sum / n
+
+    // Aufhellen, wenn zu dunkel; leichter Kontrast-Boost hilft auch bei
+    // heller Schrift auf buntem Grund (Zeitschriften).
+    const gain = mean < 125 ? Math.min(1.9, 140 / mean) : 1
+    const contrast = 1.15
+    if (gain === 1 && contrast === 1) return dataUrl
+    for (let i = 0; i < d.length; i += 4) {
+      for (let c = 0; c < 3; c++) {
+        const v = ((d[i + c] * gain) - 128) * contrast + 128
+        d[i + c] = v < 0 ? 0 : v > 255 ? 255 : v
+      }
+    }
+    ctx.putImageData(imageData, 0, 0)
+    return canvas.toDataURL('image/jpeg', 0.85)
+  } catch {
+    return dataUrl // im Zweifel unverändert weitergeben
+  }
+}
+
 export default function AddRecipe({ onSave, onClose, initialUrl }) {
   const [mode, setMode] = useState('hub')
   const [url, setUrl] = useState('')
@@ -44,6 +85,7 @@ export default function AddRecipe({ onSave, onClose, initialUrl }) {
   const [showLinkInfo, setShowLinkInfo] = useState(false)
   const [multiRecipes, setMultiRecipes] = useState(null)
   const [selectedRecipes, setSelectedRecipes] = useState(new Set())
+  const [multiEditIdx, setMultiEditIdx] = useState(null) // Index des gerade bearbeiteten Multi-Rezepts
   const photoInputRef = useRef(null)
 
   // Per Teilen-Funktion (z.B. Reel aus Instagram) geöffnet → Link sofort laden
@@ -206,20 +248,28 @@ export default function AddRecipe({ onSave, onClose, initialUrl }) {
       : 'Rezept wird erkannt … ✨')
     try {
       const compressed = await Promise.all(files.map(compressImage))
-      const recipes = await extractRecipesFromImages(compressed)
+      // Fürs Auslesen ggf. aufgehellte Kopien verwenden (Original bleibt Rezeptfoto)
+      const forOcr = await Promise.all(compressed.map(enhanceForOcr))
+      const recipes = await extractRecipesFromImages(forOcr)
 
-      if (recipes.length === 1) {
-        const r = recipes[0]
+      // Jedem Rezept sein Quellfoto zuordnen (KI liefert sourceImageIndex)
+      const withImages = recipes.map((r, i) => {
+        const idx = Number.isInteger(r.sourceImageIndex) ? r.sourceImageIndex : i
+        return { ...r, image: compressed[idx] ?? compressed[0] ?? null }
+      })
+
+      if (withImages.length === 1) {
+        const r = withImages[0]
         setForm({
           title: r.title || '', subtitle: r.subtitle || '',
           servings: r.servings || '', prepTime: r.prepTime || '',
           cookTime: r.cookTime || '', ingredients: r.ingredients || [],
-          steps: r.steps || '', tags: [], image: compressed[0],
+          steps: r.steps || '', tags: [], image: r.image,
         })
         setMode('manual')
       } else {
-        setMultiRecipes(recipes)
-        setSelectedRecipes(new Set(recipes.map((_, i) => i)))
+        setMultiRecipes(withImages)
+        setSelectedRecipes(new Set(withImages.map((_, i) => i)))
         setMode('multi-select')
       }
     } catch (error) {
@@ -295,7 +345,9 @@ export default function AddRecipe({ onSave, onClose, initialUrl }) {
                   transition: 'all 0.15s', textAlign: 'left',
                 }}
               >
-                <Monogram recipe={r} size={50} radius={12} />
+                {r.image
+                  ? <img src={r.image} alt="" style={{ width: 50, height: 50, borderRadius: 12, objectFit: 'cover', flexShrink: 0 }} />
+                  : <Monogram recipe={r} size={50} radius={12} />}
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontFamily: 'var(--serif)', fontWeight: 700, fontSize: 16, color: 'var(--espresso)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {r.title || 'Unbekanntes Rezept'}
@@ -310,6 +362,27 @@ export default function AddRecipe({ onSave, onClose, initialUrl }) {
                     {r.prepTime || r.cookTime ? ` · ${(r.prepTime || 0) + (r.cookTime || 0)} Min.` : ''}
                   </div>
                 </div>
+                <span
+                  role="button"
+                  onClick={e => {
+                    e.stopPropagation()
+                    setForm({
+                      title: r.title || '', subtitle: r.subtitle || '',
+                      servings: r.servings || '', prepTime: r.prepTime || '',
+                      cookTime: r.cookTime || '', ingredients: r.ingredients || [],
+                      steps: r.steps || '', tags: r.tags || [], image: r.image || null,
+                      source: r.source || '',
+                    })
+                    setMultiEditIdx(i)
+                    setMode('manual')
+                  }}
+                  style={{
+                    width: 32, height: 32, borderRadius: 10, flexShrink: 0,
+                    background: 'var(--card)', border: '1px solid var(--line-2)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}>
+                  <Icon name="pen" size={15} color="var(--cocoa)" />
+                </span>
                 <div style={{
                   width: 24, height: 24, borderRadius: '50%', flexShrink: 0,
                   background: selected ? 'var(--green)' : 'var(--line-2)',
@@ -539,10 +612,22 @@ export default function AddRecipe({ onSave, onClose, initialUrl }) {
   }
 
   // ── Manuelles Formular ──
+  // Übernimmt die Formularwerte zurück in die Multi-Auswahl (ohne zu speichern)
+  const applyMultiEdit = () => {
+    if (!form.title.trim()) { alert('Bitte gib einen Titel ein.'); return }
+    setMultiRecipes(multiRecipes.map((r, i) => i === multiEditIdx ? { ...r, ...form } : r))
+    setMultiEditIdx(null)
+    setForm(emptyRecipe)
+    setMode('multi-select')
+  }
+
   return (
     <div className="add-recipe">
       <div className="add-recipe-header">
-        <button className="add-close-btn" onClick={() => setMode('hub')}>
+        <button className="add-close-btn" onClick={() => {
+          if (multiEditIdx !== null) { setMultiEditIdx(null); setForm(emptyRecipe); setMode('multi-select') }
+          else setMode('hub')
+        }}>
           <Icon name="chev-left" size={18} color="var(--cocoa)" />
         </button>
       </div>
@@ -612,7 +697,9 @@ export default function AddRecipe({ onSave, onClose, initialUrl }) {
           <label className="form-label">Tags</label>
           <TagPicker selectedTags={form.tags} onChange={tags => setForm({ ...form, tags })} />
         </div>
-        <button className="form-save-btn" onClick={handleSave}>Rezept speichern</button>
+        <button className="form-save-btn" onClick={multiEditIdx !== null ? applyMultiEdit : handleSave}>
+          {multiEditIdx !== null ? 'Änderungen übernehmen' : 'Rezept speichern'}
+        </button>
         <div style={{ height: 32 }} />
       </div>
     </div>
