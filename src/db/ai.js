@@ -269,7 +269,7 @@ sourceImageIndex ist die 0-basierte Nummer des Bildes (in der übergebenen Reihe
 
 Regeln:
 - Lies den GESAMTEN Text aller Bilder
-- Fülle subtitle für JEDES Rezept: übernimm den Untertitel bzw. die Beschreibung vom Bild — falls dort keiner steht, formuliere selbst eine kurze, appetitliche Beschreibung (max. 8 Wörter). Lass subtitle NICHT leer.
+- subtitle: Übernimm für JEDES Rezept den Untertitel bzw. die Beschreibungszeile WÖRTLICH vom Bild (steht meist unter oder über dem Rezeptnamen). ERFINDE KEINEN eigenen Untertitel — steht wirklich keiner auf dem Bild, lass subtitle leer.
 - steps ist HTML mit <p> Tags; beginne die Schritte NICHT mit Nummerierungen wie "1." oder "Schritt 1:" (die App nummeriert selbst)
 - prepTime und cookTime sind Zahlen in Minuten
 - Wenn eine Zutat sowohl eine Stückangabe als auch ein Gewicht in Klammern hat (z.B. "½ kleiner Radicchio (50g)"), nimm die Stückangabe als amount und unit, und lass das Gewicht in Klammern weg. Beispiel: amount: "½", unit: "Stück", name: "kleiner Radicchio"
