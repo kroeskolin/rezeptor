@@ -24,7 +24,7 @@ export default defineConfig({
         name: 'Rezeptor',
         short_name: 'Rezeptor',
         description: 'Deine persönliche Rezeptdatenbank',
-        theme_color: '#3A5230',
+        theme_color: '#F9FBF8',
         background_color: '#F9FBF8',
         display: 'standalone',
         orientation: 'portrait',
