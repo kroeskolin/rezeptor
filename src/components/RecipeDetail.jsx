@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import './RecipeDetail.css';
 import { Icon, coverTint, totalTime } from './DesignTokens';
-import { publishRecipe, shareRecipe } from '../db/community'
+import { publishRecipe, shareRecipe, sendRecipeToUser, getAllUsers } from '../db/community'
 import { useAuth } from '../contexts/AuthContext'
 import JoinCommunity from './JoinCommunity'
 
@@ -53,6 +53,9 @@ function PhotoFullscreen({ src, onClose }) {
 export default function RecipeDetail({ recipe, onBack, onEdit, onStartCook, onToggleFavorite }) {
   const [showFullscreen, setShowFullscreen] = useState(false);
   const [showShareSheet, setShowShareSheet] = useState(false);
+  const [showUserPicker, setShowUserPicker] = useState(false);
+  const [userList, setUserList] = useState(null); // null = lädt noch
+  const [sendState, setSendState] = useState(null); // { uid, status: 'busy'|'done' }
   const [showCaptionOverlay, setShowCaptionOverlay] = useState(false);
   const [captionText, setCaptionText] = useState('');
   const [publishBusy, setPublishBusy] = useState(false);
@@ -195,6 +198,31 @@ export default function RecipeDetail({ recipe, onBack, onEdit, onStartCook, onTo
       alert('Link in Zwischenablage kopiert:\n' + link)
     } catch {
       prompt('Link zum Kopieren:', link)
+    }
+  }
+
+  // Rezept privat an ein Community-Mitglied schicken
+  const handleSendToUser = () => {
+    setShowShareSheet(false)
+    if (!user) { setShowJoin(true); return }
+    setShowUserPicker(true)
+    setUserList(null)
+    setSendState(null)
+    getAllUsers()
+      .then(all => setUserList(all.filter(u => u.id !== user.uid)))
+      .catch(() => setUserList([]))
+  }
+
+  const sendTo = async (target) => {
+    if (sendState) return // schon am Senden / gesendet
+    setSendState({ uid: target.id, status: 'busy' })
+    try {
+      await sendRecipeToUser(recipe, user, target.id)
+      setSendState({ uid: target.id, status: 'done' })
+      setTimeout(() => { setShowUserPicker(false); setSendState(null) }, 1200)
+    } catch (e) {
+      setSendState(null)
+      alert('Senden fehlgeschlagen: ' + e.message)
     }
   }
 
@@ -487,6 +515,17 @@ export default function RecipeDetail({ recipe, onBack, onEdit, onStartCook, onTo
                   <div style={{ fontFamily: 'var(--serif)', fontSize: 13, color: 'var(--green)', fontStyle: 'italic' }}>Kurzer Link mit Foto, zum Importieren</div>
                 </div>
               </button>
+              <button onClick={handleSendToUser} style={{
+                display: 'flex', alignItems: 'center', gap: 14,
+                background: 'var(--sage)', border: '1px solid var(--sage-2)',
+                borderRadius: 14, padding: '14px 16px', cursor: 'pointer', textAlign: 'left',
+              }}>
+                <Icon name="user" size={20} color="var(--espresso)" />
+                <div>
+                  <div style={{ fontFamily: 'var(--serif)', fontSize: 15, fontWeight: 700, color: 'var(--espresso)' }}>An Rezeptor-Nutzer senden</div>
+                  <div style={{ fontFamily: 'var(--serif)', fontSize: 13, color: 'var(--green)', fontStyle: 'italic' }}>Landet direkt im Posteingang der Person</div>
+                </div>
+              </button>
               <button onClick={handleShareText} style={{
                 display: 'flex', alignItems: 'center', gap: 14,
                 background: 'var(--paper-2)', border: '1px solid var(--line-2)',
@@ -515,6 +554,66 @@ export default function RecipeDetail({ recipe, onBack, onEdit, onStartCook, onTo
       )}
 
       {/* Beitreten-Sheet (Kurzlink erfordert Login) */}
+      {/* Empfänger-Auswahl fürs private Verschicken */}
+      {showUserPicker && createPortal((
+        <div style={{
+          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)',
+          zIndex: 1000, display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
+        }} onClick={() => { if (sendState?.status !== 'busy') setShowUserPicker(false) }}>
+          <div onClick={e => e.stopPropagation()} style={{
+            background: 'var(--paper)', borderRadius: '20px 20px 0 0',
+            width: '100%', maxWidth: 640, padding: '20px 22px 40px', maxHeight: '70vh', overflowY: 'auto',
+          }}>
+            <div style={{ width: 36, height: 4, borderRadius: 2, background: 'var(--line-2)', margin: '0 auto 18px' }} />
+            <div style={{ fontFamily: 'var(--serif)', fontSize: 18, fontWeight: 700, color: 'var(--espresso)', marginBottom: 4 }}>
+              An wen <span style={{ fontStyle: 'italic' }}>senden</span>?
+            </div>
+            <div style={{ fontFamily: 'var(--serif)', fontSize: 13, color: 'var(--mute)', fontStyle: 'italic', marginBottom: 14 }}>
+              „{recipe.title}" landet im Posteingang der Person.
+            </div>
+            {userList === null ? (
+              <div style={{ fontFamily: 'var(--serif)', fontSize: 14, color: 'var(--mute)', padding: '14px 0' }}>Lade Mitglieder …</div>
+            ) : userList.length === 0 ? (
+              <div style={{ fontFamily: 'var(--serif)', fontSize: 14, color: 'var(--mute)', padding: '14px 0' }}>Keine anderen Mitglieder gefunden.</div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {userList.map(u => {
+                  const busy = sendState?.uid === u.id && sendState.status === 'busy'
+                  const done = sendState?.uid === u.id && sendState.status === 'done'
+                  return (
+                    <button key={u.id} onClick={() => sendTo(u)} disabled={!!sendState} style={{
+                      display: 'flex', alignItems: 'center', gap: 12, width: '100%', textAlign: 'left',
+                      background: done ? 'var(--sage)' : 'var(--card)',
+                      border: `1px solid ${done ? 'var(--sage-2)' : 'var(--line-2)'}`,
+                      borderRadius: 14, padding: '10px 12px', cursor: 'pointer',
+                      opacity: sendState && !busy && !done ? 0.45 : 1, transition: 'all 0.15s',
+                    }}>
+                      {u.photoURL ? (
+                        <img src={u.photoURL} alt="" style={{ width: 36, height: 36, borderRadius: '50%', flexShrink: 0 }} />
+                      ) : (
+                        <div style={{
+                          width: 36, height: 36, borderRadius: '50%', flexShrink: 0,
+                          background: 'var(--green)', color: 'var(--paper)',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          fontFamily: 'var(--serif)', fontWeight: 700, fontSize: 15,
+                        }}>
+                          {(u.displayName || '?').trim().charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                      <span style={{ flex: 1, fontFamily: 'var(--serif)', fontSize: 15, color: 'var(--espresso)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {u.displayName || 'Unbekannt'}
+                      </span>
+                      {busy && <span style={{ fontFamily: 'var(--serif)', fontSize: 13, color: 'var(--mute)', fontStyle: 'italic' }}>sendet …</span>}
+                      {done && <Icon name="check" size={18} color="var(--green)" strokeWidth={2.4} />}
+                    </button>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+      ), document.body)}
+
       {showJoin && createPortal((
         <div style={{
           position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)',

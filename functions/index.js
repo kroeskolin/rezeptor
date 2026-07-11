@@ -94,7 +94,26 @@ exports.onNewLike = onDocumentCreated(
   }
 )
 
-// 3) Kommentar → Autor des Rezepts (mit comments-Pref), nicht an sich selbst
+// 3) Privat erhaltenes Rezept → Empfänger (mit received-Pref)
+exports.onNewInboxItem = onDocumentCreated(
+  { document: 'users/{uid}/inbox/{id}', region: REGION, secrets },
+  async (event) => {
+    const snap = event.data
+    if (!snap) return
+    const item = snap.data()
+    const userSnap = await db.collection('users').doc(event.params.uid).get()
+    if (!prefAllows(userSnap.data(), 'received')) return
+    configureWebpush()
+    await sendToUser(event.params.uid, {
+      title: `${item.fromName || 'Jemand'} hat dir ein Rezept geschickt 🍲`,
+      body: item.title || '',
+      url: '/rezeptor/',
+      tag: `inbox-${event.params.id}`,
+    })
+  }
+)
+
+// 4) Kommentar → Autor des Rezepts (mit comments-Pref), nicht an sich selbst
 exports.onNewComment = onDocumentCreated(
   { document: 'recipes/{recipeId}/comments/{commentId}', region: REGION, secrets },
   async (event) => {

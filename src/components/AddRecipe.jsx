@@ -88,7 +88,7 @@ function announceImportInfo(...results) {
   window.dispatchEvent(new CustomEvent('rezeptor:import-info', { detail: msg }))
 }
 
-export default function AddRecipe({ onSave, onClose, initialUrl }) {
+export default function AddRecipe({ onSave, onClose, initialUrl, initialRecipe }) {
   const [mode, setMode] = useState('hub')
   const [url, setUrl] = useState('')
   const [form, setForm] = useState(emptyRecipe)
@@ -111,6 +111,21 @@ export default function AddRecipe({ onSave, onClose, initialUrl }) {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialUrl])
+
+  // Erhaltenes Rezept (Posteingang): direkt im Formular öffnen — ansehen,
+  // eigene Tags vergeben, erst "Speichern" legt es in die Sammlung.
+  useEffect(() => {
+    if (!initialRecipe) return
+    setForm({
+      title: initialRecipe.title || '', subtitle: initialRecipe.subtitle || '',
+      servings: initialRecipe.servings || '', prepTime: initialRecipe.prepTime || '',
+      cookTime: initialRecipe.cookTime || '', ingredients: initialRecipe.ingredients || [],
+      steps: initialRecipe.steps || '', tags: initialRecipe.tags || [],
+      image: initialRecipe.image || null, source: initialRecipe.source || '',
+    })
+    setMode('manual')
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialRecipe])
 
   const handleSave = async () => {
     if (!form.title.trim()) { alert('Bitte gib einen Titel ein.'); return }
@@ -647,6 +662,7 @@ export default function AddRecipe({ onSave, onClose, initialUrl }) {
       <div className="add-recipe-header">
         <button className="add-close-btn" onClick={() => {
           if (multiEditIdx !== null) { setMultiEditIdx(null); setForm(emptyRecipe); setMode('multi-select') }
+          else if (initialRecipe) onClose() // erhaltenes Rezept: zurück = schließen (bleibt im Posteingang)
           else setMode('hub')
         }}>
           <Icon name="chev-left" size={18} color="var(--cocoa)" />

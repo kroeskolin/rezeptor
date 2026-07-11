@@ -720,6 +720,7 @@ export default function Settings({ onImport, onShowTagManager, onHideTagManager 
                         ['newRecipes', 'Neue Rezepte'],
                         ['comments', 'Kommentare'],
                         ['likes', 'Likes'],
+                        ['received', 'Erhaltene Rezepte'],
                       ].map(([key, label], i, arr) => (
                         <div key={key} style={{
                           display: 'flex', alignItems: 'center',

@@ -326,3 +326,41 @@ export async function getActivities(user) {
     activities.sort((a, b) => b.createdAtMs - a.createdAtMs);
     return activities;
 }
+// ── Rezepte privat verschicken (Posteingang) ──
+
+// Alle Community-Mitglieder (für die Empfänger-Auswahl).
+export async function getAllUsers() {
+    const snap = await getDocs(collection(db, 'users'));
+    return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+}
+
+// Rezept privat an einen Nutzer senden. Der Rezept-Inhalt (inkl. Foto) liegt
+// als shared-Doc (bewährter Kurzlink-Mechanismus); der Posteingang des
+// Empfängers bekommt nur einen kleinen Verweis darauf.
+export async function sendRecipeToUser(recipe, fromUser, toUid) {
+    if (!fromUser) throw new Error('Nicht eingeloggt');
+    const { id, done } = shareRecipe(recipe, fromUser);
+    await done; // shared-Doc muss existieren, bevor der Verweis entsteht
+    await setDoc(doc(db, 'users', toUid, 'inbox', id), {
+        sharedId: id,
+        fromUid: fromUser.uid,
+        fromName: fromUser.displayName || 'Unbekannt',
+        title: recipe.title || '',
+        createdAt: serverTimestamp(),
+    });
+}
+
+// Posteingang live beobachten (neueste zuerst).
+export function listenInbox(user, callback) {
+    if (!user) return () => { };
+    const q = query(collection(db, 'users', user.uid, 'inbox'), orderBy('createdAt', 'desc'));
+    return onSnapshot(q, (snap) => {
+        callback(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+    }, () => callback([]));
+}
+
+// Eintrag aus dem eigenen Posteingang entfernen (nach Import oder Ablehnen).
+export async function deleteInboxItem(user, itemId) {
+    if (!user) return;
+    await deleteDoc(doc(db, 'users', user.uid, 'inbox', itemId));
+}

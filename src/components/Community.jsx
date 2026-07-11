@@ -15,7 +15,7 @@ function SpeechBubble({ size = 14, color = 'var(--mute)' }) {
   )
 }
 
-export default function Community({ onLocalSave, activities = [], unreadCount = 0, lastSeen = 0, onSeen }) {
+export default function Community({ onLocalSave, activities = [], unreadCount = 0, lastSeen = 0, onSeen, inboxItems = [], onOpenInbox, onDismissInbox }) {
   const { user } = useAuth()
   const [feed, setFeed] = useState([])
   const [loading, setLoading] = useState(true)
@@ -122,6 +122,48 @@ export default function Community({ onLocalSave, activities = [], unreadCount = 
           </button>
         )}
       </div>
+
+      {/* Posteingang: privat erhaltene Rezepte */}
+      {user && inboxItems.length > 0 && (
+        <div style={{ marginBottom: 22 }}>
+          <div style={{ fontFamily: 'var(--serif)', fontStyle: 'italic', fontSize: 14, color: 'var(--mute)', marginBottom: 9 }}>
+            Für dich
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {inboxItems.map(item => (
+              <div key={item.id} style={{
+                display: 'flex', alignItems: 'center', gap: 12,
+                background: 'var(--sage)', border: '1.5px solid var(--sage-2)',
+                borderRadius: 16, padding: '12px 14px',
+              }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontFamily: 'var(--serif)', fontWeight: 700, fontSize: 15, color: 'var(--espresso)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {item.title || 'Rezept'}
+                  </div>
+                  <div style={{ fontFamily: 'var(--serif)', fontSize: 12.5, color: 'var(--green)', fontStyle: 'italic', marginTop: 2 }}>
+                    von {item.fromName || 'Unbekannt'}
+                  </div>
+                </div>
+                <button onClick={() => onOpenInbox && onOpenInbox(item)} style={{
+                  background: 'var(--green)', color: 'var(--paper)', border: 'none',
+                  borderRadius: 10, padding: '9px 14px', fontFamily: 'var(--serif)',
+                  fontSize: 13.5, fontWeight: 700, cursor: 'pointer', flexShrink: 0,
+                }}>
+                  Ansehen
+                </button>
+                <button onClick={() => onDismissInbox && onDismissInbox(item)} aria-label="Ablehnen" style={{
+                  width: 32, height: 32, borderRadius: '50%', flexShrink: 0,
+                  background: 'var(--paper)', border: '1px solid var(--line-2)', cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontFamily: 'var(--serif)', fontSize: 14, color: 'var(--cocoa)', lineHeight: 1,
+                }}>
+                  ✕
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Feed */}
       {loading ? (

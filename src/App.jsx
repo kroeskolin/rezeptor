@@ -20,7 +20,7 @@ import OnboardingHints from './components/OnboardingHints'
 import { decompressFromEncodedURIComponent } from 'lz-string'
 import { addRecipe } from './db/recipes'
 import { useAuth } from './contexts/AuthContext'
-import { getActivities, getSharedRecipe } from './db/community'
+import { getActivities, getSharedRecipe, listenInbox, deleteInboxItem } from './db/community'
 
 loadTheme()
 
@@ -45,6 +45,8 @@ function App() {
   const [welcomeDone, setWelcomeDone] = useState(() => !!localStorage.getItem('rezeptor-onboarded'))
   const [justUpdated, setJustUpdated] = useState(false)
   const [importInfo, setImportInfo] = useState(null)
+  const [inboxItems, setInboxItems] = useState([])
+  const [inboxImport, setInboxImport] = useState(null) // { recipe, inboxId } — erhaltenes Rezept im Formular
 
   const dismissWelcome = () => {
     localStorage.setItem('rezeptor-onboarded', '1')
@@ -100,8 +102,31 @@ function App() {
     syncThemeFromCloud() // am Konto gespeichertes Farbschema übernehmen
     const unsubR = startRecipeSync(() => getAllRecipes().then(setRecipes))
     const unsubT = startTagSync(() => window.dispatchEvent(new Event('rezeptor:tags-updated')))
-    return () => { unsubR(); unsubT() }
+    const unsubI = listenInbox(user, setInboxItems)
+    return () => { unsubR(); unsubT(); unsubI(); setInboxItems([]) }
   }, [user])
+
+  // Erhaltenes Rezept ansehen/bearbeiten: shared-Doc laden, Tags verwerfen
+  // (die sind pro Nutzer individuell), dann ins Formular geben.
+  const openInboxItem = async (item) => {
+    try {
+      const shared = await getSharedRecipe(item.sharedId)
+      if (!shared) {
+        alert('Das Rezept ist nicht mehr verfügbar.')
+        await deleteInboxItem(user, item.id)
+        return
+      }
+      setInboxImport({
+        recipe: { ...shared, tags: [], source: shared.source || `Von ${item.fromName}` },
+        inboxId: item.id,
+      })
+      goToSubPage()
+    } catch (e) {
+      alert('Rezept konnte nicht geladen werden: ' + e.message)
+    }
+  }
+
+  const dismissInboxItem = (item) => deleteInboxItem(user, item.id).catch(() => {})
 
   // Aktivitäten laden, sobald ein Nutzer eingeloggt ist (und beim Wiederanzeigen der App)
   useEffect(() => {
@@ -292,6 +317,13 @@ function App() {
       )
     }
 
+    if (inboxImport) {
+      return <AddRecipe
+        initialRecipe={inboxImport.recipe}
+        onSave={async () => { await deleteInboxItem(user, inboxImport.inboxId).catch(() => {}); setInboxImport(null); handleSave() }}
+        onClose={() => { setInboxImport(null); goToMainPage() }}
+      />
+    }
     if (showAddRecipe) {
       return <AddRecipe initialUrl={sharedUrl} onSave={handleSave} onClose={() => { setShowAddRecipe(false); setSharedUrl(''); goToMainPage() }} />
     }
@@ -349,6 +381,9 @@ function App() {
           unreadCount={unreadCount}
           lastSeen={lastSeen}
           onSeen={markActivitiesSeen}
+          inboxItems={inboxItems}
+          onOpenInbox={openInboxItem}
+          onDismissInbox={dismissInboxItem}
         />
       case 'settings':
         return <Settings
@@ -367,7 +402,7 @@ function App() {
     <>
       <Layout
         activeTab={activeTab}
-        communityBadge={unreadCount}
+        communityBadge={unreadCount + inboxItems.length}
         onTabChange={(tab) => {
           setActiveTab(tab)
           setTodayMode(null)
