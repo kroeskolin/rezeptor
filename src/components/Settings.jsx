@@ -7,6 +7,8 @@ import { pushSupported, isPushEnabled, enablePush, disablePush, getPushPrefs, sa
 import JoinCommunity from './JoinCommunity'
 import EmailBackup from './EmailBackup'
 import { LANGUAGES, UNIT_SYSTEMS, getImportPrefs, saveImportPrefs, languageLabel } from '../db/prefs'
+import { doc, getDoc, setDoc } from 'firebase/firestore'
+import { db } from '../db/firebase'
 import './Settings.css'
 
 // Web3Forms Access-Key — kostenlos auf web3forms.com mit brr.kroeske@gmail.com anlegen.
@@ -152,6 +154,21 @@ export default function Settings({ onImport, onShowTagManager, onHideTagManager 
   const [showBackup, setShowBackup] = useState(false)
   const [showLangUnits, setShowLangUnits] = useState(false)
   const [importPrefs, setImportPrefs] = useState(getImportPrefs)
+  const [allowInbox, setAllowInbox] = useState(true)
+
+  // Empfangs-Einstellung aus dem eigenen users-Dokument laden
+  useEffect(() => {
+    if (!user) return
+    getDoc(doc(db, 'users', user.uid))
+      .then(snap => setAllowInbox(snap.data()?.allowInbox !== false))
+      .catch(() => {})
+  }, [user])
+
+  const toggleAllowInbox = () => {
+    const next = !allowInbox
+    setAllowInbox(next)
+    if (user) setDoc(doc(db, 'users', user.uid), { allowInbox: next }, { merge: true }).catch(() => {})
+  }
   const [contactMsg, setContactMsg] = useState('')
   const [contactEmail, setContactEmail] = useState('')
   const [contactBusy, setContactBusy] = useState(false)
@@ -775,6 +792,16 @@ export default function Settings({ onImport, onShowTagManager, onHideTagManager 
           value={`${languageLabel(importPrefs.language)} · ${importPrefs.units === 'metric' ? 'metrisch' : 'US'}`}
           onClick={() => setShowLangUnits(true)} />
       </SettingsGroup>
+
+      {user && (
+        <SettingsGroup title="Privatsphäre">
+          <SettingRow icon="shield" label="Rezepte empfangen" toggle
+            on={allowInbox} onToggle={toggleAllowInbox} />
+          <div style={{ fontFamily: 'var(--serif)', fontSize: 12.5, color: 'var(--mute)', fontStyle: 'italic', padding: '0 16px 12px' }}>
+            Wenn aus: andere können dir keine Rezepte mehr direkt schicken, und du erscheinst nicht in der Empfänger-Auswahl.
+          </div>
+        </SettingsGroup>
+      )}
 
       <SettingsGroup title="Hilfe">
         <SettingRow icon="help" label="Kontakt" onClick={() => setShowContact(true)} />

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import './RecipeDetail.css';
 import { Icon, coverTint, totalTime } from './DesignTokens';
-import { publishRecipe, shareRecipe, sendRecipeToUser, getAllUsers } from '../db/community'
+import { publishRecipe, shareRecipe, sendRecipeToUser, getAllUsers, firstName } from '../db/community'
 import { useAuth } from '../contexts/AuthContext'
 import JoinCommunity from './JoinCommunity'
 
@@ -56,6 +56,7 @@ export default function RecipeDetail({ recipe, onBack, onEdit, onStartCook, onTo
   const [showUserPicker, setShowUserPicker] = useState(false);
   const [userList, setUserList] = useState(null); // null = lädt noch
   const [sendState, setSendState] = useState(null); // { uid, status: 'busy'|'done' }
+  const [sendMsg, setSendMsg] = useState(''); // optionaler Begleittext
   const [showCaptionOverlay, setShowCaptionOverlay] = useState(false);
   const [captionText, setCaptionText] = useState('');
   const [publishBusy, setPublishBusy] = useState(false);
@@ -208,8 +209,10 @@ export default function RecipeDetail({ recipe, onBack, onEdit, onStartCook, onTo
     setShowUserPicker(true)
     setUserList(null)
     setSendState(null)
+    setSendMsg('')
     getAllUsers()
-      .then(all => setUserList(all.filter(u => u.id !== user.uid)))
+      // Sich selbst und Nutzer, die den Empfang deaktiviert haben, ausblenden
+      .then(all => setUserList(all.filter(u => u.id !== user.uid && u.allowInbox !== false)))
       .catch(() => setUserList([]))
   }
 
@@ -217,7 +220,7 @@ export default function RecipeDetail({ recipe, onBack, onEdit, onStartCook, onTo
     if (sendState) return // schon am Senden / gesendet
     setSendState({ uid: target.id, status: 'busy' })
     try {
-      await sendRecipeToUser(recipe, user, target.id)
+      await sendRecipeToUser(recipe, user, target.id, sendMsg)
       setSendState({ uid: target.id, status: 'done' })
       setTimeout(() => { setShowUserPicker(false); setSendState(null) }, 1200)
     } catch (e) {
@@ -511,8 +514,8 @@ export default function RecipeDetail({ recipe, onBack, onEdit, onStartCook, onTo
               }}>
                 <Icon name="link" size={20} color="var(--espresso)" />
                 <div>
-                  <div style={{ fontFamily: 'var(--serif)', fontSize: 15, fontWeight: 700, color: 'var(--espresso)' }}>Kurzlink an Rezeptor senden</div>
-                  <div style={{ fontFamily: 'var(--serif)', fontSize: 13, color: 'var(--green)', fontStyle: 'italic' }}>Kurzer Link mit Foto, zum Importieren</div>
+                  <div style={{ fontFamily: 'var(--serif)', fontSize: 15, fontWeight: 700, color: 'var(--espresso)' }}>Kurzlink per Messenger senden</div>
+                  <div style={{ fontFamily: 'var(--serif)', fontSize: 13, color: 'var(--green)', fontStyle: 'italic' }}>Kurzer Link, öffnet Rezeptor</div>
                 </div>
               </button>
               <button onClick={handleSendToUser} style={{
@@ -522,8 +525,8 @@ export default function RecipeDetail({ recipe, onBack, onEdit, onStartCook, onTo
               }}>
                 <Icon name="user" size={20} color="var(--espresso)" />
                 <div>
-                  <div style={{ fontFamily: 'var(--serif)', fontSize: 15, fontWeight: 700, color: 'var(--espresso)' }}>An Rezeptor-Nutzer senden</div>
-                  <div style={{ fontFamily: 'var(--serif)', fontSize: 13, color: 'var(--green)', fontStyle: 'italic' }}>Landet direkt im Posteingang der Person</div>
+                  <div style={{ fontFamily: 'var(--serif)', fontSize: 15, fontWeight: 700, color: 'var(--espresso)' }}>An Rezeptor-Nutzer:in senden</div>
+                  <div style={{ fontFamily: 'var(--serif)', fontSize: 13, color: 'var(--green)', fontStyle: 'italic' }}>Landet direkt in den Aktivitäten der Person</div>
                 </div>
               </button>
               <button onClick={handleShareText} style={{
@@ -568,9 +571,21 @@ export default function RecipeDetail({ recipe, onBack, onEdit, onStartCook, onTo
             <div style={{ fontFamily: 'var(--serif)', fontSize: 18, fontWeight: 700, color: 'var(--espresso)', marginBottom: 4 }}>
               An wen <span style={{ fontStyle: 'italic' }}>senden</span>?
             </div>
-            <div style={{ fontFamily: 'var(--serif)', fontSize: 13, color: 'var(--mute)', fontStyle: 'italic', marginBottom: 14 }}>
+            <div style={{ fontFamily: 'var(--serif)', fontSize: 13, color: 'var(--mute)', fontStyle: 'italic', marginBottom: 12 }}>
               „{recipe.title}" landet im Posteingang der Person.
             </div>
+            <textarea
+              value={sendMsg}
+              onChange={e => setSendMsg(e.target.value)}
+              placeholder="Kurzer Gruß dazu … (optional)"
+              rows={2}
+              maxLength={200}
+              style={{
+                width: '100%', boxSizing: 'border-box', borderRadius: 12, border: '1px solid var(--line-2)',
+                padding: '10px 12px', fontFamily: 'var(--serif)', fontSize: 14, color: 'var(--ink)',
+                background: 'var(--card)', resize: 'none', marginBottom: 12,
+              }}
+            />
             {userList === null ? (
               <div style={{ fontFamily: 'var(--serif)', fontSize: 14, color: 'var(--mute)', padding: '14px 0' }}>Lade Mitglieder …</div>
             ) : userList.length === 0 ? (
@@ -601,7 +616,7 @@ export default function RecipeDetail({ recipe, onBack, onEdit, onStartCook, onTo
                         </div>
                       )}
                       <span style={{ flex: 1, fontFamily: 'var(--serif)', fontSize: 15, color: 'var(--espresso)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {u.displayName || 'Unbekannt'}
+                        {firstName(u.displayName)}
                       </span>
                       {busy && <span style={{ fontFamily: 'var(--serif)', fontSize: 13, color: 'var(--mute)', fontStyle: 'italic' }}>sendet …</span>}
                       {done && <Icon name="check" size={18} color="var(--green)" strokeWidth={2.4} />}

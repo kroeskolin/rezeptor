@@ -15,7 +15,7 @@ function SpeechBubble({ size = 14, color = 'var(--mute)' }) {
   )
 }
 
-export default function Community({ onLocalSave, activities = [], unreadCount = 0, lastSeen = 0, onSeen, inboxItems = [], onOpenInbox, onDismissInbox }) {
+export default function Community({ onLocalSave, activities = [], unreadCount = 0, lastSeen = 0, onSeen, inboxItems = [], onOpenInbox, onDismissInbox, onThankInbox }) {
   const { user } = useAuth()
   const [feed, setFeed] = useState([])
   const [loading, setLoading] = useState(true)
@@ -51,6 +51,7 @@ export default function Community({ onLocalSave, activities = [], unreadCount = 
     if (a.type === 'like') return `${a.actorName} gefällt dein Rezept „${a.recipeTitle}"!`
     if (a.type === 'comment') return `${a.actorName} hat dein Rezept „${a.recipeTitle}" kommentiert!`
     if (a.type === 'newpost') return `${a.actorName} hat ein neues Rezept geteilt: „${a.recipeTitle}"`
+    if (a.type === 'thanks') return `${a.actorName} bedankt sich für „${a.recipeTitle}" 💚`
     return `${a.actorName} hat ebenfalls das Rezept „${a.recipeTitle}" kommentiert!`
   }
 
@@ -132,33 +133,52 @@ export default function Community({ onLocalSave, activities = [], unreadCount = 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {inboxItems.map(item => (
               <div key={item.id} style={{
-                display: 'flex', alignItems: 'center', gap: 12,
                 background: 'var(--sage)', border: '1.5px solid var(--sage-2)',
                 borderRadius: 16, padding: '12px 14px',
               }}>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontFamily: 'var(--serif)', fontWeight: 700, fontSize: 15, color: 'var(--espresso)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {item.title || 'Rezept'}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontFamily: 'var(--serif)', fontWeight: 700, fontSize: 15, color: 'var(--espresso)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {item.title || 'Rezept'}
+                    </div>
+                    <div style={{ fontFamily: 'var(--serif)', fontSize: 12.5, color: 'var(--green)', fontStyle: 'italic', marginTop: 2 }}>
+                      von {item.fromName || 'Unbekannt'}
+                    </div>
                   </div>
-                  <div style={{ fontFamily: 'var(--serif)', fontSize: 12.5, color: 'var(--green)', fontStyle: 'italic', marginTop: 2 }}>
-                    von {item.fromName || 'Unbekannt'}
-                  </div>
+                  <button onClick={() => onDismissInbox && onDismissInbox(item)} aria-label="Ablehnen" style={{
+                    width: 32, height: 32, borderRadius: '50%', flexShrink: 0,
+                    background: 'var(--paper)', border: '1px solid var(--line-2)', cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontFamily: 'var(--serif)', fontSize: 14, color: 'var(--cocoa)', lineHeight: 1,
+                  }}>
+                    ✕
+                  </button>
                 </div>
-                <button onClick={() => onOpenInbox && onOpenInbox(item)} style={{
-                  background: 'var(--green)', color: 'var(--paper)', border: 'none',
-                  borderRadius: 10, padding: '9px 14px', fontFamily: 'var(--serif)',
-                  fontSize: 13.5, fontWeight: 700, cursor: 'pointer', flexShrink: 0,
-                }}>
-                  Ansehen
-                </button>
-                <button onClick={() => onDismissInbox && onDismissInbox(item)} aria-label="Ablehnen" style={{
-                  width: 32, height: 32, borderRadius: '50%', flexShrink: 0,
-                  background: 'var(--paper)', border: '1px solid var(--line-2)', cursor: 'pointer',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontFamily: 'var(--serif)', fontSize: 14, color: 'var(--cocoa)', lineHeight: 1,
-                }}>
-                  ✕
-                </button>
+                {item.message && (
+                  <div style={{ fontFamily: 'var(--serif)', fontSize: 13.5, color: 'var(--espresso)', fontStyle: 'italic', marginTop: 8, lineHeight: 1.4 }}>
+                    „{item.message}"
+                  </div>
+                )}
+                <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+                  <button onClick={() => onOpenInbox && onOpenInbox(item)} style={{
+                    flex: 1, background: 'var(--green)', color: 'var(--paper)', border: 'none',
+                    borderRadius: 10, padding: '9px 14px', fontFamily: 'var(--serif)',
+                    fontSize: 13.5, fontWeight: 700, cursor: 'pointer',
+                  }}>
+                    Ansehen
+                  </button>
+                  <button
+                    onClick={() => { if (!item.thanked && onThankInbox) onThankInbox(item) }}
+                    disabled={!!item.thanked}
+                    style={{
+                      flex: 1, background: 'var(--paper)', color: 'var(--green)',
+                      border: '1.5px solid var(--green)', borderRadius: 10, padding: '9px 14px',
+                      fontFamily: 'var(--serif)', fontSize: 13.5, fontWeight: 700,
+                      cursor: item.thanked ? 'default' : 'pointer', opacity: item.thanked ? 0.7 : 1,
+                    }}>
+                    {item.thanked ? 'Danke gesendet 💚' : 'Danke!'}
+                  </button>
+                </div>
               </div>
             ))}
           </div>
@@ -260,7 +280,7 @@ export default function Community({ onLocalSave, activities = [], unreadCount = 
                 {activities.map(a => {
                   const isNew = a.createdAtMs > seenThreshold
                   return (
-                    <button key={a.id} onClick={() => openActivityRecipe(a.recipeId)} style={{
+                    <button key={a.id} onClick={() => { if (a.recipeId) openActivityRecipe(a.recipeId) }} style={{
                       display: 'flex', alignItems: 'center', gap: 12, width: '100%', textAlign: 'left',
                       background: isNew ? 'var(--rose)' : 'var(--card)',
                       border: `1px solid ${isNew ? 'var(--rose-2)' : 'var(--line-2)'}`,

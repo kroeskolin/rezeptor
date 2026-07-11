@@ -101,6 +101,8 @@ exports.onNewInboxItem = onDocumentCreated(
     const snap = event.data
     if (!snap) return
     const item = snap.data()
+    // „Danke"-Einträge erscheinen als Aktivität + Badge, ohne eigene Push-Nachricht
+    if (item.type === 'thanks') return
     const userSnap = await db.collection('users').doc(event.params.uid).get()
     if (!prefAllows(userSnap.data(), 'received')) return
     configureWebpush()

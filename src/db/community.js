@@ -328,26 +328,50 @@ export async function getActivities(user) {
 }
 // ── Rezepte privat verschicken (Posteingang) ──
 
+// Nur der Vorname wird angezeigt/gespeichert (Datenschutz).
+export const firstName = (name) => (name || '').trim().split(/\s+/)[0] || 'Unbekannt';
+
 // Alle Community-Mitglieder (für die Empfänger-Auswahl).
 export async function getAllUsers() {
     const snap = await getDocs(collection(db, 'users'));
     return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
 }
 
-// Rezept privat an einen Nutzer senden. Der Rezept-Inhalt (inkl. Foto) liegt
-// als shared-Doc (bewährter Kurzlink-Mechanismus); der Posteingang des
-// Empfängers bekommt nur einen kleinen Verweis darauf.
-export async function sendRecipeToUser(recipe, fromUser, toUid) {
+// Rezept privat an einen Nutzer senden (optional mit kurzem Begleittext).
+// Der Rezept-Inhalt (inkl. Foto) liegt als shared-Doc (bewährter Kurzlink-
+// Mechanismus); der Posteingang des Empfängers bekommt nur einen Verweis.
+export async function sendRecipeToUser(recipe, fromUser, toUid, message = '') {
     if (!fromUser) throw new Error('Nicht eingeloggt');
     const { id, done } = shareRecipe(recipe, fromUser);
     await done; // shared-Doc muss existieren, bevor der Verweis entsteht
     await setDoc(doc(db, 'users', toUid, 'inbox', id), {
+        type: 'recipe',
         sharedId: id,
         fromUid: fromUser.uid,
-        fromName: fromUser.displayName || 'Unbekannt',
+        fromName: firstName(fromUser.displayName),
         title: recipe.title || '',
+        message: (message || '').trim().slice(0, 200),
         createdAt: serverTimestamp(),
     });
+}
+
+// „Danke!" an den Absender zurückschicken (landet in dessen Aktivitäten).
+export async function sendThanks(user, item) {
+    if (!user || !item?.fromUid) return;
+    const ref = doc(collection(db, 'users', item.fromUid, 'inbox'));
+    await setDoc(ref, {
+        type: 'thanks',
+        fromUid: user.uid,
+        fromName: firstName(user.displayName),
+        title: item.title || '',
+        createdAt: serverTimestamp(),
+    });
+}
+
+// Eigenen Posteingangs-Eintrag als „bedankt" markieren (Button-Zustand merken).
+export async function markInboxThanked(user, itemId) {
+    if (!user) return;
+    await updateDoc(doc(db, 'users', user.uid, 'inbox', itemId), { thanked: true });
 }
 
 // Posteingang live beobachten (neueste zuerst).

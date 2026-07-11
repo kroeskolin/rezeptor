@@ -20,7 +20,7 @@ import OnboardingHints from './components/OnboardingHints'
 import { decompressFromEncodedURIComponent } from 'lz-string'
 import { addRecipe } from './db/recipes'
 import { useAuth } from './contexts/AuthContext'
-import { getActivities, getSharedRecipe, listenInbox, deleteInboxItem } from './db/community'
+import { getActivities, getSharedRecipe, listenInbox, deleteInboxItem, sendThanks, markInboxThanked } from './db/community'
 
 loadTheme()
 
@@ -144,7 +144,27 @@ function App() {
     return () => document.removeEventListener('visibilitychange', onVisible)
   }, [user])
 
-  const unreadCount = activities.filter(a => a.createdAtMs > lastSeen).length
+  // Posteingang: Rezepte und „Danke"-Einträge trennen — Danke erscheint als Aktivität
+  const inboxRecipes = inboxItems.filter(i => i.type !== 'thanks')
+  const thanksActivities = inboxItems
+    .filter(i => i.type === 'thanks')
+    .map(i => ({
+      id: `thanks_${i.id}`, type: 'thanks',
+      actorName: i.fromName || 'Jemand', recipeTitle: i.title || '',
+      createdAtMs: i.createdAt?.toMillis ? i.createdAt.toMillis() : 0,
+    }))
+  const allActivities = [...activities, ...thanksActivities].sort((a, b) => b.createdAtMs - a.createdAtMs)
+  const unreadCount = allActivities.filter(a => a.createdAtMs > lastSeen).length
+
+  // „Danke!" an den Absender schicken + eigenen Eintrag als bedankt markieren
+  const thankInboxItem = async (item) => {
+    try {
+      await sendThanks(user, item)
+      await markInboxThanked(user, item.id)
+    } catch (e) {
+      console.error('Danke senden fehlgeschlagen:', e)
+    }
+  }
 
   // Homescreen-Badge am App-Icon mit dem Ungelesen-Zähler synchron halten
   useEffect(() => {
@@ -377,13 +397,14 @@ function App() {
         return <Community
           recipes={recipes}
           onLocalSave={handleSave}
-          activities={activities}
+          activities={allActivities}
           unreadCount={unreadCount}
           lastSeen={lastSeen}
           onSeen={markActivitiesSeen}
-          inboxItems={inboxItems}
+          inboxItems={inboxRecipes}
           onOpenInbox={openInboxItem}
           onDismissInbox={dismissInboxItem}
+          onThankInbox={thankInboxItem}
         />
       case 'settings':
         return <Settings
@@ -402,7 +423,7 @@ function App() {
     <>
       <Layout
         activeTab={activeTab}
-        communityBadge={unreadCount + inboxItems.length}
+        communityBadge={unreadCount + inboxRecipes.length}
         onTabChange={(tab) => {
           setActiveTab(tab)
           setTodayMode(null)
