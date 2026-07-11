@@ -81,7 +81,8 @@ export async function addRecipe(recipe) {
             ...recipe,
             cloudId: recipe.cloudId || newCloudId(),
             favorite: false,
-            createdAt: new Date().toISOString()
+            createdAt: new Date().toISOString(),
+            localUpdatedAt: Date.now(), // für den Sync: lokal ist ab jetzt neuer als die Cloud
         }
         const request = store.add(newRecipe)
         request.onsuccess = () => {
@@ -97,9 +98,10 @@ export async function updateRecipe(recipe) {
     return new Promise((resolve, reject) => {
         const tx = db.transaction(STORE_NAME, 'readwrite')
         const store = tx.objectStore(STORE_NAME)
-        const request = store.put(recipe)
+        const stamped = { ...recipe, localUpdatedAt: Date.now() }
+        const request = store.put(stamped)
         request.onsuccess = () => {
-            if (auth.currentUser) pushRecipeToCloud(recipe).catch(() => { })
+            if (auth.currentUser) pushRecipeToCloud(stamped).catch(() => { })
             resolve(request.result)
         }
         request.onerror = () => reject(request.error)
@@ -180,7 +182,7 @@ export async function addTag(tag) {
     return new Promise((resolve, reject) => {
         const tx = db.transaction(TAGS_STORE, 'readwrite')
         const store = tx.objectStore(TAGS_STORE)
-        const newTag = { ...tag, cloudId: tag.cloudId || newCloudId() }
+        const newTag = { ...tag, cloudId: tag.cloudId || newCloudId(), localUpdatedAt: Date.now() }
         const request = store.add(newTag)
         request.onsuccess = () => {
             if (auth.currentUser) pushTagToCloud(newTag).catch(() => { })
@@ -214,9 +216,10 @@ export async function updateTag(tag) {
     return new Promise((resolve, reject) => {
         const tx = db.transaction(TAGS_STORE, 'readwrite')
         const store = tx.objectStore(TAGS_STORE)
-        const request = store.put(tag)
+        const stamped = { ...tag, localUpdatedAt: Date.now() }
+        const request = store.put(stamped)
         request.onsuccess = () => {
-            if (auth.currentUser) pushTagToCloud(tag).catch(() => { })
+            if (auth.currentUser) pushTagToCloud(stamped).catch(() => { })
             resolve(request.result)
         }
         request.onerror = () => reject(request.error)
@@ -294,6 +297,13 @@ function reconcileFromCloud(storeName, snap, onChange) {
                 // Firestore-Timestamp nicht lokal speichern (nicht klonbar)
                 const { updatedAt, ...data } = change.doc.data()
                 if (local) {
+                    // Veralteter Cloud-Stand darf eine NEUERE lokale Änderung nie
+                    // überschreiben (Race: Push läuft noch, Snapshot kommt mit altem
+                    // Stand zurück → z.B. Favoriten-Herz sprang wieder zurück).
+                    if (local.localUpdatedAt && data.localUpdatedAt &&
+                        data.localUpdatedAt < local.localUpdatedAt) {
+                        return
+                    }
                     const merged = { ...local, ...data, cloudId, id: local.id }
                     // Lokales Base64-Foto behalten (offline-fähig), nicht durch URL ersetzen
                     if (local.image && String(local.image).startsWith('data:') &&
