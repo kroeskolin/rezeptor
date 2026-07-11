@@ -482,10 +482,10 @@ export default function RecipeDetail({ recipe, onBack, onEdit, onStartCook, onTo
       )}
 
       {/* Share Sheet */}
-      {showShareSheet && (
+      {showShareSheet && createPortal((
         <div style={{
           position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)',
-          zIndex: 300, display: 'flex', alignItems: 'flex-end',
+          zIndex: 1000, display: 'flex', alignItems: 'flex-end',
         }} onClick={() => setShowShareSheet(false)}>
           <div style={{
             background: 'var(--paper)', borderRadius: '20px 20px 0 0',
@@ -554,7 +554,7 @@ export default function RecipeDetail({ recipe, onBack, onEdit, onStartCook, onTo
             </div>
           </div>
         </div>
-      )}
+      ), document.body)}
 
       {/* Beitreten-Sheet (Kurzlink erfordert Login) */}
       {/* Empfänger-Auswahl fürs private Verschicken */}
@@ -650,15 +650,17 @@ export default function RecipeDetail({ recipe, onBack, onEdit, onStartCook, onTo
         </div>
       ), document.body)}
 
-      {/* Textbeitrag-Overlay vor dem Veröffentlichen */}
-      {showCaptionOverlay && (
+      {/* Textbeitrag-Overlay vor dem Veröffentlichen.
+          Per Portal + mittig: liegt garantiert über der Fußleiste, und die
+          iOS-Tastatur schiebt den Veröffentlichen-Button nicht aus dem Bild. */}
+      {showCaptionOverlay && createPortal((
         <div style={{
           position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)',
-          zIndex: 320, display: 'flex', alignItems: 'flex-end',
+          zIndex: 3000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16,
         }} onClick={() => { if (!publishBusy) setShowCaptionOverlay(false); }}>
           <div style={{
-            background: 'var(--paper)', borderRadius: '20px 20px 0 0',
-            padding: '20px 20px 40px', width: '100%',
+            background: 'var(--paper)', borderRadius: 20,
+            padding: '20px 20px 22px', width: '100%', maxWidth: 480,
           }} onClick={e => e.stopPropagation()}>
             <div style={{ width: 36, height: 4, borderRadius: 2, background: 'var(--line-2)', margin: '0 auto 20px' }} />
             <div style={{ fontFamily: 'var(--serif)', fontSize: 18, fontWeight: 700, color: 'var(--espresso)', marginBottom: 6 }}>
@@ -691,7 +693,7 @@ export default function RecipeDetail({ recipe, onBack, onEdit, onStartCook, onTo
             </button>
           </div>
         </div>
-      )}
+      ), document.body)}
     </div>
   );
 }
