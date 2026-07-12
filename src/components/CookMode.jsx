@@ -193,7 +193,7 @@ export default function CookMode({ recipe, onClose }) {
 
   const advance = () => {
     if (step < total - 1) {
-      if (timerActive) handleTimerStop();
+      // Timer läuft beim Blättern weiter (z.B. „5 Min köcheln" + nächsten Schritt lesen)
       setHistory(h => [...h, step]);
       setStep(s => s + 1);
     }
@@ -201,7 +201,6 @@ export default function CookMode({ recipe, onClose }) {
 
   const back = () => {
     if (history.length > 0) {
-      if (timerActive) handleTimerStop();
       setStep(history[history.length - 1]);
       setHistory(h => h.slice(0, -1));
     }
