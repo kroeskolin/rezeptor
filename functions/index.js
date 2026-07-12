@@ -2,10 +2,11 @@
    Löst bei Community-Ereignissen aus und verschickt an die Geräte der Empfänger,
    sofern diese den jeweiligen Push-Typ in den Einstellungen aktiviert haben. */
 
-const { onDocumentCreated } = require('firebase-functions/v2/firestore')
+const { onDocumentCreated, onDocumentDeleted } = require('firebase-functions/v2/firestore')
 const { defineSecret } = require('firebase-functions/params')
 const { initializeApp } = require('firebase-admin/app')
 const { getFirestore } = require('firebase-admin/firestore')
+const { getStorage } = require('firebase-admin/storage')
 const webpush = require('web-push')
 
 initializeApp()
@@ -136,5 +137,18 @@ exports.onNewComment = onDocumentCreated(
       url: '/rezeptor/',
       tag: `comment-${event.params.recipeId}`,
     })
+  }
+)
+
+// 5) Geteiltes Rezept gelöscht (manuell ODER per Firestore-TTL nach 90 Tagen)
+//    → zugehöriges Foto aus Storage aufräumen (verhindert verwaiste Bilder).
+exports.onSharedDeleted = onDocumentDeleted(
+  { document: 'shared/{id}', region: REGION },
+  async (event) => {
+    try {
+      await getStorage().bucket().file(`shared/${event.params.id}.jpg`).delete()
+    } catch (e) {
+      // Bild evtl. nie vorhanden — ignorieren
+    }
   }
 )

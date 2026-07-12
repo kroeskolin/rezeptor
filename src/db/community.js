@@ -13,7 +13,11 @@ import {
     updateDoc,
     deleteDoc,
     onSnapshot,
+    Timestamp,
 } from 'firebase/firestore';
+
+// Geteilte Rezepte/Kurzlinks laufen nach 90 Tagen ab (Firestore-TTL auf expiresAt).
+const SHARE_TTL_MS = 90 * 24 * 60 * 60 * 1000;
 
 import { ref as storageRef, uploadString, getDownloadURL, deleteObject } from 'firebase/storage';
 
@@ -224,6 +228,7 @@ export function shareRecipe(recipe, user) {
         source: recipe.source || '',
         image: null,
         createdAt: serverTimestamp(),
+        expiresAt: Timestamp.fromMillis(Date.now() + SHARE_TTL_MS), // Firestore-TTL löscht danach
     };
 
     const done = (async () => {
