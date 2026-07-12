@@ -26,6 +26,16 @@ export default {
       return new Response("Forbidden", { status: 403, headers: corsHeaders });
     }
 
+    // Kostenbremse: max. Anfragen pro IP/Minute (Rate-Limit-Binding aus den
+    // Worker-Settings). Ohne Binding passiert nichts — Code bleibt gefahrlos.
+    if (env.RATE_LIMIT) {
+      const ip = request.headers.get("CF-Connecting-IP") || "unknown";
+      const { success } = await env.RATE_LIMIT.limit({ key: ip });
+      if (!success) {
+        return new Response("Zu viele Anfragen", { status: 429, headers: corsHeaders });
+      }
+    }
+
     const url = new URL(request.url);
 
     // YouTube video info proxy: GET /videoinfo?videoId=...
