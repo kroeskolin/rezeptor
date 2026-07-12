@@ -39,6 +39,7 @@ export default function CookMode({ recipe, onClose }) {
   const [showTimerSetup, setShowTimerSetup] = useState(false);
   const [timerSeconds, setTimerSeconds] = useState(null);
   const [timerRunning, setTimerRunning] = useState(false);
+  const [showSoundHint, setShowSoundHint] = useState(false);
 
   const wakeLockRef = useRef(null);
   const [wakeLockActive, setWakeLockActive] = useState(false);
@@ -152,6 +153,9 @@ export default function CookMode({ recipe, onClose }) {
     setTimerSeconds(mins * 60);
     setTimerRunning(true);
     setShowTimerSetup(false);
+    // iOS lässt Web-Töne nicht durch den Stummschalter — kurz daran erinnern.
+    setShowSoundHint(true);
+    setTimeout(() => setShowSoundHint(false), 3000);
   };
 
   const handleTimerStop = () => {
@@ -236,11 +240,26 @@ export default function CookMode({ recipe, onClose }) {
         <div className="cook-title" style={{ flex: 1, margin: '0 10px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {recipe?.title}
         </div>
-        <div className="cook-awake-pill" style={{ opacity: wakeLockActive ? 1 : 0.4 }}>
-          <span className="cook-awake-dot" />
-          <span className="cook-awake-label">An</span>
-        </div>
+        <div style={{ width: 38 }} />
       </div>
+
+      {/* Timer läuft — Erinnerung, den Ton einzuschalten (iOS-Stummschalter) */}
+      {showSoundHint && (
+        <div className="update-toast" style={{
+          position: 'fixed', top: 'calc(var(--sat, env(safe-area-inset-top, 0px)) + 70px)', left: '50%',
+          zIndex: 3000, background: 'var(--card)', border: '1px solid var(--line-2)',
+          borderRadius: 14, padding: '10px 20px', textAlign: 'center',
+          maxWidth: '90%', width: 'max-content',
+          boxShadow: '0 10px 28px -10px rgba(0,0,0,0.35)',
+        }}>
+          <div style={{ fontFamily: 'var(--serif)', fontSize: 11, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--green)' }}>
+            Hinweis
+          </div>
+          <div style={{ fontFamily: 'var(--serif)', fontSize: 15, color: 'var(--espresso)', marginTop: 3 }}>
+            Ton am Smartphone einschalten 🔔
+          </div>
+        </div>
+      )}
 
       {/* Fortschrittsbalken — fix */}
       <div className="cook-progress">

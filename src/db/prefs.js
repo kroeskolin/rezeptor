@@ -5,9 +5,6 @@ const KEY = 'rezeptor-import-prefs'
 export const LANGUAGES = [
     { id: 'de', label: 'Deutsch' },
     { id: 'en', label: 'Englisch' },
-    { id: 'fr', label: 'Französisch' },
-    { id: 'it', label: 'Italienisch' },
-    { id: 'es', label: 'Spanisch' },
 ]
 
 export const UNIT_SYSTEMS = [

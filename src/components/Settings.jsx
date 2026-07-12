@@ -536,6 +536,9 @@ export default function Settings({ onImport, onShowTagManager, onHideTagManager 
                 <span style={{ fontFamily: 'var(--serif)', fontSize: 15, color: 'var(--espresso)', fontWeight: importPrefs.language === l.id ? 700 : 400 }}>{l.label}</span>
               </button>
             ))}
+            <div style={{ fontFamily: 'var(--serif)', fontSize: 12.5, color: 'var(--mute)', fontStyle: 'italic', padding: '6px 12px 2px' }}>
+              Übersetzt nur importierte Rezepte. Die App-Sprache bleibt deutsch.
+            </div>
             <div style={{ borderTop: '1px solid var(--line)', marginTop: 10, paddingTop: 4 }}>
               <SettingRow icon="globe" label="Automatisch übersetzen" toggle
                 on={importPrefs.translate} onToggle={() => updateImportPrefs({ translate: !importPrefs.translate })} />
@@ -787,8 +790,8 @@ export default function Settings({ onImport, onShowTagManager, onHideTagManager 
           value={currentThemeName} onClick={() => setShowThemePicker(true)} />
       </SettingsGroup>
 
-      <SettingsGroup title="Import">
-        <SettingRow icon="globe" label="Sprache & Einheiten"
+      <SettingsGroup title="Sprache & Einheiten">
+        <SettingRow icon="globe" label="Für importierte Rezepte"
           value={`${languageLabel(importPrefs.language)} · ${importPrefs.units === 'metric' ? 'metrisch' : 'US'}`}
           onClick={() => setShowLangUnits(true)} />
       </SettingsGroup>

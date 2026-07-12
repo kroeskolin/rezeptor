@@ -36,7 +36,11 @@ function App() {
   const [showSearch, setShowSearch] = useState(false)
   const [favOnly, setFavOnly] = useState(false)
   const [todayMode, setTodayMode] = useState(null)
-  const [showSplash, setShowSplash] = useState(true)
+  // Nach einem Auto-Update folgt sofort ein Reload — dann NICHT nochmal den Splash
+  // zeigen (sonst blitzt er doppelt). Direkt zur App + „Gruß aus der Küche"-Banner.
+  const [showSplash, setShowSplash] = useState(() => {
+    try { return !sessionStorage.getItem('rezeptor-just-updated') } catch { return true }
+  })
   const [isOnMainPage, setIsOnMainPage] = useState(true)
   const [importRecipe, setImportRecipe] = useState(null)
 

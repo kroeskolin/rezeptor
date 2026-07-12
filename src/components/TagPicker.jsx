@@ -32,6 +32,7 @@ const STARTER_TAGS = [
   { name: 'Backen herzhaft',     color: '#A1665A' },
   { name: 'Schmoren',            color: '#6D4C41' },
   { name: 'Salat',               color: '#66BB6A' },
+  { name: 'Kalte Küche',         color: '#FB8C00' },
   { name: 'Pfannengericht',      color: '#FFEE58' },
   { name: 'Familienrezept',      color: '#9C27B0' },
   { name: 'Noch nie zubereitet', color: '#CE93D8' },

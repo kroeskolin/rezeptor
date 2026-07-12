@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import './RecipeDetail.css';
 import { Icon, coverTint, totalTime } from './DesignTokens';
@@ -58,6 +58,13 @@ export default function RecipeDetail({ recipe, onBack, onEdit, onStartCook, onTo
   const [sendState, setSendState] = useState(null); // { uid, status: 'busy'|'done' }
   const [sendMsg, setSendMsg] = useState(''); // optionaler Begleittext
   const [showCaptionOverlay, setShowCaptionOverlay] = useState(false);
+
+  // Beim Öffnen eines Rezepts immer oben starten (Scroll-Position der Liste nicht erben)
+  useEffect(() => {
+    const el = document.querySelector('.app-content');
+    if (el) el.scrollTo(0, 0);
+    else window.scrollTo(0, 0);
+  }, [recipe?.id]);
   const [captionText, setCaptionText] = useState('');
   const [publishBusy, setPublishBusy] = useState(false);
   const [showJoin, setShowJoin] = useState(false);

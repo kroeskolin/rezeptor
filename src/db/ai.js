@@ -145,13 +145,24 @@ function parseJsonLdRecipe(data) {
 
     // Bekannte Einheiten (dt. + engl.), auch OHNE Punkt — "cup"/"g"/"EL" etc.
     // landen so im unit-Feld statt im Zutaten-Namen.
-    const INGREDIENT_RE = /^\s*([\d/.,\s¼½¾⅓⅔⅛]+)?\s*(?:(g|kg|mg|ml|cl|dl|l|EL|TL|Esslöffel|Teelöffel|Msp|Prisen?|Bund|Stück|Zehen?|Dosen?|Packung(?:en)?|Pck|Becher|Tassen?|Scheiben?|Blatt|Blätter|cups?|tbsp|tsp|oz|lb|pounds?|ounces?|cans?|cloves?|teaspoons?|tablespoons?)\b\.?\s+)?(.*)$/i
+    const INGREDIENT_RE = /^\s*([\d/.,\s¼½¾⅓⅔⅛]+)?\s*(?:(g|kg|mg|ml|cl|dl|l|Gramm|Kilogramm|Kilo|Milliliter|Liter|Pfund|EL|TL|Esslöffel|Teelöffel|Msp|Prisen?|Bund|Stück|Zehen?|Dosen?|Packung(?:en)?|Pck|Becher|Tassen?|Scheiben?|Blatt|Blätter|cups?|tbsp|tsp|oz|lb|pounds?|ounces?|cans?|cloves?|teaspoons?|tablespoons?)\b\.?\s+)?(.*)$/i
+    // Manche Quellen (z.B. WP-Recipe-Maker) schreiben doppelte Klammern „((…))"
+    // und doppelte Leerzeichen — behutsam glätten, ohne echte Klammern zu verlieren.
+    const cleanName = (s) => (s || '')
+        .replace(/\(\s*\(/g, '(').replace(/\)\s*\)/g, ')')
+        .replace(/\s+/g, ' ')
+        .trim()
     const ingredients = (data.recipeIngredient || []).map(ing => {
         const match = ing.match(INGREDIENT_RE)
+        const amount = match?.[1]?.trim() || ''
+        let unit = match?.[2]?.trim() || ''
+        // Zählbare Zutat mit Zahl, aber ohne erkannte Einheit (z.B. „4 Schmorgurken",
+        // „1 Zwiebel") → Einheit „Stück" ergänzen.
+        if (amount && !unit && /[\d¼½¾⅓⅔⅛]/.test(amount)) unit = 'Stück'
         return {
-            amount: match?.[1]?.trim() || '',
-            unit: match?.[2]?.trim() || '',
-            name: match?.[3]?.trim() || ing,
+            amount,
+            unit,
+            name: cleanName(match?.[3] || ing),
         }
     })
 
