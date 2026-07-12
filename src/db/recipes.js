@@ -83,11 +83,13 @@ export async function addRecipe(recipe) {
             favorite: false,
             createdAt: new Date().toISOString(),
             localUpdatedAt: Date.now(), // für den Sync: lokal ist ab jetzt neuer als die Cloud
+            pendingSync: true,          // bis zur bestätigten Cloud-Sicherung
         }
         const request = store.add(newRecipe)
         request.onsuccess = () => {
-            if (auth.currentUser) pushRecipeToCloud(newRecipe).catch(() => { })
-            resolve(request.result)
+            const newId = request.result
+            if (auth.currentUser) pushRecipeToCloud(newRecipe).then(() => clearPendingSync(newId)).catch(() => { })
+            resolve(newId)
         }
         request.onerror = () => reject(request.error)
     })
@@ -98,10 +100,10 @@ export async function updateRecipe(recipe) {
     return new Promise((resolve, reject) => {
         const tx = db.transaction(STORE_NAME, 'readwrite')
         const store = tx.objectStore(STORE_NAME)
-        const stamped = { ...recipe, localUpdatedAt: Date.now() }
+        const stamped = { ...recipe, localUpdatedAt: Date.now(), pendingSync: true }
         const request = store.put(stamped)
         request.onsuccess = () => {
-            if (auth.currentUser) pushRecipeToCloud(stamped).catch(() => { })
+            if (auth.currentUser) pushRecipeToCloud(stamped).then(() => clearPendingSync(recipe.id)).catch(() => { })
             resolve(request.result)
         }
         request.onerror = () => reject(request.error)
@@ -122,7 +124,12 @@ export async function deleteRecipe(id) {
             const cloudId = getReq.result?.cloudId
             const delReq = store.delete(id)
             delReq.onsuccess = () => {
-                if (auth.currentUser && cloudId) deleteRecipeFromCloud(cloudId).catch(() => { })
+                // Tombstone: Löschung merken, damit sie garantiert die Cloud erreicht
+                // (und ein Cloud-Snapshot das Rezept nicht wieder „aufleben" lässt).
+                if (cloudId) {
+                    addPendingDelete(cloudId)
+                    if (auth.currentUser) deleteRecipeFromCloud(cloudId).then(() => removePendingDelete(cloudId)).catch(() => { })
+                }
                 resolve()
             }
             delReq.onerror = () => reject(delReq.error)
@@ -239,27 +246,100 @@ export async function updateTag(tag) {
 
 // Einmal pro Gerät: alle lokalen Rezepte/Tags in die Cloud sichern.
 // Idempotent über ein localStorage-Flag (verhindert wiederholtes Hochspielen).
+// ── Zuverlässiger Cloud-Sync: ausstehende Schreib-/Löschvorgänge merken ──
+// Jede lokale Änderung wird als pendingSync markiert und beim nächsten
+// Login/App-Start/Online-Werden nachgeschoben. Löschungen als Tombstone-Liste.
+const PENDING_DELETES_KEY = 'rezeptor-pending-deletes'
+
+function getPendingDeletes() {
+    try { return JSON.parse(localStorage.getItem(PENDING_DELETES_KEY)) || [] } catch { return [] }
+}
+function setPendingDeletes(list) {
+    try { localStorage.setItem(PENDING_DELETES_KEY, JSON.stringify(list)) } catch { /* Speicher voll */ }
+}
+function addPendingDelete(cloudId) {
+    if (!cloudId) return
+    const l = getPendingDeletes()
+    if (!l.includes(cloudId)) { l.push(cloudId); setPendingDeletes(l) }
+}
+function removePendingDelete(cloudId) {
+    setPendingDeletes(getPendingDeletes().filter(c => c !== cloudId))
+}
+
+// pendingSync-Flag eines lokalen Rezepts entfernen (nach bestätigtem Cloud-Push).
+async function clearPendingSync(id) {
+    if (id == null) return
+    const idb = await openDB()
+    await new Promise((resolve) => {
+        const tx = idb.transaction(STORE_NAME, 'readwrite')
+        const store = tx.objectStore(STORE_NAME)
+        const g = store.get(id)
+        g.onsuccess = () => {
+            const rec = g.result
+            if (rec && rec.pendingSync) { delete rec.pendingSync; store.put(rec) }
+            resolve()
+        }
+        g.onerror = () => resolve()
+    })
+}
+
+// Alle lokalen Rezepte als „zu sichern" markieren (Erst-Backup inkl. Altbestand).
+async function markAllPendingSync() {
+    const idb = await openDB()
+    await new Promise((resolve) => {
+        const tx = idb.transaction(STORE_NAME, 'readwrite')
+        const store = tx.objectStore(STORE_NAME)
+        const g = store.getAll()
+        g.onsuccess = () => { g.result.forEach(r => store.put({ ...r, pendingSync: true })) }
+        tx.oncomplete = () => resolve()
+        tx.onerror = () => resolve()
+    })
+}
+
+// Ausstehende Löschungen + ungesicherte Rezepte in die Cloud nachschieben.
+// Idempotent (deleteDoc / setDoc merge). Bei Login, App-Start und Online aufrufen.
+export async function flushPending() {
+    if (!auth.currentUser) return
+    for (const cloudId of getPendingDeletes()) {
+        try { await deleteRecipeFromCloud(cloudId); removePendingDelete(cloudId) }
+        catch (e) { /* bleibt für den nächsten Versuch */ }
+    }
+    const all = await getAllRecipes()
+    for (const r of all.filter(r => r.pendingSync)) {
+        try { await pushRecipeToCloud(r); await clearPendingSync(r.id) }
+        catch (e) { /* bleibt pendingSync → nächster Versuch */ }
+    }
+}
+
+// Lokale Bibliothek leeren (Konto-Wechsel „getrennt lassen").
+export async function clearAllLocal() {
+    const idb = await openDB()
+    await new Promise((resolve, reject) => {
+        const tx = idb.transaction([STORE_NAME, TAGS_STORE], 'readwrite')
+        tx.objectStore(STORE_NAME).clear()
+        tx.objectStore(TAGS_STORE).clear()
+        tx.oncomplete = () => resolve()
+        tx.onerror = () => reject(tx.error)
+    })
+    setPendingDeletes([])
+}
+
 export async function backupAllToCloud() {
     const user = auth.currentUser
     if (!user) return
     const key = `rezeptor-backup-done-v2-${user.uid}`
-    if (localStorage.getItem(key)) return
-    let hadError = false
-    try {
-        const recipes = await getAllRecipes()
-        for (const r of recipes) {
-            try { await pushRecipeToCloud(r) } catch (e) { hadError = true; console.error('Backup-Push (Rezept):', e) }
-        }
-        const tags = await getAllTags()
-        for (const t of tags) {
-            try { await pushTagToCloud(t) } catch (e) { hadError = true; console.error('Backup-Push (Tag):', e) }
-        }
-    } catch (e) {
-        hadError = true
-        console.error('Cloud-Backup fehlgeschlagen:', e)
+    if (!localStorage.getItem(key)) {
+        // Erstmalig für dieses Konto+Gerät: alle Rezepte (auch Altbestand) als
+        // pendingSync markieren, Tags direkt sichern.
+        await markAllPendingSync()
+        try {
+            const tags = await getAllTags()
+            for (const t of tags) { try { await pushTagToCloud(t) } catch (e) { console.error('Backup-Push (Tag):', e) } }
+        } catch (e) { console.error('Tag-Backup:', e) }
+        localStorage.setItem(key, '1')
     }
-    // Nur bei vollständigem Erfolg als „erledigt" markieren – sonst beim nächsten Mal erneut versuchen
-    if (!hadError) localStorage.setItem(key, '1')
+    // Immer: ausstehende Rezepte/Löschungen nachschieben (Zuverlässigkeit).
+    await flushPending()
 }
 
 // Tag-Palette aus den in Rezepten verwendeten Tags ableiten/ergänzen.
@@ -298,6 +378,7 @@ function reconcileFromCloud(storeName, snap, onChange) {
         const allReq = store.getAll()
         allReq.onsuccess = () => {
             const byCloudId = new Map(allReq.result.filter(r => r.cloudId).map(r => [r.cloudId, r]))
+            const pendingDeletes = storeName === STORE_NAME ? getPendingDeletes() : []
             snap.docChanges().forEach(change => {
                 const cloudId = change.doc.id
                 const local = byCloudId.get(cloudId)
@@ -305,6 +386,8 @@ function reconcileFromCloud(storeName, snap, onChange) {
                     if (local) store.delete(local.id)
                     return
                 }
+                // Lokal gelöscht, aber Cloud-Löschung noch nicht durch → nicht wieder anlegen
+                if (pendingDeletes.includes(cloudId)) return
                 // Firestore-Timestamp nicht lokal speichern (nicht klonbar)
                 const { updatedAt, ...data } = change.doc.data()
                 if (local) {

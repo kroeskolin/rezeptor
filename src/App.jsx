@@ -6,7 +6,7 @@ import AddRecipe from './components/AddRecipe'
 import EditRecipe from './components/EditRecipe'
 import CookMode from './components/CookMode'
 import Community from './components/Community'
-import { getAllRecipes, toggleFavorite, backupAllToCloud, startRecipeSync, startTagSync, ensurePaletteFromRecipes } from './db/recipes'
+import { getAllRecipes, toggleFavorite, backupAllToCloud, startRecipeSync, startTagSync, ensurePaletteFromRecipes, flushPending, clearAllLocal } from './db/recipes'
 import Settings from './components/Settings'
 import TodayTab from './components/TodayTab'
 import LuckyWheel from './components/LuckyWheel'
@@ -47,6 +47,7 @@ function App() {
   const [importInfo, setImportInfo] = useState(null)
   const [inboxItems, setInboxItems] = useState([])
   const [inboxImport, setInboxImport] = useState(null) // { recipe, inboxId } — erhaltenes Rezept im Formular
+  const [accountSwitch, setAccountSwitch] = useState(null) // { toUid } — Rückfrage bei Konto-Wechsel am selben Gerät
 
   const dismissWelcome = () => {
     localStorage.setItem('rezeptor-onboarded', '1')
@@ -96,15 +97,44 @@ function App() {
     }
   }, [showAddRecipe, showEditRecipe])
 
-  // Live-Sync: Cloud-Rezepte/Tags/Theme in die lokale DB übernehmen, sobald eingeloggt
+  // Synchroner Guard (liest localStorage, nicht den State) — schließt das
+  // Leck-Fenster, in dem Effekte einmal laufen, bevor accountSwitch greift.
+  const isDifferentAccount = () => {
+    const lastUid = localStorage.getItem('rezeptor-last-uid')
+    return !!(lastUid && user && lastUid !== user.uid)
+  }
+
+  // Konto-Wechsel am selben Gerät erkennen (#9): meldet sich ein ANDERES Konto an
+  // als zuletzt, erst nachfragen — sonst könnten fremde Geräte-Rezepte ins neue
+  // Konto wandern. Bis zur Entscheidung ruht Sync/Backup (Guards unten).
   useEffect(() => {
     if (!user) return
+    const lastUid = localStorage.getItem('rezeptor-last-uid')
+    if (lastUid && lastUid !== user.uid) {
+      setAccountSwitch({ toUid: user.uid })
+    } else {
+      localStorage.setItem('rezeptor-last-uid', user.uid)
+      setAccountSwitch(null)
+    }
+  }, [user])
+
+  // Live-Sync: Cloud-Rezepte/Tags/Theme in die lokale DB übernehmen, sobald eingeloggt
+  useEffect(() => {
+    if (!user || isDifferentAccount()) return
     syncThemeFromCloud() // am Konto gespeichertes Farbschema übernehmen
     const unsubR = startRecipeSync(() => getAllRecipes().then(setRecipes))
     const unsubT = startTagSync(() => window.dispatchEvent(new Event('rezeptor:tags-updated')))
     const unsubI = listenInbox(user, setInboxItems)
     return () => { unsubR(); unsubT(); unsubI(); setInboxItems([]) }
-  }, [user])
+  }, [user, accountSwitch])
+
+  // Ausstehende Sicherungen nachschieben, sobald das Gerät wieder online ist
+  useEffect(() => {
+    if (!user || isDifferentAccount()) return
+    const onOnline = () => flushPending().catch(() => {})
+    window.addEventListener('online', onOnline)
+    return () => window.removeEventListener('online', onOnline)
+  }, [user, accountSwitch])
 
   // Erhaltenes Rezept ansehen/bearbeiten: shared-Doc laden, Tags verwerfen
   // (die sind pro Nutzer individuell), dann ins Formular geben.
@@ -128,10 +158,23 @@ function App() {
 
   const dismissInboxItem = (item) => deleteInboxItem(user, item.id).catch(() => {})
 
+  // Konto-Wechsel auflösen: 'merge' = Geräte-Rezepte ins neue Konto übernehmen
+  // (Backup-Effekt lädt sie hoch); 'separate' = vom Gerät entfernen.
+  const resolveAccountSwitch = async (mode) => {
+    const uid = user?.uid
+    if (mode === 'separate') {
+      try { await clearAllLocal(); setRecipes([]) }
+      catch (e) { console.error('Lokale Daten leeren fehlgeschlagen:', e) }
+    }
+    if (uid) localStorage.setItem('rezeptor-last-uid', uid)
+    setAccountSwitch(null)
+  }
+
   // Aktivitäten laden, sobald ein Nutzer eingeloggt ist (und beim Wiederanzeigen der App)
   useEffect(() => {
     if (!user) { setActivities([]); setLastSeen(0); return }
-    // Einmaliges Cloud-Backup der lokalen Rezepte (Phase 2a; idempotent pro Gerät),
+    if (isDifferentAccount()) return // erst Konto-Wechsel klären, dann sichern
+    // Backup + Nachschieben ausstehender Rezepte (zuverlässig, idempotent),
     // danach Tag-Palette aus den Rezept-Tags ableiten (damit Tags ans Konto wandern)
     backupAllToCloud()
       .then(() => ensurePaletteFromRecipes())
@@ -142,7 +185,7 @@ function App() {
     const onVisible = () => { if (!document.hidden) load() }
     document.addEventListener('visibilitychange', onVisible)
     return () => document.removeEventListener('visibilitychange', onVisible)
-  }, [user])
+  }, [user, accountSwitch])
 
   // Posteingang: Rezepte und „Danke"-Einträge trennen — Danke erscheint als Aktivität
   const inboxRecipes = inboxItems.filter(i => i.type !== 'thanks')
@@ -474,6 +517,38 @@ function App() {
           </div>
           <div style={{ fontFamily: 'var(--serif)', fontSize: 15, color: 'var(--espresso)', marginTop: 3 }}>
             Rezeptor hat ein Update erhalten ✅
+          </div>
+        </div>
+      )}
+
+      {/* Konto-Wechsel am selben Gerät (#9): Rückfrage, bevor etwas synchronisiert wird */}
+      {accountSwitch && (
+        <div style={{
+          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 5000,
+          display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20,
+        }}>
+          <div style={{ background: 'var(--paper)', borderRadius: 20, maxWidth: 440, width: '100%', padding: '24px 22px' }}>
+            <h2 style={{ fontFamily: 'var(--serif)', fontSize: 20, fontWeight: 700, color: 'var(--espresso)', margin: '0 0 8px' }}>
+              Anderes Konto erkannt
+            </h2>
+            <p style={{ fontFamily: 'var(--serif)', fontSize: 14.5, color: 'var(--cocoa)', lineHeight: 1.5, margin: '0 0 20px' }}>
+              Auf diesem Gerät liegen Rezepte, die zu einem anderen Konto gehören. Was möchtest du damit tun?
+            </p>
+            <button onClick={() => resolveAccountSwitch('merge')} style={{
+              width: '100%', padding: '13px', borderRadius: 14, border: 'none', background: 'var(--green)',
+              color: '#F9FBF8', fontFamily: 'var(--serif)', fontSize: 15, fontWeight: 600, cursor: 'pointer', marginBottom: 10,
+            }}>
+              In dieses Konto übernehmen
+            </button>
+            <button onClick={() => resolveAccountSwitch('separate')} style={{
+              width: '100%', padding: '13px', borderRadius: 14, border: '1px solid var(--line-2)', background: 'var(--card)',
+              color: 'var(--cocoa)', fontFamily: 'var(--serif)', fontSize: 15, cursor: 'pointer',
+            }}>
+              Getrennt lassen (vom Gerät entfernen)
+            </button>
+            <p style={{ fontFamily: 'var(--serif)', fontSize: 12, color: 'var(--mute)', fontStyle: 'italic', margin: '12px 2px 0', lineHeight: 1.4 }}>
+              „Getrennt lassen" entfernt die Rezepte des anderen Kontos von diesem Gerät — falls dort gesichert, bleiben sie im eigenen Backup erhalten.
+            </p>
           </div>
         </div>
       )}

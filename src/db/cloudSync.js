@@ -11,8 +11,8 @@ export async function pushRecipeToCloud(recipe) {
     const user = auth.currentUser
     if (!user || !recipe?.cloudId) return
 
-    // Lokalen Integer-Schlüssel + image getrennt behandeln
-    const { id, image, ...rest } = recipe
+    // Lokalen Integer-Schlüssel + lokale Sync-Flags + image getrennt behandeln
+    const { id, image, pendingSync, ...rest } = recipe
     const data = { ...rest, updatedAt: serverTimestamp() }
 
     if (image && image.startsWith('data:')) {
