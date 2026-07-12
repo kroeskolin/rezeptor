@@ -152,15 +152,26 @@ export async function importRecipes(jsonString) {
     return new Promise((resolve, reject) => {
         const tx = db.transaction(STORE_NAME, 'readwrite')
         const store = tx.objectStore(STORE_NAME)
-        recipes.forEach(recipe => {
-            const withCloudId = { ...recipe, cloudId: recipe.cloudId || newCloudId() }
-            if (withCloudId.id !== undefined) {
-                store.put(withCloudId)
-            } else {
-                const { id, ...recipeWithoutId } = withCloudId
-                store.add(recipeWithoutId)
-            }
-        })
+        // Nach cloudId deduplizieren: der (geräte-spezifische) Integer-Schlüssel
+        // aus dem Export wird NIE übernommen — sonst würde er ein fremdes lokales
+        // Rezept mit gleicher id überschreiben.
+        const allReq = store.getAll()
+        allReq.onsuccess = () => {
+            const localIdByCloudId = new Map(
+                allReq.result.filter(r => r.cloudId).map(r => [r.cloudId, r.id])
+            )
+            recipes.forEach(recipe => {
+                const { id, ...rest } = recipe
+                const cloudId = rest.cloudId || newCloudId()
+                const record = { ...rest, cloudId, localUpdatedAt: Date.now() }
+                const existingLocalId = localIdByCloudId.get(cloudId)
+                if (existingLocalId !== undefined) {
+                    store.put({ ...record, id: existingLocalId }) // vorhandenes Rezept aktualisieren
+                } else {
+                    store.add(record) // neues Rezept (autoIncrement vergibt die id)
+                }
+            })
+        }
         tx.oncomplete = () => resolve(recipes.length)
         tx.onerror = () => reject(tx.error)
     })

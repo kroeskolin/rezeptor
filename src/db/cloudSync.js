@@ -11,26 +11,28 @@ export async function pushRecipeToCloud(recipe) {
     const user = auth.currentUser
     if (!user || !recipe?.cloudId) return
 
-    // Foto: Base64 → Storage; bereits vorhandene URL direkt übernehmen
-    let imageUrl = recipe.image || null
-    if (recipe.image && recipe.image.startsWith('data:')) {
+    // Lokalen Integer-Schlüssel + image getrennt behandeln
+    const { id, image, ...rest } = recipe
+    const data = { ...rest, updatedAt: serverTimestamp() }
+
+    if (image && image.startsWith('data:')) {
+        // Base64 → Storage. Schlägt der Upload FEHL, wird image NICHT geschrieben
+        // (merge) → vorhandenes Cloud-Bild bleibt erhalten, statt es zu löschen.
         try {
             const r = storageRef(storage, `users/${user.uid}/recipe-images/${recipe.cloudId}.jpg`)
-            await uploadString(r, recipe.image, 'data_url')
-            imageUrl = await getDownloadURL(r)
+            await uploadString(r, image, 'data_url')
+            data.image = await getDownloadURL(r)
         } catch (e) {
-            console.error('Foto-Upload (Cloud) fehlgeschlagen:', e)
-            imageUrl = null
+            console.error('Foto-Upload (Cloud) fehlgeschlagen — Bild bleibt unverändert:', e)
         }
+    } else if (image) {
+        data.image = image // bereits eine URL
+    } else {
+        data.image = null // Nutzer hat das Bild wirklich entfernt
     }
 
-    // Lokalen Integer-Schlüssel nicht mit in die Cloud schreiben
-    const { id, ...rest } = recipe
-    await setDoc(doc(db, 'users', user.uid, 'recipes', recipe.cloudId), {
-        ...rest,
-        image: imageUrl,
-        updatedAt: serverTimestamp(),
-    })
+    // merge:true, damit ausgelassene Felder (z.B. image bei Upload-Fehler) erhalten bleiben
+    await setDoc(doc(db, 'users', user.uid, 'recipes', recipe.cloudId), data, { merge: true })
 }
 
 export async function deleteRecipeFromCloud(cloudId) {
