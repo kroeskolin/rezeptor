@@ -790,8 +790,8 @@ export default function Settings({ onImport, onShowTagManager, onHideTagManager 
           value={currentThemeName} onClick={() => setShowThemePicker(true)} />
       </SettingsGroup>
 
-      <SettingsGroup title="Sprache & Einheiten">
-        <SettingRow icon="globe" label="Für importierte Rezepte"
+      <SettingsGroup title="Lokales">
+        <SettingRow icon="globe" label="Sprache & Einheiten"
           value={`${languageLabel(importPrefs.language)} · ${importPrefs.units === 'metric' ? 'metrisch' : 'US'}`}
           onClick={() => setShowLangUnits(true)} />
       </SettingsGroup>
