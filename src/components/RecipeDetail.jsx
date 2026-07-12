@@ -62,10 +62,10 @@ export default function RecipeDetail({ recipe, onBack, onEdit, onStartCook, onTo
   const [publishBusy, setPublishBusy] = useState(false);
   const [showJoin, setShowJoin] = useState(false);
   const { user, signInWithGoogle } = useAuth();
+  const [servings, setServings] = useState(recipe?.servings || 1);
 
+  // Early-Return hinter ALLEN Hooks (Rules of Hooks)
   if (!recipe) return null;
-
-  const [servings, setServings] = useState(recipe.servings || 1);
   const t = coverTint(recipe);
   const initial = (recipe.title || '?').trim().charAt(0).toUpperCase();
   const time = totalTime(recipe);
@@ -125,7 +125,18 @@ export default function RecipeDetail({ recipe, onBack, onEdit, onStartCook, onTo
       recipe.source ? `Quelle: ${recipe.source}` : null,
     ].filter(Boolean).join('\n')
 
-    await navigator.share({ title: recipe.title, text })
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: recipe.title, text })
+      } else if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(text)
+        alert('Rezept in die Zwischenablage kopiert.')
+      } else {
+        alert('Teilen wird auf diesem Gerät nicht unterstützt.')
+      }
+    } catch (err) {
+      if (err?.name !== 'AbortError') console.error('Teilen fehlgeschlagen:', err)
+    }
     setShowShareSheet(false)
   }
 

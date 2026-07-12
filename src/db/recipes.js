@@ -394,8 +394,10 @@ function reconcileFromCloud(storeName, snap, onChange) {
                     // Veralteter Cloud-Stand darf eine NEUERE lokale Änderung nie
                     // überschreiben (Race: Push läuft noch, Snapshot kommt mit altem
                     // Stand zurück → z.B. Favoriten-Herz sprang wieder zurück).
-                    if (local.localUpdatedAt && data.localUpdatedAt &&
-                        data.localUpdatedAt < local.localUpdatedAt) {
+                    // Auch Alt-Cloud-Docs OHNE Stempel gelten als älter als ein
+                    // lokal bearbeitetes Rezept.
+                    if (local.localUpdatedAt &&
+                        (!data.localUpdatedAt || data.localUpdatedAt < local.localUpdatedAt)) {
                         return
                     }
                     const merged = { ...local, ...data, cloudId, id: local.id }

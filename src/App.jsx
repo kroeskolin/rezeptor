@@ -125,7 +125,11 @@ function App() {
   useEffect(() => {
     if (!user || isDifferentAccount()) return
     syncThemeFromCloud() // am Konto gespeichertes Farbschema übernehmen
-    const unsubR = startRecipeSync(() => getAllRecipes().then(setRecipes))
+    const unsubR = startRecipeSync(() => getAllRecipes().then(all => {
+      setRecipes(all)
+      // Auch das gerade geöffnete Rezept auffrischen (Änderung von einem 2. Gerät)
+      setSelectedRecipe(sel => sel ? (all.find(r => (sel.cloudId && r.cloudId === sel.cloudId) || r.id === sel.id) || sel) : sel)
+    }))
     const unsubT = startTagSync(() => window.dispatchEvent(new Event('rezeptor:tags-updated')))
     const unsubI = listenInbox(user, setInboxItems)
     return () => { unsubR(); unsubT(); unsubI(); setInboxItems([]) }

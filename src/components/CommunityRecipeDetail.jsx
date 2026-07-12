@@ -4,14 +4,16 @@ import { createPortal } from 'react-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { toggleLike, hasLiked, listenComments, listenRecipe, addComment, deleteComment, deleteRecipe } from '../db/community'
 import { addRecipe } from '../db/recipes'
+import JoinCommunity from './JoinCommunity'
 
 export default function CommunityRecipeDetail({ recipe, onBack, onDeleted, onLocalSave }) {
-    if (!recipe) return null
-
+    // Rules of Hooks: keine Rückgabe vor den Hooks. recipe wird vom Parent
+    // (App.jsx / Community.jsx) garantiert non-null übergeben.
     const { user } = useAuth()
     const [liked, setLiked] = useState(false)
-    const [likeCount, setLikeCount] = useState(recipe.likeCount || 0)
+    const [likeCount, setLikeCount] = useState(recipe?.likeCount || 0)
     const [likeBusy, setLikeBusy] = useState(false)
+    const [showJoin, setShowJoin] = useState(false)
 
     // Beim Öffnen prüfen, ob ich dieses Rezept schon geliked habe
     useEffect(() => {
@@ -29,10 +31,7 @@ export default function CommunityRecipeDetail({ recipe, onBack, onDeleted, onLoc
     }, [recipe.id])
 
     const handleLike = async () => {
-        if (!user) {
-            alert('Zum Liken bitte einloggen (im Community-Tab oben).')
-            return
-        }
+        if (!user) { setShowJoin(true); return }
         if (likeBusy) return // Doppelklick-Schutz
         setLikeBusy(true)
         // Herz optimistisch umschalten; den Zähler liefert der Live-Listener
@@ -59,10 +58,7 @@ export default function CommunityRecipeDetail({ recipe, onBack, onDeleted, onLoc
     }, [recipe.id])
 
     const handleAddComment = async () => {
-        if (!user) {
-            alert('Zum Kommentieren bitte einloggen (im Community-Tab oben).')
-            return
-        }
+        if (!user) { setShowJoin(true); return }
         const clean = commentText.trim()
         if (!clean) return
         if (commentBusy) return
@@ -494,6 +490,21 @@ export default function CommunityRecipeDetail({ recipe, onBack, onDeleted, onLoc
                                 {saved ? '✓ In deinen Rezepten gespeichert' : saveBusy ? 'Speichert…' : '+ In meinen Rezepten speichern'}
                             </button>
                         </div>
+                    </div>
+                </div>
+            ), document.body)}
+
+            {showJoin && createPortal((
+                <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 1000, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }} onClick={() => setShowJoin(false)}>
+                    <div onClick={e => e.stopPropagation()} style={{ background: 'var(--paper)', borderRadius: '20px 20px 0 0', width: '100%', maxWidth: 640, padding: '20px 22px 40px' }}>
+                        <div style={{ width: 36, height: 4, borderRadius: 2, background: 'var(--line-2)', margin: '0 auto 18px' }} />
+                        <div style={{ fontFamily: 'var(--serif)', fontSize: 18, fontWeight: 700, color: 'var(--espresso)', marginBottom: 4 }}>
+                            Zum Mitmachen <span style={{ fontStyle: 'italic' }}>beitreten</span>
+                        </div>
+                        <div style={{ fontFamily: 'var(--serif)', fontSize: 13, color: 'var(--mute)', fontStyle: 'italic', marginBottom: 14 }}>
+                            Für Likes und Kommentare brauchst du ein Konto (Name reicht).
+                        </div>
+                        <JoinCommunity onDone={() => setShowJoin(false)} />
                     </div>
                 </div>
             ), document.body)}

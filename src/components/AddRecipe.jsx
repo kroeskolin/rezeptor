@@ -286,6 +286,8 @@ export default function AddRecipe({ onSave, onClose, initialUrl, initialRecipe }
 
   const handlePhotoLoad = async (e) => {
     const files = Array.from(e.target.files)
+    // Input leeren, damit dieselbe Datei nach einem Fehlversuch erneut wählbar ist
+    if (e.target) e.target.value = ''
     if (files.length === 0) return
     setIsLoading(true)
     setLoadingMsg(files.length > 1
@@ -303,7 +305,10 @@ export default function AddRecipe({ onSave, onClose, initialUrl, initialRecipe }
         return { ...r, image: compressed[idx] ?? compressed[0] ?? null }
       })
 
-      if (withImages.length === 1) {
+      if (withImages.length === 0 || !withImages.some(r => r.title || r.ingredients?.length)) {
+        alert('Auf dem Foto wurde kein Rezept erkannt. Versuch ein deutlicheres/helleres Foto — oder gib das Rezept manuell ein.')
+        setMode('hub')
+      } else if (withImages.length === 1) {
         const r = withImages[0]
         setForm({
           title: r.title || '', subtitle: r.subtitle || '',
