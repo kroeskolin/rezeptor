@@ -43,6 +43,7 @@ export default function CookMode({ recipe, onClose }) {
   const wakeLockRef = useRef(null);
   const [wakeLockActive, setWakeLockActive] = useState(false);
   const timerIntervalRef = useRef(null);
+  const endTimeRef = useRef(null); // feste Endzeit → Restzeit bleibt auch nach Hintergrund korrekt
   const audioCtxRef = useRef(null);
   const plingFiredRef = useRef(false);
 
@@ -80,15 +81,25 @@ export default function CookMode({ recipe, onClose }) {
 
   useEffect(() => {
     if (timerRunning) {
-      timerIntervalRef.current = setInterval(() => setTimerSeconds(s => s - 1), 1000);
-    } else {
-      clearInterval(timerIntervalRef.current);
+      // Restzeit immer aus der Endzeit berechnen (nicht aufsummiert dekrementieren)
+      const tick = () => {
+        if (endTimeRef.current != null) {
+          setTimerSeconds(Math.round((endTimeRef.current - Date.now()) / 1000));
+        }
+      };
+      tick();
+      timerIntervalRef.current = setInterval(tick, 1000);
+      // Beim Zurückkehren in den Vordergrund sofort neu berechnen
+      const onVis = () => { if (!document.hidden) tick(); };
+      document.addEventListener('visibilitychange', onVis);
+      return () => { clearInterval(timerIntervalRef.current); document.removeEventListener('visibilitychange', onVis); };
     }
+    clearInterval(timerIntervalRef.current);
     return () => clearInterval(timerIntervalRef.current);
   }, [timerRunning]);
 
   useEffect(() => {
-    if (timerSeconds === 0 && !plingFiredRef.current) {
+    if (timerSeconds !== null && timerSeconds <= 0 && !plingFiredRef.current) {
       plingFiredRef.current = true;
       playPling();
       if (navigator.vibrate) navigator.vibrate([400, 100, 400]);
@@ -137,6 +148,7 @@ export default function CookMode({ recipe, onClose }) {
   const handleTimerStart = (mins) => {
     unlockAudio();
     plingFiredRef.current = false;
+    endTimeRef.current = Date.now() + mins * 60 * 1000;
     setTimerSeconds(mins * 60);
     setTimerRunning(true);
     setShowTimerSetup(false);

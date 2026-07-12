@@ -47,6 +47,31 @@ export async function isPushEnabled() {
   } catch { return false }
 }
 
+// Selbstheilung: beim App-Start die aktuelle Subscription nach Firestore
+// schreiben (iOS rotiert/verliert Abos gelegentlich → sonst zeigt der Server
+// auf einen toten Endpoint und Pushes kommen still nie an).
+export async function resyncPushSubscription() {
+  if (!pushSupported() || Notification.permission !== 'granted') return
+  const user = auth.currentUser
+  if (!user || !VAPID_PUBLIC) return
+  try {
+    const reg = await navigator.serviceWorker.ready
+    let sub = await reg.pushManager.getSubscription()
+    if (!sub) {
+      sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC),
+      })
+    }
+    const json = sub.toJSON()
+    await setDoc(doc(db, 'users', user.uid, 'pushSubscriptions', await subKey(json.endpoint)), {
+      endpoint: json.endpoint,
+      keys: json.keys,
+      updatedAt: serverTimestamp(),
+    })
+  } catch { /* still — nächster Start versucht es erneut */ }
+}
+
 // Aktiviert Push (muss aus einer echten Nutzergeste aufgerufen werden!)
 export async function enablePush() {
   if (!pushSupported()) throw new Error('Dein Gerät unterstützt keine Push-Nachrichten.')

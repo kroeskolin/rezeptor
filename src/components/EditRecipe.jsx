@@ -132,8 +132,7 @@ function EditRecipe({ recipe, onSave, onClose, onDelete }) {
 
                 <div className="form-section">
                     <label className="form-label">Zubereitung</label>
-                    <RichTextEditor key={form.steps ? 'loaded' : 'empty'}
-                        content={form.steps} onChange={steps => setForm({ ...form, steps })} />
+                    <RichTextEditor content={form.steps} onChange={steps => setForm({ ...form, steps })} />
                 </div>
                 <div className="form-section">
                     <label className="form-label">Quelle <span className="form-label-opt">optional</span></label>

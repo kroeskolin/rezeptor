@@ -1,6 +1,7 @@
 import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import Underline from '@tiptap/extension-underline'
+import { useEffect } from 'react'
 import './RichTextEditor.css'
 
 function RichTextEditor({ content, onChange }) {
@@ -10,6 +11,15 @@ function RichTextEditor({ content, onChange }) {
             onChange(editor.getHTML())
         },
     })
+
+    // Externe Inhaltsänderung (z.B. KI-Import) übernehmen, OHNE neu zu mounten.
+    // Nur bei echtem Unterschied → kein Cursor-Sprung/Loop beim Tippen.
+    useEffect(() => {
+        if (editor && (content || '') !== editor.getHTML()) {
+            editor.commands.setContent(content || '', false)
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [content, editor])
 
     if (!editor) return null
 

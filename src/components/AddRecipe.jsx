@@ -16,19 +16,23 @@ const emptyRecipe = {
 }
 
 async function compressImage(file) {
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
     const reader = new FileReader()
+    reader.onerror = () => reject(new Error('Datei konnte nicht gelesen werden.'))
     reader.onloadend = async () => {
-      const img = new Image()
-      img.src = reader.result
-      await new Promise(r => img.onload = r)
-      const canvas = document.createElement('canvas')
-      const maxSize = 1024
-      const ratio = Math.min(maxSize / img.width, maxSize / img.height)
-      canvas.width = img.width * ratio
-      canvas.height = img.height * ratio
-      canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height)
-      resolve(canvas.toDataURL('image/jpeg', 0.8))
+      try {
+        const img = new Image()
+        img.src = reader.result
+        // onerror MUSS gesetzt sein, sonst hängt der Spinner bei defekten Bildern ewig
+        await new Promise((res, rej) => { img.onload = res; img.onerror = () => rej(new Error('Bild konnte nicht dekodiert werden.')) })
+        const canvas = document.createElement('canvas')
+        const maxSize = 1024
+        const ratio = Math.min(maxSize / img.width, maxSize / img.height)
+        canvas.width = img.width * ratio
+        canvas.height = img.height * ratio
+        canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height)
+        resolve(canvas.toDataURL('image/jpeg', 0.8))
+      } catch (e) { reject(e) }
     }
     reader.readAsDataURL(file)
   })
@@ -101,6 +105,7 @@ export default function AddRecipe({ onSave, onClose, initialUrl, initialRecipe }
   const [selectedRecipes, setSelectedRecipes] = useState(new Set())
   const [multiEditIdx, setMultiEditIdx] = useState(null) // Index des gerade bearbeiteten Multi-Rezepts
   const [showCropper, setShowCropper] = useState(false)
+  const [saving, setSaving] = useState(false)
   const photoInputRef = useRef(null)
 
   // Per Teilen-Funktion (z.B. Reel aus Instagram) geöffnet → Link sofort laden
@@ -128,14 +133,21 @@ export default function AddRecipe({ onSave, onClose, initialUrl, initialRecipe }
   }, [initialRecipe])
 
   const handleSave = async () => {
+    if (saving) return // Doppel-Tap-Schutz → keine doppelten Rezepte
     if (!form.title.trim()) { alert('Bitte gib einen Titel ein.'); return }
-    await addRecipe({
-      title: form.title, subtitle: form.subtitle,
-      servings: Number(form.servings), prepTime: Number(form.prepTime),
-      cookTime: Number(form.cookTime), ingredients: form.ingredients,
-      steps: form.steps, tags: form.tags, source: form.source || '', image: form.image || null,
-    })
-    onSave()
+    setSaving(true)
+    try {
+      await addRecipe({
+        title: form.title, subtitle: form.subtitle,
+        servings: Number(form.servings), prepTime: Number(form.prepTime),
+        cookTime: Number(form.cookTime), ingredients: form.ingredients,
+        steps: form.steps, tags: form.tags, source: form.source || '', image: form.image || null,
+      })
+      onSave()
+    } catch (e) {
+      setSaving(false)
+      alert('Speichern fehlgeschlagen: ' + (e?.message || ''))
+    }
   }
 
   const handleSaveMultiple = async () => {
@@ -327,7 +339,12 @@ export default function AddRecipe({ onSave, onClose, initialUrl, initialRecipe }
       setMode('manual')
       announceImportInfo(recipe)
     } catch (error) {
-      throw error // an VoiceInput weiterreichen, damit der Transcript erhalten bleibt
+      // KI-Fehler: das Gesprochene NICHT verlieren → in die manuelle Eingabe
+      // übernehmen (unter „Zubereitung"), damit der Nutzer weiterarbeiten kann.
+      const safe = String(transcript || '').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      setForm({ ...emptyRecipe, steps: safe ? `<p>${safe}</p>` : '' })
+      setMode('manual')
+      alert('Die KI konnte kein Rezept erkennen — dein diktierter Text steht jetzt im Formular unter „Zubereitung".')
     } finally {
       setIsLoading(false); setLoadingMsg('')
     }
@@ -735,8 +752,7 @@ export default function AddRecipe({ onSave, onClose, initialUrl, initialRecipe }
         </div>
         <div className="form-section">
           <label className="form-label">Zubereitung</label>
-          <RichTextEditor key={form.steps ? 'loaded' : 'empty'}
-            content={form.steps} onChange={steps => setForm({ ...form, steps })} />
+          <RichTextEditor content={form.steps} onChange={steps => setForm({ ...form, steps })} />
         </div>
         <div className="form-section">
           <label className="form-label">Quelle <span className="form-label-opt">optional</span></label>
@@ -747,8 +763,10 @@ export default function AddRecipe({ onSave, onClose, initialUrl, initialRecipe }
           <label className="form-label">Tags</label>
           <TagPicker selectedTags={form.tags} onChange={tags => setForm({ ...form, tags })} />
         </div>
-        <button className="form-save-btn" onClick={multiEditIdx !== null ? applyMultiEdit : handleSave}>
-          {multiEditIdx !== null ? 'Änderungen übernehmen' : 'Rezept speichern'}
+        <button className="form-save-btn" disabled={saving}
+          style={saving ? { opacity: 0.6 } : undefined}
+          onClick={multiEditIdx !== null ? applyMultiEdit : handleSave}>
+          {saving ? 'Wird gespeichert …' : (multiEditIdx !== null ? 'Änderungen übernehmen' : 'Rezept speichern')}
         </button>
         <div style={{ height: 32 }} />
       </div>

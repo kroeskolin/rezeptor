@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Layout from './components/Layout'
 import RecipeList from './components/RecipeList'
 import RecipeDetail from './components/RecipeDetail'
@@ -21,6 +21,7 @@ import { decompressFromEncodedURIComponent } from 'lz-string'
 import { addRecipe } from './db/recipes'
 import { useAuth } from './contexts/AuthContext'
 import { getActivities, getSharedRecipe, listenInbox, deleteInboxItem, sendThanks, markInboxThanked, sanitizeForeignRecipe } from './db/community'
+import { resyncPushSubscription } from './db/push'
 
 loadTheme()
 
@@ -48,6 +49,7 @@ function App() {
   const [inboxItems, setInboxItems] = useState([])
   const [inboxImport, setInboxImport] = useState(null) // { recipe, inboxId } — erhaltenes Rezept im Formular
   const [accountSwitch, setAccountSwitch] = useState(null) // { toUid } — Rückfrage bei Konto-Wechsel am selben Gerät
+  const importingRef = useRef(false) // Doppel-Tap-Schutz beim Kurzlink-Import
 
   const dismissWelcome = () => {
     localStorage.setItem('rezeptor-onboarded', '1')
@@ -86,16 +88,17 @@ function App() {
     return () => window.removeEventListener('rezeptor:import-info', onInfo)
   }, [])
 
-  // Editier-Flag für den Auto-Reload: nicht reloaden, während ein Rezept bearbeitet wird
+  // Editier-Flag für den Auto-Reload: nicht mitten in einer Eingabe/Aktion reloaden.
+  // Deckt jetzt auch Import (Kurzlink/Posteingang) und Kochmodus mit ab.
   useEffect(() => {
-    const editing = showAddRecipe || showEditRecipe
+    const editing = showAddRecipe || showEditRecipe || !!inboxImport || !!importRecipe || showCookMode
     window.__rezeptorEditing = editing
     if (!editing && window.__rezeptorPendingReload) {
       window.__rezeptorPendingReload = false
       sessionStorage.setItem('rezeptor-just-updated', '1')
       window.location.reload()
     }
-  }, [showAddRecipe, showEditRecipe])
+  }, [showAddRecipe, showEditRecipe, inboxImport, importRecipe, showCookMode])
 
   // Synchroner Guard (liest localStorage, nicht den State) — schließt das
   // Leck-Fenster, in dem Effekte einmal laufen, bevor accountSwitch greift.
@@ -135,6 +138,11 @@ function App() {
     window.addEventListener('online', onOnline)
     return () => window.removeEventListener('online', onOnline)
   }, [user, accountSwitch])
+
+  // Push-Abo beim Start auffrischen (Selbstheilung nach iOS-Rotation/-Verlust)
+  useEffect(() => {
+    if (user) resyncPushSubscription()
+  }, [user])
 
   // Erhaltenes Rezept ansehen/bearbeiten: shared-Doc laden, Tags verwerfen
   // (die sind pro Nutzer individuell), dann ins Formular geben.
@@ -344,20 +352,26 @@ function App() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             <button
               onClick={async () => {
-                await addRecipe({
-                  title: importRecipe.title || '',
-                  subtitle: importRecipe.subtitle || '',
-                  servings: Number(importRecipe.servings) || 0,
-                  prepTime: Number(importRecipe.prepTime) || 0,
-                  cookTime: Number(importRecipe.cookTime) || 0,
-                  ingredients: importRecipe.ingredients || [],
-                  steps: importRecipe.steps || '',
-                  tags: importRecipe.tags || [],
-                  source: importRecipe.source || 'Geteilt via Rezeptor',
-                  image: importRecipe.image || null,
-                })
-                setImportRecipe(null)
-                await handleSave()
+                if (importingRef.current) return // Doppel-Tap-Schutz
+                importingRef.current = true
+                try {
+                  await addRecipe({
+                    title: importRecipe.title || '',
+                    subtitle: importRecipe.subtitle || '',
+                    servings: Number(importRecipe.servings) || 0,
+                    prepTime: Number(importRecipe.prepTime) || 0,
+                    cookTime: Number(importRecipe.cookTime) || 0,
+                    ingredients: importRecipe.ingredients || [],
+                    steps: importRecipe.steps || '',
+                    tags: importRecipe.tags || [],
+                    source: importRecipe.source || 'Geteilt via Rezeptor',
+                    image: importRecipe.image || null,
+                  })
+                  setImportRecipe(null)
+                  await handleSave()
+                } finally {
+                  importingRef.current = false
+                }
               }}
               style={{
                 background: 'var(--green)', color: 'var(--paper)', border: 'none',
