@@ -16,6 +16,16 @@ export default {
       return new Response(null, { headers: corsHeaders });
     }
 
+    // Zugangs-Schutz: nur Anfragen aus der App durchlassen. Browser senden bei
+    // Cross-Origin-fetch immer einen Origin-Header — header-loses curl/Bots (die
+    // typische Missbrauchsquelle) werden so abgewiesen. WICHTIG zusätzlich:
+    // im Cloudflare-Dashboard ein Rate-Limit pro IP aktivieren (echte Kostenbremse).
+    const origin = request.headers.get("Origin") || "";
+    const referer = request.headers.get("Referer") || "";
+    if (!origin.startsWith(allowedOrigin) && !referer.startsWith(allowedOrigin)) {
+      return new Response("Forbidden", { status: 403, headers: corsHeaders });
+    }
+
     const url = new URL(request.url);
 
     // YouTube video info proxy: GET /videoinfo?videoId=...

@@ -331,6 +331,15 @@ export async function getActivities(user) {
 // Nur der Vorname wird angezeigt/gespeichert (Datenschutz).
 export const firstName = (name) => (name || '').trim().split(/\s+/)[0] || 'Unbekannt';
 
+// Fremde Rezepte (Kurzlink/Posteingang) absichern: nur unbedenkliche Bild-URLs
+// zulassen (https / data:image) — verhindert präparierte image-Werte.
+export function sanitizeForeignRecipe(recipe) {
+    if (!recipe) return recipe;
+    const img = recipe.image;
+    const ok = typeof img === 'string' && (/^https:\/\//i.test(img) || /^data:image\//i.test(img));
+    return ok ? recipe : { ...recipe, image: null };
+}
+
 // Alle Community-Mitglieder (für die Empfänger-Auswahl).
 export async function getAllUsers() {
     const snap = await getDocs(collection(db, 'users'));

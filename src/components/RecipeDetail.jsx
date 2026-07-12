@@ -153,7 +153,7 @@ export default function RecipeDetail({ recipe, onBack, onEdit, onStartCook, onTo
     container.style.background = '#fff'
     container.innerHTML = `
       <div style="font-family: Georgia, serif; padding: 40px; color: #473528; box-sizing: border-box; width: 700px;">
-        ${recipe.image ? `<img src="${recipe.image}" style="width:100%;max-height:320px;object-fit:cover;border-radius:12px;margin-bottom:24px;display:block" />` : ''}
+        ${recipe.image ? `<img src="${escape(recipe.image)}" style="width:100%;max-height:320px;object-fit:cover;border-radius:12px;margin-bottom:24px;display:block" />` : ''}
         <h1 style="font-size:32px;margin-bottom:4px">${escape(recipe.title)}</h1>
         ${recipe.subtitle ? `<div style="font-style:italic;color:#6A5546;margin-bottom:16px">${escape(recipe.subtitle)}</div>` : ''}
         <div style="color:#9A8C7E;font-size:14px;margin-bottom:24px">${[time > 0 ? `${time} Min.` : null, recipe.servings > 0 ? `${recipe.servings} Portionen` : null].filter(Boolean).join(' · ')}</div>

@@ -20,7 +20,7 @@ import OnboardingHints from './components/OnboardingHints'
 import { decompressFromEncodedURIComponent } from 'lz-string'
 import { addRecipe } from './db/recipes'
 import { useAuth } from './contexts/AuthContext'
-import { getActivities, getSharedRecipe, listenInbox, deleteInboxItem, sendThanks, markInboxThanked } from './db/community'
+import { getActivities, getSharedRecipe, listenInbox, deleteInboxItem, sendThanks, markInboxThanked, sanitizeForeignRecipe } from './db/community'
 
 loadTheme()
 
@@ -117,7 +117,7 @@ function App() {
         return
       }
       setInboxImport({
-        recipe: { ...shared, tags: [], source: shared.source || `Von ${item.fromName}` },
+        recipe: sanitizeForeignRecipe({ ...shared, tags: [], source: shared.source || `Von ${item.fromName}` }),
         inboxId: item.id,
       })
       goToSubPage()
@@ -205,7 +205,7 @@ function App() {
         const json = decompressFromEncodedURIComponent(compressed)
         const recipe = JSON.parse(json)
         if (recipe && recipe.title) {
-          setImportRecipe(recipe)
+          setImportRecipe(sanitizeForeignRecipe(recipe))
           setIsOnMainPage(false)
         }
       } catch (e) {
@@ -219,7 +219,7 @@ function App() {
       getSharedRecipe(id)
         .then((recipe) => {
           if (recipe && recipe.title) {
-            setImportRecipe(recipe)
+            setImportRecipe(sanitizeForeignRecipe(recipe))
             setIsOnMainPage(false)
           } else {
             alert('Dieses geteilte Rezept wurde nicht gefunden.')
