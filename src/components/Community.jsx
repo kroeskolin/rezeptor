@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { useAuth } from '../contexts/AuthContext'
-import { listenFeed, getRecipeById } from '../db/community'
+import { listenFeed, getRecipeById, postAnnouncement, ADMIN_UID } from '../db/community'
+import { Icon } from './DesignTokens'
 import CommunityRecipeDetail from './CommunityRecipeDetail'
 import JoinCommunity from './JoinCommunity'
 
@@ -23,6 +24,28 @@ export default function Community({ onLocalSave, activities = [], unreadCount = 
   const [showActivities, setShowActivities] = useState(false)
   const [seenThreshold, setSeenThreshold] = useState(0)
   const [showJoin, setShowJoin] = useState(false)
+
+  // Rezeptor-News verfassen (nur Admin-Konto)
+  const isAdmin = user && user.uid === ADMIN_UID
+  const [showCompose, setShowCompose] = useState(false)
+  const [newsTitle, setNewsTitle] = useState('')
+  const [newsText, setNewsText] = useState('')
+  const [newsBusy, setNewsBusy] = useState(false)
+
+  const handlePostNews = async () => {
+    if (newsBusy) return
+    if (!newsTitle.trim() || !newsText.trim()) return
+    setNewsBusy(true)
+    try {
+      await postAnnouncement(user, newsTitle, newsText)
+      setNewsTitle(''); setNewsText(''); setShowCompose(false)
+      // Der Feed-Listener holt den neuen Beitrag automatisch
+    } catch (err) {
+      alert('Posten fehlgeschlagen: ' + err.message)
+    } finally {
+      setNewsBusy(false)
+    }
+  }
 
   useEffect(() => {
     // Feed live: Änderungen (neue Rezepte, Like-/Kommentarzähler) erscheinen sofort
@@ -48,11 +71,20 @@ export default function Community({ onLocalSave, activities = [], unreadCount = 
 
   // Text einer Aktivität
   const activityText = (a) => {
-    if (a.type === 'like') return `${a.actorName} gefällt dein Rezept „${a.recipeTitle}"!`
-    if (a.type === 'comment') return `${a.actorName} hat dein Rezept „${a.recipeTitle}" kommentiert!`
-    if (a.type === 'newpost') return `${a.actorName} hat ein neues Rezept geteilt: „${a.recipeTitle}"`
+    const isNews = a.recipeType === 'announcement'
+    if (a.type === 'like') return isNews
+      ? `${a.actorName} gefällt dein Beitrag „${a.recipeTitle}"!`
+      : `${a.actorName} gefällt dein Rezept „${a.recipeTitle}"!`
+    if (a.type === 'comment') return isNews
+      ? `${a.actorName} hat deinen Beitrag „${a.recipeTitle}" kommentiert!`
+      : `${a.actorName} hat dein Rezept „${a.recipeTitle}" kommentiert!`
+    if (a.type === 'newpost') return isNews
+      ? `📣 Rezeptor-News: „${a.recipeTitle}"`
+      : `${a.actorName} hat ein neues Rezept geteilt: „${a.recipeTitle}"`
     if (a.type === 'thanks') return `${a.actorName} bedankt sich für „${a.recipeTitle}" 💚`
-    return `${a.actorName} hat ebenfalls das Rezept „${a.recipeTitle}" kommentiert!`
+    return isNews
+      ? `${a.actorName} hat ebenfalls den Beitrag „${a.recipeTitle}" kommentiert!`
+      : `${a.actorName} hat ebenfalls das Rezept „${a.recipeTitle}" kommentiert!`
   }
 
   // Auth lädt noch
@@ -103,24 +135,39 @@ export default function Community({ onLocalSave, activities = [], unreadCount = 
             Beitreten
           </button>
         ) : (
-          // Aktivitäten-Sprechblase (ganz rechts); Account-Verwaltung liegt in den Einstellungen
-          <button
-            onClick={openActivities}
-            aria-label="Aktivitäten"
-            style={{
-              width: 40, height: 40, borderRadius: '50%', flexShrink: 0,
-              background: unreadCount > 0 ? 'var(--rose)' : 'var(--card)',
-              border: `1px solid ${unreadCount > 0 ? 'var(--rose-2)' : 'var(--line-2)'}`,
-              cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-            }}>
-            {unreadCount > 0 ? (
-              <span style={{ fontFamily: 'var(--serif)', fontSize: 14, fontWeight: 700, color: 'var(--rose-ink)' }}>
-                {unreadCount > 9 ? '9+' : unreadCount}
-              </span>
-            ) : (
-              <SpeechBubble size={18} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            {/* Rezeptor-News verfassen — nur fürs Admin-Konto sichtbar */}
+            {isAdmin && (
+              <button
+                onClick={() => setShowCompose(true)}
+                aria-label="Rezeptor-News schreiben"
+                style={{
+                  width: 40, height: 40, borderRadius: '50%', flexShrink: 0,
+                  background: 'var(--card)', border: '1px solid var(--line-2)',
+                  cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                <Icon name="megaphone" size={19} color="var(--green)" strokeWidth={1.7} />
+              </button>
             )}
-          </button>
+            {/* Aktivitäten-Sprechblase (ganz rechts); Account-Verwaltung liegt in den Einstellungen */}
+            <button
+              onClick={openActivities}
+              aria-label="Aktivitäten"
+              style={{
+                width: 40, height: 40, borderRadius: '50%', flexShrink: 0,
+                background: unreadCount > 0 ? 'var(--rose)' : 'var(--card)',
+                border: `1px solid ${unreadCount > 0 ? 'var(--rose-2)' : 'var(--line-2)'}`,
+                cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+              {unreadCount > 0 ? (
+                <span style={{ fontFamily: 'var(--serif)', fontSize: 14, fontWeight: 700, color: 'var(--rose-ink)' }}>
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </span>
+              ) : (
+                <SpeechBubble size={18} />
+              )}
+            </button>
+          </div>
         )}
       </div>
 
@@ -196,7 +243,34 @@ export default function Community({ onLocalSave, activities = [], unreadCount = 
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          {feed.map(recipe => (
+          {feed.map(recipe => recipe.type === 'announcement' ? (
+            // Rezeptor-News: Beitrag ohne Rezept, hebt sich farblich ab
+            <div key={recipe.id}
+              onClick={() => setSelectedFeedRecipe(recipe)}
+              style={{
+                background: 'var(--sage)', border: '1.5px solid var(--sage-2)',
+                borderRadius: 16, padding: 16, cursor: 'pointer',
+              }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                <Icon name="megaphone" size={15} color="var(--green)" strokeWidth={1.9} />
+                <span style={{ fontFamily: 'var(--serif)', fontSize: 11, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--green)' }}>
+                  Rezeptor-News
+                </span>
+              </div>
+              <div style={{ fontFamily: 'var(--serif)', fontWeight: 700, fontSize: 17, color: 'var(--espresso)', marginTop: 9, lineHeight: 1.25 }}>
+                {recipe.title}
+              </div>
+              <div style={{ fontFamily: 'var(--serif)', fontSize: 15, color: 'var(--espresso)', lineHeight: 1.5, whiteSpace: 'pre-wrap', marginTop: 6 }}>
+                {recipe.caption}
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 16, fontFamily: 'var(--serif)', fontSize: 13, color: 'var(--mute)', marginTop: 10 }}>
+                <span>♥ {recipe.likeCount || 0}</span>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                  <SpeechBubble size={14} /> {recipe.commentCount || 0}
+                </span>
+              </div>
+            </div>
+          ) : (
             <div key={recipe.id}
               onClick={() => setSelectedFeedRecipe(recipe)}
               style={{
@@ -307,6 +381,72 @@ export default function Community({ onLocalSave, activities = [], unreadCount = 
                 })}
               </div>
             )}
+          </div>
+        </div>
+      ), document.body)}
+
+      {/* Rezeptor-News verfassen (mittig zentriert → iOS-Tastatur verdeckt nichts) */}
+      {showCompose && createPortal((
+        <div style={{
+          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)',
+          zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20,
+        }} onClick={() => { if (!newsBusy) setShowCompose(false) }}>
+          <div onClick={e => e.stopPropagation()} style={{
+            background: 'var(--paper)', borderRadius: 20, width: '100%', maxWidth: 440, padding: '22px 20px',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+              <Icon name="megaphone" size={18} color="var(--green)" strokeWidth={1.8} />
+              <span style={{ fontFamily: 'var(--serif)', fontSize: 18, fontWeight: 700, color: 'var(--espresso)' }}>
+                Rezeptor-News schreiben
+              </span>
+            </div>
+            <input
+              type="text"
+              value={newsTitle}
+              onChange={e => setNewsTitle(e.target.value)}
+              placeholder="Überschrift"
+              maxLength={100}
+              style={{
+                width: '100%', boxSizing: 'border-box', border: '1px solid var(--line-2)',
+                borderRadius: 12, padding: '11px 14px', fontFamily: 'var(--serif)', fontSize: 15,
+                fontWeight: 700, color: 'var(--espresso)', background: 'var(--card)', outline: 'none',
+                marginBottom: 10,
+              }}
+            />
+            <textarea
+              value={newsText}
+              onChange={e => setNewsText(e.target.value)}
+              placeholder="Was gibt es Neues?"
+              rows={5}
+              maxLength={2000}
+              style={{
+                width: '100%', boxSizing: 'border-box', border: '1px solid var(--line-2)',
+                borderRadius: 12, padding: '11px 14px', fontFamily: 'var(--serif)', fontSize: 15,
+                color: 'var(--espresso)', background: 'var(--card)', outline: 'none',
+                resize: 'vertical', marginBottom: 14,
+              }}
+            />
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button onClick={() => setShowCompose(false)} disabled={newsBusy} style={{
+                flex: 1, background: 'var(--card)', color: 'var(--cocoa)',
+                border: '1px solid var(--line-2)', borderRadius: 12, padding: '12px 14px',
+                fontFamily: 'var(--serif)', fontSize: 14.5, cursor: 'pointer',
+              }}>
+                Abbrechen
+              </button>
+              <button
+                onClick={handlePostNews}
+                disabled={newsBusy || !newsTitle.trim() || !newsText.trim()}
+                style={{
+                  flex: 1, background: 'var(--green)', color: 'var(--paper)', border: 'none',
+                  borderRadius: 12, padding: '12px 14px', fontFamily: 'var(--serif)',
+                  fontSize: 14.5, fontWeight: 700,
+                  cursor: (newsBusy || !newsTitle.trim() || !newsText.trim()) ? 'default' : 'pointer',
+                  opacity: (newsBusy || !newsTitle.trim() || !newsText.trim()) ? 0.5 : 1,
+                }}>
+                {newsBusy ? 'Wird gepostet…' : 'Posten'}
+              </button>
+            </div>
           </div>
         </div>
       ), document.body)}

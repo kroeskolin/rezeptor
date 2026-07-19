@@ -1,4 +1,4 @@
-import { coverTint, totalTime } from './DesignTokens'
+import { coverTint, totalTime, Icon } from './DesignTokens'
 import { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { useAuth } from '../contexts/AuthContext'
@@ -123,7 +123,9 @@ export default function CommunityRecipeDetail({ recipe, onBack, onDeleted, onLoc
     const [deleteBusy, setDeleteBusy] = useState(false)
     const handleDeleteRecipe = async () => {
         if (deleteBusy) return
-        if (!confirm('Dieses Rezept dauerhaft aus der Community löschen?')) return
+        if (!confirm(recipe.type === 'announcement'
+            ? 'Diesen Beitrag dauerhaft löschen?'
+            : 'Dieses Rezept dauerhaft aus der Community löschen?')) return
         setDeleteBusy(true)
         try {
             await deleteRecipe(recipe.id, user)
@@ -135,6 +137,8 @@ export default function CommunityRecipeDetail({ recipe, onBack, onDeleted, onLoc
     }
 
     const isOwner = user && recipe.authorId === user.uid
+    // Rezeptor-News: Beitrag ohne Rezept — keine Rezeptkarte, kein Overlay
+    const isNews = recipe.type === 'announcement'
 
     // Zeitstempel hübsch formatieren (Firestore Timestamp → lesbar)
     const formatTime = (ts) => {
@@ -207,8 +211,26 @@ export default function CommunityRecipeDetail({ recipe, onBack, onDeleted, onLoc
                     </div>
                 </div>
 
+                {/* Rezeptor-News: Megafon-Zeile + Überschrift + Text statt Rezeptkarte */}
+                {isNews && (
+                    <>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginTop: 16 }}>
+                            <Icon name="megaphone" size={15} color="var(--green)" strokeWidth={1.9} />
+                            <span style={{ fontFamily: 'var(--serif)', fontSize: 11, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--green)' }}>
+                                Rezeptor-News
+                            </span>
+                        </div>
+                        <div style={{ fontFamily: 'var(--serif)', fontWeight: 700, fontSize: 19, color: 'var(--espresso)', marginTop: 9, lineHeight: 1.25 }}>
+                            {recipe.title}
+                        </div>
+                        <div style={{ fontFamily: 'var(--serif)', fontSize: 15.5, color: 'var(--espresso)', lineHeight: 1.55, whiteSpace: 'pre-wrap', marginTop: 8 }}>
+                            {recipe.caption}
+                        </div>
+                    </>
+                )}
+
                 {/* 2. Rezeptkarte → öffnet das Overlay */}
-                {recipe.image ? (
+                {!isNews && (recipe.image ? (
                     <button onClick={() => setShowRecipe(true)} style={{
                         width: '100%', display: 'block', padding: 0, overflow: 'hidden',
                         background: 'var(--card)', border: '1px solid var(--sage-2)',
@@ -255,10 +277,10 @@ export default function CommunityRecipeDetail({ recipe, onBack, onDeleted, onLoc
                             Ansehen →
                         </span>
                     </button>
-                )}
+                ))}
 
                 {/* 3. Caption */}
-                {recipe.caption ? (
+                {!isNews && (recipe.caption ? (
                     <div style={{ fontFamily: 'var(--serif)', fontSize: 16, color: 'var(--espresso)', lineHeight: 1.5, marginTop: 14, whiteSpace: 'pre-wrap' }}>
                         {recipe.caption}
                     </div>
@@ -266,7 +288,7 @@ export default function CommunityRecipeDetail({ recipe, onBack, onDeleted, onLoc
                     <div style={{ fontFamily: 'var(--serif)', fontSize: 15, color: 'var(--cocoa)', opacity: 0.85, marginTop: 14, fontStyle: 'italic' }}>
                         hat ein Rezept geteilt.
                     </div>
-                )}
+                ))}
 
                 {/* 4. Likes-Pille */}
                 <div style={{ marginTop: 14 }}>
@@ -370,7 +392,7 @@ export default function CommunityRecipeDetail({ recipe, onBack, onDeleted, onLoc
                         fontFamily: 'var(--serif)', fontSize: 14, fontWeight: 700,
                         color: 'var(--rose-ink)', opacity: deleteBusy ? 0.6 : 1,
                     }}>
-                        {deleteBusy ? 'Wird gelöscht…' : 'Rezept aus der Community löschen'}
+                        {deleteBusy ? 'Wird gelöscht…' : isNews ? 'Beitrag löschen' : 'Rezept aus der Community löschen'}
                     </button>
                 </div>
             )}

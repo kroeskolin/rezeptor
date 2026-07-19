@@ -50,7 +50,8 @@ async function sendToUser(uid, payload) {
   }))
 }
 
-// 1) Neues Community-Rezept → alle anderen Nutzer (mit newRecipes-Pref)
+// 1) Neues Community-Rezept ODER Rezeptor-News → alle anderen Nutzer
+//    (Rezepte mit newRecipes-Pref, News mit news-Pref — beide standardmäßig an)
 exports.onNewRecipe = onDocumentCreated(
   { document: 'recipes/{id}', region: REGION, secrets },
   async (event) => {
@@ -58,15 +59,16 @@ exports.onNewRecipe = onDocumentCreated(
     if (!snap) return
     const r = snap.data()
     configureWebpush()
+    const isNews = r.type === 'announcement'
     const payload = {
-      title: `Neues Rezept von ${r.authorName || 'jemandem'}`,
+      title: isNews ? '📣 Rezeptor-News' : `Neues Rezept von ${r.authorName || 'jemandem'}`,
       body: r.title || '',
       url: '/rezeptor/',
-      tag: `recipe-${event.params.id}`,
+      tag: `${isNews ? 'news' : 'recipe'}-${event.params.id}`,
     }
     const usersSnap = await db.collection('users').get()
     const targets = usersSnap.docs.filter(
-      (d) => d.id !== r.authorId && prefAllows(d.data(), 'newRecipes')
+      (d) => d.id !== r.authorId && prefAllows(d.data(), isNews ? 'news' : 'newRecipes')
     )
     await Promise.all(targets.map((d) => sendToUser(d.id, payload)))
   }
@@ -87,7 +89,7 @@ exports.onNewLike = onDocumentCreated(
     if (!prefAllows(authorSnap.data(), 'likes')) return
     configureWebpush()
     await sendToUser(r.authorId, {
-      title: `${like.authorName || 'Jemand'} gefällt dein Rezept`,
+      title: `${like.authorName || 'Jemand'} gefällt dein ${r.type === 'announcement' ? 'Beitrag' : 'Rezept'}`,
       body: r.title || '',
       url: '/rezeptor/',
       tag: `like-${event.params.recipeId}`,

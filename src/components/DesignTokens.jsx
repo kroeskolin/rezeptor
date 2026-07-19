@@ -175,6 +175,9 @@ export function Icon({ name, size = 24, color = 'var(--espresso)', strokeWidth =
     case 'check': return (
       <svg {...p}><path d="M4 12l6 6L20 6" /></svg>
     );
+    case 'megaphone': return (
+      <svg {...p}><path d="M4 10.5v3a1.5 1.5 0 0 0 1.5 1.5H8l9.5 4.5v-15L8 9H5.5A1.5 1.5 0 0 0 4 10.5z" /><path d="M20.5 10v4M8.5 15.5l1 4.5" /></svg>
+    );
     default: return (
       <svg {...p}><circle cx="12" cy="12" r="5" /></svg>
     );

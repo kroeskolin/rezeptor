@@ -3,7 +3,7 @@ import { doc, setDoc, deleteDoc, getDoc, serverTimestamp } from 'firebase/firest
 
 const VAPID_PUBLIC = import.meta.env.VITE_VAPID_PUBLIC_KEY
 
-export const DEFAULT_PUSH_PREFS = { newRecipes: true, comments: true, likes: true, received: true }
+export const DEFAULT_PUSH_PREFS = { newRecipes: true, comments: true, likes: true, received: true, news: true }
 
 export function pushSupported() {
   return typeof window !== 'undefined'

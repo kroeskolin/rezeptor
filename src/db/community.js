@@ -19,6 +19,10 @@ import {
 // Geteilte Rezepte/Kurzlinks laufen nach 90 Tagen ab (Firestore-TTL auf expiresAt).
 const SHARE_TTL_MS = 90 * 24 * 60 * 60 * 1000;
 
+// Nur dieses Konto darf Rezeptor-News posten. Die harte Absicherung liegt in den
+// Firestore-Regeln (gleiche UID) — hier steuert sie nur die Sichtbarkeit des Buttons.
+export const ADMIN_UID = '7Bx3RyxhHifK6f8r4n2RJ9hSYHp2';
+
 import { ref as storageRef, uploadString, getDownloadURL, deleteObject } from 'firebase/storage';
 
 import { db, storage } from './firebase';
@@ -74,6 +78,24 @@ export async function publishRecipe(recipe, user, caption = '') {
     }
 
     return { id: ref.id, photoError };
+}
+
+// Rezeptor-News (Beitrag ohne Rezept) posten — nur fürs Admin-Konto; die
+// Firestore-Regel weist alle anderen ab. Liegt in derselben recipes-Sammlung,
+// damit Likes/Kommentare/Aktivitäten/Push ohne Extra-Infrastruktur funktionieren.
+export async function postAnnouncement(user, title, text) {
+    if (!user) throw new Error('Nicht eingeloggt');
+    const ref = await addDoc(collection(db, 'recipes'), {
+        type: 'announcement',
+        authorId: user.uid,
+        authorName: user.displayName || 'Rezeptor',
+        title: (title || '').trim(),
+        caption: (text || '').trim(),
+        likeCount: 0,
+        commentCount: 0,
+        createdAt: serverTimestamp(),
+    });
+    return ref.id;
 }
 
 // Alle veröffentlichten Rezepte laden, neueste zuerst.
@@ -285,7 +307,7 @@ export async function getActivities(user) {
                 const d = l.data();
                 activities.push({
                     id: `like_${rid}_${l.id}`, type: 'like',
-                    recipeId: rid, recipeTitle: rec.title || '',
+                    recipeId: rid, recipeTitle: rec.title || '', recipeType: rec.type || 'recipe',
                     actorName: d.authorName || 'Jemand', actorId: l.id,
                     createdAtMs: ms(d.createdAt),
                 });
@@ -297,7 +319,7 @@ export async function getActivities(user) {
                 if (d.authorId === me) return; // eigener Kommentar
                 activities.push({
                     id: `comment_${rid}_${c.id}`, type: 'comment',
-                    recipeId: rid, recipeTitle: rec.title || '',
+                    recipeId: rid, recipeTitle: rec.title || '', recipeType: rec.type || 'recipe',
                     actorName: d.authorName || 'Jemand', actorId: d.authorId,
                     text: d.text || '', createdAtMs: ms(d.createdAt),
                 });
@@ -306,7 +328,7 @@ export async function getActivities(user) {
             // Fremdes Rezept → neuer Beitrag als Aktivität (macht auf die Community aufmerksam)
             activities.push({
                 id: `newpost_${rid}`, type: 'newpost',
-                recipeId: rid, recipeTitle: rec.title || '',
+                recipeId: rid, recipeTitle: rec.title || '', recipeType: rec.type || 'recipe',
                 actorName: rec.authorName || 'Jemand', actorId: rec.authorId,
                 createdAtMs: ms(rec.createdAt),
             });
@@ -319,7 +341,7 @@ export async function getActivities(user) {
                     if (d.authorId === me) return; // eigener Kommentar
                     activities.push({
                         id: `cocomment_${rid}_${c.id}`, type: 'cocomment',
-                        recipeId: rid, recipeTitle: rec.title || '',
+                        recipeId: rid, recipeTitle: rec.title || '', recipeType: rec.type || 'recipe',
                         actorName: d.authorName || 'Jemand', actorId: d.authorId,
                         text: d.text || '', createdAtMs: ms(d.createdAt),
                     });
